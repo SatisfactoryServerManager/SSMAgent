@@ -23,6 +23,9 @@
         "fs-extra": "^11.1.0",
         "fs-reverse": "^0.0.3"
     },
+    "scripts": {
+        "start": "node index.js"
+    },
     "pkg": {
         "assets": [
             "views/**/*",

@@ -14,13 +14,13 @@ RUN apt-get -qq update -y
 
 RUN useradd -m -u 9999 -s /bin/bash ssm 
 
-RUN mkdir /opt/SSM
-VOLUME /opt/SSM
+RUN mkdir /opt/SSMAgent
+VOLUME /opt/SSMAgent
 
-COPY release-builds/linux/* /opt/SSM/
-RUN chown -R ssm:ssm /opt/SSM
+COPY release-builds/linux/* /opt/SSMAgent/
+RUN chown -R ssm:ssm /opt/SSMAgent
 
-RUN mkdir -p /home/ssm/.SatisfactoryServerManager && mkdir -p /home/ssm/.config/Epic/FactoryGame
+RUN mkdir -p /home/ssm/SSMAgent && mkdir -p /home/ssm/.config/Epic/FactoryGame
 RUN chown -R ssm:ssm /home/ssm
 
 COPY entry.sh /entry.sh
