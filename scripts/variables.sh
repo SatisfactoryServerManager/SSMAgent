@@ -1,5 +1,5 @@
-export GITHUB_TOKEN="$(cat ./tools/TOKEN.txt)"
-export DOCKER_PASS="$(cat ./tools/DOCKERPASS.txt)"
+export GITHUB_TOKEN="$(cat ./scripts/TOKEN.txt)"
+export DOCKER_PASS="$(cat ./scripts/DOCKERPASS.txt)"
 
 SSH_CMD="ssh -q -o HostKeyAlgorithms=ssh-rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 SCP_CMD="scp -qpr -o HostKeyAlgorithms=ssh-rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"

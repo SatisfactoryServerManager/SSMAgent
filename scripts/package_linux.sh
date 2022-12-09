@@ -84,7 +84,7 @@ if [ ${COMPILEONLY} -eq 0 ]; then
     "
     ${SSH_CMD} root@${LINUX_SERVER} "${sshargs}"
 
-    ${SCP_CMD} root@${LINUX_SERVER}:/nodejs/build/SSM/release-builds/linux/* ${release_dir_linux}/.
+    ${SCP_CMD} root@${LINUX_SERVER}:/nodejs/build/SSMAgent/release-builds/linux/* ${release_dir_linux}/.
 
     DOCKERIMG="mrhid6/ssmagent"
 
