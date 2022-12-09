@@ -51,7 +51,7 @@ if [ ${COMPILEONLY} -eq 0 ]; then
 
     printDots "* Cloning SSM Repo" 30
     sshargs="cd /nodejs/build; \
-        git clone https://github.com/mrhid6/SatisfactoryServerManager.git SSM; \
+        git clone https://github.com/SatisfactoryServerManager/SSMAgent.git SSMAgent; \
         exit \$?
     "
     ${SSH_CMD} root@${LINUX_SERVER} "${sshargs}" >/dev/null 2>&1
@@ -64,8 +64,8 @@ if [ ${COMPILEONLY} -eq 0 ]; then
 
     printDots "* Building App" 30
     sshargs="PATH+=:/root/n/bin; \
-        cd /nodejs/build/SSM; \
-        bash ./tools/build_app.sh -i -u; \
+        cd /nodejs/build/SSMAgent; \
+        yarn install; \
         exit \$?
     "
     ${SSH_CMD} root@${LINUX_SERVER} "${sshargs}" >/dev/null 2>&1
@@ -78,8 +78,8 @@ if [ ${COMPILEONLY} -eq 0 ]; then
     fi
 
     sshargs="PATH+=:/root/n/bin; \
-        cd /nodejs/build/SSM; \
-        bash ./tools/package/package_linux.sh --version ${VERSION} --compile; \
+        cd /nodejs/build/SSMAgent; \
+        bash ./scripts/package_linux.sh --version ${VERSION} --compile; \
         exit \$?
     "
     ${SSH_CMD} root@${LINUX_SERVER} "${sshargs}"
@@ -91,10 +91,10 @@ if [ ${COMPILEONLY} -eq 0 ]; then
     echo "${DOCKER_PASS}" | docker login -u mrhid6 --password-stdin
     docker build -t ${DOCKERIMG}:latest ${BASEDIR}/.
 
-    docker tag ${DOCKERIMG}:latest ${DOCKERIMG}:${VERSION}
+    #docker tag ${DOCKERIMG}:latest ${DOCKERIMG}:${VERSION}
 
-    docker push ${DOCKERIMG}:latest
-    docker push ${DOCKERIMG}:${VERSION}
+    #docker push ${DOCKERIMG}:latest
+    #docker push ${DOCKERIMG}:${VERSION}
 
 else
     release_dir="${BASEDIR}/release-builds"
@@ -117,7 +117,7 @@ else
 
     printDots "* Compiling Linux" 30
 
-    pkg app.js -c package.json -t node16-linux-x64 --out-path ${release_dir_linux} -d >${release_dir_linux}/build.log
+    pkg index.js -c package.json -t node18-linux-x64 --out-path ${release_dir_linux} -d >${release_dir_linux}/build.log
 
     if [ $? -ne 0 ]; then
         echo -en "\e[31m✘\e[0m\n"
