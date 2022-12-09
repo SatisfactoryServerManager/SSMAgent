@@ -1,0 +1,50 @@
+{
+    "name": "SSMAgent",
+    "version": "1.0.0",
+    "main": "index.js",
+    "license": "MIT",
+    "dependencies": {
+        "axios": "^1.2.1",
+        "mrhid6utils": "^1.0.6",
+        "node-pty": "^0.10.1",
+        "recursive-readdir": "^2.2.2",
+        "recursive-readdir-async": "^1.2.1",
+        "rimraf": "^3.0.2",
+        "systeminformation": "^5.12.3",
+        "tar": "^6.1.11",
+        "tmp-promise": "^3.0.3",
+        "graphql": "^16.5.0",
+        "graphql-request": "^5.0.0",
+        "vdf": "^0.0.2",
+        "crypto-js": "^4.1.1",
+        "archiver": "^5.3.1",
+        "chmodr": "^1.2.0",
+        "extract-zip": "^2.0.1",
+        "fs-extra": "^11.1.0",
+        "fs-reverse": "^0.0.3"
+    },
+    "pkg": {
+        "assets": [
+            "views/**/*",
+            "public/**/*",
+            "scripts/**/*.sh",
+            "assets/**/*",
+            "node_modules/jquery/dist/**/*",
+            "node_modules/jquery-steps/build/**/*",
+            "node_modules/@fortawesome/fontawesome-free/css/**/*",
+            "node_modules/@fortawesome/fontawesome-free/webfonts/**/*",
+            "node_modules/moment/min/**/*",
+            "node_modules/toastr/build/**/*",
+            "node_modules/ts-invariant/**/*",
+            "node_modules/exiftool-vendored.exe/**/*",
+            "node_modules/exiftool-vendored/**/*",
+            "node_modules/exiftool-vendored.pl/**/*",
+            "node_modules/jquery-circle-progress/**/*",
+            "node_modules/axios/**/*",
+            "db_updates/**/*"
+        ],
+        "targets": [
+            "node16"
+        ]
+    }
+}
