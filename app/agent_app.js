@@ -3,6 +3,9 @@ const Logger = require("./agent_logger");
 const Cleanup = require("./agent_cleanup");
 
 const AgentAPI = require("./agent_api");
+const AgentMessageQueue = require("./agent_messagequeue");
+const SteamCMD = require("./agent_steamcmd").AgentSteamCMD;
+const AgentSFHandler = require("./agent_sf_handler");
 
 class AgentApp {
     constructor() {}
@@ -16,8 +19,14 @@ class AgentApp {
                 Cleanup.decreaseCounter(1);
             } catch (err) {}
         });
+
         try {
             await this.SendAgentOnlineRequest();
+
+            await this.setupSteamCMD();
+            await AgentSFHandler.init();
+
+            await AgentMessageQueue.startPollingTask();
         } catch (err) {
             console.log(err);
         }
@@ -42,6 +51,30 @@ class AgentApp {
             Logger.info("[AGENT_APP] - Sent Offline Status to SSM Cloud");
         } catch (err) {
             throw err;
+        }
+    };
+
+    setupSteamCMD = async () => {
+        SteamCMD.init(Config.get("agent.steamcmd"));
+
+        if (!SteamCMD.isInstalled()) {
+            Logger.info("[AGENT_APP] - Downloading SteamCMD");
+            try {
+                await SteamCMD.download();
+                Logger.info("[AGENT_APP] - Successfully Downloaded SteamCMD");
+            } catch (err) {
+                Logger.error("[AGENT_APP] - Error Downloading SteamCMD");
+                console.log(err);
+            }
+        }
+
+        Logger.info("[AGENT_APP] - Initializing SteamCMD");
+        try {
+            await SteamCMD.run([], true);
+            Logger.info("[AGENT_APP] - Successfully Initialized SteamCMD");
+        } catch (err) {
+            Logger.error("[AGENT_APP] - Error Initializing SteamCMD");
+            console.log(err);
         }
     };
 }

@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"@electerm/strip-ansi@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@electerm/strip-ansi/-/strip-ansi-1.0.0.tgz#c0bfedc13e8be852f62e036154b09c5b0c768550"
+  integrity sha512-taZnYu/i473T8qx5kzJSqMWKrOSVh32XZpWGOFgN6zvBMPqLjUY+/9z2qncpo9/otzaN29F3e4Ulbv+PevZccA==
+
 "@graphql-typed-document-node/core@^3.1.1":
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/@graphql-typed-document-node/core/-/core-3.1.1.tgz#076d78ce99822258cf813ecc1e7fa460fa74d052"

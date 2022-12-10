@@ -1,3 +1,3 @@
 #!/bin/bash
 
-su - ssm -c "/opt/SSMAgent/SSMAgent"
+su ssm -c "/opt/SSMAgent/SSMAgent"

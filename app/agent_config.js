@@ -28,6 +28,12 @@ class ServerConfig extends iConfig {
         var pjson = require("../package.json");
         super.set("agent.version", pjson.version);
 
+        super.set("agent.steamcmd", path.join(userDataPath, "steamcmd"));
+        fs.ensureDirSync(super.get("agent.steamcmd"));
+
+        super.set("agent.sfserver", path.join(userDataPath, "sfserver"));
+        fs.ensureDirSync(super.get("agent.sfserver"));
+
         super.set("agent.tempdir", path.join(userDataPath, "temp"));
         fs.ensureDirSync(super.get("agent.tempdir"));
 
@@ -36,6 +42,12 @@ class ServerConfig extends iConfig {
             process.env.SSM_URL || "http://localhost"
         );
         super.get("agent.ssmcloud.apikey", process.env.SSM_APIKEY || "ABC123");
+
+        super.get("agent.sf.branch", "public");
+        super.get("agent.sf.versions.installed", 0);
+        super.get("agent.sf.versions.available", 0);
+
+        super.get("agent.sf.worker_threads", 20);
     };
 }
 
