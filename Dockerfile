@@ -28,6 +28,4 @@ RUN chmod 755 /entry.sh
 
 RUN ls -l /
 
-EXPOSE 3000/tcp
-
 ENTRYPOINT [ "/entry.sh" ]

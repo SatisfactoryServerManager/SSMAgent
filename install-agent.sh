@@ -20,11 +20,6 @@ RED='\033[0;31m'
 YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 
-if [ ! "${PLATFORM}" == "Linux" ]; then
-    echo -e "${RED}Error: Install Script Only Works On Linux Platforms!${NC}"
-    exit 1
-fi
-
 function _spinner() {
     # $1 start/stop
     #
@@ -99,6 +94,16 @@ AGENTNAME=""
 SERVERQUERYPORT="15777"
 BEACONPORT="15000"
 PORT="7777"
+SSMURL=""
+SSMAPIKEY=""
+MEMORY=1073741824
+
+PLATFORM="$(uname -s)"
+
+if [ ! "${PLATFORM}" == "Linux" ]; then
+    echo "Error: Install Script Only Works On Linux Platforms!"
+    exit 1
+fi
 
 while [[ $# -gt 0 ]]; do
     key="$1"
@@ -106,11 +111,6 @@ while [[ $# -gt 0 ]]; do
     case $key in
     --name)
         AGENTNAME="$2"
-        shift # past value
-        shift # past value
-        ;;
-    --serverqueryport)
-        SERVERQUERYPORT="$2"
         shift # past value
         shift # past value
         ;;
@@ -129,6 +129,21 @@ while [[ $# -gt 0 ]]; do
         shift # past value
         shift # past value
         ;;
+    --url)
+        SSMURL="$2"
+        shift # past value
+        shift # past value
+        ;;
+    --apikey)
+        SSMAPIKEY="$2"
+        shift # past value
+        shift # past value
+        ;;
+    --memory)
+        MEMORY="$2"
+        shift # past value
+        shift # past value
+        ;;
     esac
 done
 
@@ -137,18 +152,24 @@ wget -q https://get.docker.com/ -O - | sh >/dev/null 2>&1
 
 stop_spinner $?
 
-read -r -p "Enter SSM Cloud URL [https://ssmcloud.hostxtra.co.uk]: " SSMURL </dev/tty
-
 if [ "${SSMURL}" == "" ]; then
-    SSMURL = "https://ssmcloud.hostxtra.co.uk"
+    read -r -p "Enter SSM Cloud URL [https://ssmcloud.hostxtra.co.uk]: " SSMURL </dev/tty
+
+    if [ "${SSMURL}" == "" ]; then
+        SSMURL = "https://ssmcloud.hostxtra.co.uk"
+    fi
 fi
-
-read -r -p "Enter SSM Cloud API Key [AGT-API-XXXXXXX]: " SSMAPIKEY </dev/tty
-
 if [ "${SSMAPIKEY}" == "" ]; then
-    echo -e "${RED}You must enter your agent API key${NC}"
-    exit 1
+    read -r -p "Enter SSM Cloud API Key [AGT-API-XXXXXXX]: " SSMAPIKEY </dev/tty
+
+    if [ "${SSMAPIKEY}" == "" ]; then
+        echo -e "${RED}You must enter your agent API key${NC}"
+        exit 1
+    fi
 fi
+
+mkdir -p "/SSMAgent/${AGENTNAME}/SSM" >/dev/null 2>&1
+mkdir -p "/SSMAgent/${AGENTNAME}/.config" >/dev/null 2>&1
 
 docker run -d \
     -e SSM_URL="${SSMURL}" \
@@ -156,5 +177,8 @@ docker run -d \
     -p "${SERVERQUERYPORT}:15777" \
     -p "${BEACONPORT}:15000" \
     -p "${PORT}:7777" \
+    -v "/SSMAgent/${AGENTNAME}/SSM:/home/ssm/SSMAgent" \
+    -v "/SSMAgent/${AGENTNAME}/.config:/home/ssm/.config/Epic/FactoryGame" \
+    -m $MEMORY \
     --name "${AGENTNAME}" \
     mrhid6/ssmagent:latest
