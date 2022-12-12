@@ -31,15 +31,26 @@ class AgentSFHandler {
     init = async () => {
         await this.getVersionFromSteam();
         await this.UpdateAgentInstalledState();
+
+        if (Config.get("agent.sf.checkForUpdatesOnStart")) {
+            await this.UpdateSFServer();
+        }
+
         this.StartPollingSFProcess();
     };
 
     getVersionFromSteam = async () => {
+        const prevVersion = Config.get("agent.sf.versions.available");
+
         const VersionData = await SteamCMD.getAppInfo(1690800);
         const ServerVersion =
             VersionData.depots.branches[`${Config.get("agent.sf.branch")}`]
                 .buildid;
         Config.set("agent.sf.versions.available", parseInt(ServerVersion));
+
+        if (prevVersion != Config.get("agent.sf.versions.available")) {
+            await Config.SendConfigToSSMCloud();
+        }
     };
 
     StartPollingSFProcess() {
@@ -203,6 +214,8 @@ class AgentSFHandler {
                     "agent.sf.versions.installed",
                     Config.get("agent.sf.versions.available")
                 );
+
+                await Config.SendConfigToSSMCloud();
             }
         } catch (err) {
             Logger.error(

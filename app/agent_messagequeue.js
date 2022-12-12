@@ -16,7 +16,7 @@ class AgentMessageQueue {
                 await this.pollQueue();
             } catch (err) {
                 Logger.error("[MessageQueue] - Error getting message queue.");
-                console.log(err);
+                //console.log(err);
             }
         }, 10000);
     };

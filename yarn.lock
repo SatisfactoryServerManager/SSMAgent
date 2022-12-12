@@ -1207,6 +1207,13 @@ pend@~1.2.0:
   resolved "https://registry.yarnpkg.com/pend/-/pend-1.2.0.tgz#7a57eb550a6783f9115331fcf4663d5c8e007a50"
   integrity sha512-F3asv42UuXchdzt+xXqfW1OGlVBe+mxa2mqI0pg5yAHZPvFmY3Y6drSf/GQ1A86WgWEN9Kzh/WrgKa6iGcHXLg==
 
+platform-folders@^0.6.0:
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/platform-folders/-/platform-folders-0.6.0.tgz#9841351716a70d79d5f84f7e0c096bd426b4c259"
+  integrity sha512-CzaJGN1cbL6kwkge7zM7VbXr/L0Qjkg2Z4IzcprziHHSw8y73oORfB9pMLwjAIhb8JcWUemmWvTXAXvc5hnVlg==
+  dependencies:
+    bindings "^1.5.0"
+
 prebuild-install@^7.1.0:
   version "7.1.1"
   resolved "https://registry.yarnpkg.com/prebuild-install/-/prebuild-install-7.1.1.tgz#de97d5b34a70a0c81334fd24641f2a1702352e45"
@@ -1332,7 +1339,7 @@ recursive-readdir-async@^1.2.1:
   resolved "https://registry.yarnpkg.com/recursive-readdir-async/-/recursive-readdir-async-1.2.1.tgz#994beaa07a985e806a5946b4b795fe9b5f1a6b9b"
   integrity sha512-fU8aySmHIhrycTlXn+hI7dS/p7GnrMHzr2xDdBSd8HZ16mbLkmfIEccIE80gLHftrkTt9oDJiGEJNIPY6n0v6A==
 
-recursive-readdir@^2.2.2:
+recursive-readdir@^2.2.3:
   version "2.2.3"
   resolved "https://registry.yarnpkg.com/recursive-readdir/-/recursive-readdir-2.2.3.tgz#e726f328c0d69153bcabd5c322d3195252379372"
   integrity sha512-8HrF5ZsXk5FAH9dgsx3BlUer73nIhuj+9OrQwEbLTPOBzGkL1lsFCR01am+v+0m2Cmbs1nP12hLDl5FA7EszKA==

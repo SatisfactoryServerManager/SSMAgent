@@ -6,6 +6,7 @@ const AgentAPI = require("./agent_api");
 const AgentMessageQueue = require("./agent_messagequeue");
 const SteamCMD = require("./agent_steamcmd").AgentSteamCMD;
 const AgentSFHandler = require("./agent_sf_handler");
+const BackupManager = require("./agent_backup");
 
 class AgentApp {
     constructor() {}
@@ -22,9 +23,11 @@ class AgentApp {
 
         try {
             await this.SendAgentOnlineRequest();
+            await Config.SendConfigToSSMCloud();
 
             await this.setupSteamCMD();
             await AgentSFHandler.init();
+            BackupManager.init();
 
             await AgentMessageQueue.startPollingTask();
         } catch (err) {

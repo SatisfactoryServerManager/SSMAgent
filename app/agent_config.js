@@ -37,6 +37,9 @@ class ServerConfig extends iConfig {
         super.set("agent.tempdir", path.join(userDataPath, "temp"));
         fs.ensureDirSync(super.get("agent.tempdir"));
 
+        super.set("agent.backupdir", path.join(userDataPath, "backup"));
+        fs.ensureDirSync(super.get("agent.backupdir"));
+
         super.get(
             "agent.ssmcloud.url",
             process.env.SSM_URL || "http://localhost"
@@ -48,6 +51,36 @@ class ServerConfig extends iConfig {
         super.get("agent.sf.versions.available", 0);
 
         super.get("agent.sf.worker_threads", 20);
+        super.get("agent.sf.max_players", 4);
+        super.get("agent.sf.checkForUpdatesOnStart", true);
+
+        super.get("agent.backup.interval", 1);
+        super.get("agent.backup.keep", 24);
+        super.get("agent.backup.nextbackup", 0);
+    };
+
+    SendConfigToSSMCloud = async () => {
+        const AgentAPI = require("./agent_api");
+        const payload = {
+            config: {
+                version: super.get("agent.version"),
+                workerThreads: super.get("agent.sf.worker_threads"),
+                sfVersions: super.get("agent.sf.versions"),
+                sfBranch: super.get("agent.sf.branch"),
+                maxPlayers: super.get("agent.sf.max_players"),
+                checkForUpdatesOnStart: super.get(
+                    "agent.sf.checkForUpdatesOnStart"
+                ),
+                backup: super.get("agent.backup"),
+            },
+        };
+
+        try {
+            await AgentAPI.remoteRequestPOST("api/agent/configData", payload);
+        } catch (err) {
+            console.log(err);
+            throw err;
+        }
     };
 }
 
