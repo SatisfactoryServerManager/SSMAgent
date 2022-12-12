@@ -1,5 +1,6 @@
 const AgentAPI = require("./agent_api");
 const Logger = require("./agent_logger");
+const Config = require("./agent_config");
 
 const AgentSFHandler = require("./agent_sf_handler");
 
@@ -71,6 +72,9 @@ class AgentMessageQueue {
                     break;
                 case "killsfserver":
                     await AgentSFHandler.KillSFServer();
+                    break;
+                case "updateconfig":
+                    Config.UpdateSettings(item.data);
                     break;
                 default:
                     Logger.error(

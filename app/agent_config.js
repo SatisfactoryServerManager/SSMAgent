@@ -82,6 +82,46 @@ class ServerConfig extends iConfig {
             throw err;
         }
     };
+
+    UpdateSettings = async (data) => {
+        if (data.inp_maxplayers) {
+            super.set("agent.sf.max_players", parseInt(data.inp_maxplayers));
+        }
+
+        if (data.inp_updatesfonstart) {
+            super.set(
+                "agent.sf.checkForUpdatesOnStart",
+                data.inp_updatesfonstart == "on" ? true : false
+            );
+        }
+
+        if (data.inp_workerthreads) {
+            super.set(
+                "agent.sf.worker_threads",
+                parseInt(data.inp_workerthreads)
+            );
+        }
+
+        if (data.inp_sfbranch) {
+            super.set(
+                "agent.sf.branch",
+                data.inp_sfbranch == "on" ? "experimental" : "public"
+            );
+        }
+
+        if (data.inp_backupinterval) {
+            super.set(
+                "agent.backup.interval",
+                parseInt(data.inp_backupinterval)
+            );
+        }
+
+        if (data.inp_backupkeep) {
+            super.set("agent.backup.keep", parseInt(data.inp_backupkeep));
+        }
+
+        await this.SendConfigToSSMCloud();
+    };
 }
 
 const serverConfig = new ServerConfig();

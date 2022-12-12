@@ -86,6 +86,8 @@ if [ ${COMPILEONLY} -eq 0 ]; then
 
     ${SCP_CMD} root@${LINUX_SERVER}:/nodejs/build/SSMAgent/release-builds/linux/* ${release_dir_linux}/.
 
+    cp "${BASEDIR}/scripts/stop-agent.sh" ${release_dir_linux}/.
+
     DOCKERIMG="mrhid6/ssmagent"
 
     echo "${DOCKER_PASS}" | docker login -u mrhid6 --password-stdin
