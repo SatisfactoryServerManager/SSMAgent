@@ -90,9 +90,12 @@ class AgentSaveManager {
         returnData.startInfo = serial.readString().replaceAll("\0", "");
         returnData.sessionName = serial.readString().replaceAll("\0", "");
         serial.seek(17);
-        returnData.mods = JSON.parse(
-            serial.readString().replaceAll("\0", "")
-        ).Mods;
+
+        const modsString = serial.readString().replaceAll("\0", "");
+
+        if (modsString.isJsonString()) {
+            returnData.mods = JSON.parse(modsString).Mods;
+        }
 
         return returnData;
     };

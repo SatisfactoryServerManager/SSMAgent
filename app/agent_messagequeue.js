@@ -56,7 +56,7 @@ class AgentMessageQueue {
     };
 
     handleQueueItem = async (item) => {
-        console.log(item);
+        //console.log(item);
         try {
             switch (item.action) {
                 case "installsfserver":

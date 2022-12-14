@@ -88,8 +88,6 @@ class AgentAPI {
                 "agent.ssmcloud.url"
             )}/api/agent/saves/download/${fileName}`;
 
-            console.log(url);
-
             axios.get(url, reqconfig).then((res) => {
                 res.data.pipe(writer);
                 let error = null;
