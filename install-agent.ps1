@@ -5,7 +5,7 @@ param(
     [String]$PORT="7777",
     [String]$SSMURL="",
     [String]$SSMAPIKEY="",
-    [Int]$MEMORY=1073741824
+    [String]$MEMORY=1073741824
 )
 
 write-host $AGENTNAME;

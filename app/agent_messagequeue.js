@@ -3,6 +3,7 @@ const Logger = require("./agent_logger");
 const Config = require("./agent_config");
 
 const AgentSFHandler = require("./agent_sf_handler");
+const AgentSaveManager = require("./agent_save_manager");
 
 class AgentMessageQueue {
     constructor() {
@@ -75,6 +76,9 @@ class AgentMessageQueue {
                     break;
                 case "updateconfig":
                     Config.UpdateSettings(item.data);
+                    break;
+                case "downloadSave":
+                    AgentSaveManager.DownloadSaveFile(item.data);
                     break;
                 default:
                     Logger.error(

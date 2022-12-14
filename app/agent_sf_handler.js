@@ -161,6 +161,12 @@ class AgentSFHandler {
     };
 
     UpdateSFServer = async () => {
+        const serverRunning = await this.isServerRunning();
+
+        if (serverRunning) {
+            throw new SFActionFailedRunning();
+        }
+
         await this.getVersionFromSteam();
 
         if (
@@ -411,6 +417,8 @@ class AgentSFHandler {
             }, 1000);
         });
     }
+
+   
 }
 
 const agentSFHandler = new AgentSFHandler();

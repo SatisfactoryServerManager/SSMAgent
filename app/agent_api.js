@@ -2,6 +2,8 @@ const axios = require("axios");
 const Config = require("./agent_config");
 const fs = require("fs-extra");
 const path = require("path");
+const { getDataHome, getHomeFolder } = require("platform-folders");
+const platform = process.platform;
 
 class AgentAPI {
     constructor() {}
@@ -52,6 +54,60 @@ class AgentAPI {
             throw err;
         }
     };
+
+    DownloadAgentSaveFile(fileName) {
+        return new Promise((resolve, reject) => {
+            let localAppdata = "";
+            if (platform == "win32") {
+                localAppdata = path.resolve(
+                    getDataHome() + "/../local/FactoryGame"
+                );
+            } else {
+                localAppdata = path.resolve(
+                    getHomeFolder() + "/.config/Epic/FactoryGame"
+                );
+            }
+            const SaveFolder = path.join(
+                localAppdata,
+                "Saved",
+                "SaveGames",
+                "server"
+            );
+
+            const outputFile = path.join(SaveFolder, fileName);
+            const writer = fs.createWriteStream(outputFile);
+
+            const reqconfig = {
+                headers: {
+                    "x-ssm-key": Config.get("agent.ssmcloud.apikey"),
+                },
+                responseType: "stream",
+            };
+
+            const url = `${Config.get(
+                "agent.ssmcloud.url"
+            )}/api/agent/saves/download/${fileName}`;
+
+            console.log(url);
+
+            axios.get(url, reqconfig).then((res) => {
+                res.data.pipe(writer);
+                let error = null;
+
+                writer.on("error", (err) => {
+                    error = err;
+                    writer.close();
+                    reject(err);
+                });
+
+                writer.on("close", (err) => {
+                    if (!error) {
+                        resolve(outputFile);
+                    }
+                });
+            });
+        });
+    }
 }
 const agentApi = new AgentAPI();
 module.exports = agentApi;

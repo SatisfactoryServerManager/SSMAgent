@@ -11,7 +11,8 @@ const { getDataHome, getHomeFolder } = require("platform-folders");
 
 const Config = require("./agent_config");
 const Cleanup = require("./agent_cleanup");
-const logger = require("./agent_logger");
+const Logger = require("./agent_logger");
+const SteamLogger = require("./agent_steamcmd").SteamLogger;
 
 const AgentAPI = require("./agent_api");
 
@@ -37,7 +38,7 @@ class BackupManager {
         this.SetupEventHandlers();
         this.startBackupTimer();
 
-        logger.info("[BACKUP_MANAGER] [INIT] - Backup Manager Initialized");
+        Logger.info("[BACKUP_MANAGER] [INIT] - Backup Manager Initialized");
     }
 
     SetupEventHandlers() {}
@@ -74,7 +75,7 @@ class BackupManager {
 
             const NextBackupTime = new Date(date.getTime() + interval);
 
-            logger.info("[BACKUP_MANAGER] - Starting Backup Task..");
+            Logger.info("[BACKUP_MANAGER] - Starting Backup Task..");
             Cleanup.increaseCounter(1);
 
             fs.ensureDirSync(Config.get("agent.backupdir"));
@@ -83,7 +84,7 @@ class BackupManager {
             var archive = archiver("zip");
 
             outputStream.on("close", async () => {
-                logger.info("[BACKUP_MANAGER] - Backup Task Finished!");
+                Logger.info("[BACKUP_MANAGER] - Backup Task Finished!");
                 Cleanup.decreaseCounter(1);
                 Config.set("agent.backup.nextbackup", NextBackupTime.getTime());
                 await Config.SendConfigToSSMCloud();
@@ -126,7 +127,9 @@ class BackupManager {
 
             // append files from a sub-directory, putting its contents at the root of archive
             archive.directory(SaveFolder, "Saves");
-            archive.directory(LogFolder, "Logs");
+            archive.directory(LogFolder, "Logs/Server");
+            archive.directory(Logger._options.logDirectory, "Logs/SSM");
+            archive.directory(SteamLogger._options.logDirectory, "Logs/Steam");
             archive.directory(this.GameConfigDir, "Configs/Game");
             archive.file(Config._options.configFilePath, {
                 name: "Configs/SSM/SSM.json",
@@ -174,7 +177,7 @@ class BackupManager {
         return new Promise((resolve, reject) => {
             rimraf(file, ["unlink"], (err) => {
                 if (err) {
-                    logger.error("[BACKUP_MANAGER] - Remove Backup Error");
+                    Logger.error("[BACKUP_MANAGER] - Remove Backup Error");
                     reject(err);
                     return;
                 }
@@ -185,24 +188,26 @@ class BackupManager {
     }
 
     UploadBackupFile = async (backupFilePath, backupFileName) => {
-        const backupFile = path.join(backupFilePath, backupFileName);
+        try {
+            const backupFile = path.join(backupFilePath, backupFileName);
 
-        const fileStream = fs.createReadStream(backupFile);
+            const fileStream = fs.createReadStream(backupFile);
 
-        const form = new FormData();
-        // Pass file stream directly to form
-        form.append("file", fileStream, backupFileName);
+            const form = new FormData();
+            // Pass file stream directly to form
+            form.append("file", fileStream, backupFileName);
 
-        const url = `${Config.get(
-            "agent.ssmcloud.url"
-        )}/api/agent/uploadbackup`;
+            const url = `${Config.get(
+                "agent.ssmcloud.url"
+            )}/api/agent/uploadbackup`;
 
-        const response = await axios.post(url, form, {
-            headers: {
-                "x-ssm-key": Config.get("agent.ssmcloud.apikey"),
-                ...form.getHeaders(),
-            },
-        });
+            await axios.post(url, form, {
+                headers: {
+                    "x-ssm-key": Config.get("agent.ssmcloud.apikey"),
+                    ...form.getHeaders(),
+                },
+            });
+        } catch (err) {}
     };
 }
 
