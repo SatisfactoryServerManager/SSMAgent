@@ -93,7 +93,7 @@ class AgentSaveManager {
 
         const modsString = serial.readString().replaceAll("\0", "");
 
-        if (modsString.isJsonString()) {
+        if (modsString.IsJsonString()) {
             returnData.mods = JSON.parse(modsString).Mods;
         }
 
