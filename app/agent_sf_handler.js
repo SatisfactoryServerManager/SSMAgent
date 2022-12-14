@@ -323,7 +323,7 @@ class AgentSFHandler {
         try {
             process.kill(this._processIds.pid1, "SIGTERM");
             process.kill(this._processIds.pid2, "SIGTERM");
-
+            Logger.debug("Start waiting for server to stop");
             await this.WaitTillServerStopped();
 
             Logger.info("[SF_Handler] - Server has been stopped successfully");
@@ -407,6 +407,9 @@ class AgentSFHandler {
                         return;
                     }
 
+                    Logger.debug("waiting for server to stop..");
+                    console.log(this._processIds);
+
                     if (!running) {
                         clearInterval(interval);
                         resolve();
@@ -417,8 +420,6 @@ class AgentSFHandler {
             }, 1000);
         });
     }
-
-   
 }
 
 const agentSFHandler = new AgentSFHandler();
