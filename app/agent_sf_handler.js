@@ -321,8 +321,12 @@ class AgentSFHandler {
         }
 
         try {
-            process.kill(this._processIds.pid1, "SIGTERM");
             process.kill(this._processIds.pid2, "SIGTERM");
+            process.kill(this._processIds.pid1, "SIGTERM");
+
+            process.kill(this._processIds.pid2, "SIGINT");
+            process.kill(this._processIds.pid1, "SIGINT");
+
             Logger.debug("Start waiting for server to stop");
             await this.WaitTillServerStopped();
 
@@ -408,7 +412,7 @@ class AgentSFHandler {
                     }
 
                     Logger.debug("waiting for server to stop..");
-                    console.log(this._processIds);
+                    console.log(this._processId, timeoutCounter);
 
                     if (!running) {
                         clearInterval(interval);
