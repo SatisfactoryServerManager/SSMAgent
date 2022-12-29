@@ -44,7 +44,15 @@ class ServerConfig extends iConfig {
             "agent.ssmcloud.url",
             process.env.SSM_URL || "http://localhost"
         );
-        super.get("agent.ssmcloud.apikey", process.env.SSM_APIKEY || "ABC123");
+
+        if (super.get("agent.ssmcloud.apikey") != process.env.SSM_APIKEY) {
+            if (
+                process.env.SSM_APIKEY != null &&
+                process.env.SSM_APIKEY != ""
+            ) {
+                super.set("agent.ssmcloud.apikey", process.env.SSM_APIKEY);
+            }
+        }
 
         super.get("agent.sf.branch", "public");
         super.get("agent.sf.versions.installed", 0);
