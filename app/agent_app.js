@@ -8,6 +8,8 @@ const SteamCMD = require("./agent_steamcmd").AgentSteamCMD;
 const AgentSFHandler = require("./agent_sf_handler");
 const BackupManager = require("./agent_backup");
 const AgentSaveManager = require("./agent_save_manager");
+const AgentServerConfigManager = require("./agent_server_config");
+const AgentLogHandler = require("./agent_log_handler");
 
 class AgentApp {
     constructor() {}
@@ -27,6 +29,8 @@ class AgentApp {
             await Config.SendConfigToSSMCloud();
 
             await AgentSaveManager.init();
+            await AgentServerConfigManager.init();
+            AgentLogHandler.init();
 
             await this.setupSteamCMD();
             await AgentSFHandler.init();

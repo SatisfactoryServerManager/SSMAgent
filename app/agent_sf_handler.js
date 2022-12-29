@@ -377,7 +377,7 @@ class AgentSFHandler {
     WaitTillServerStarted() {
         return new Promise((resolve, reject) => {
             let timeoutCounter = 0;
-            let timeoutLimit = 30 * 1000; // 30 Seconds
+            let timeoutLimit = 30; // 30 Seconds
 
             const interval = setInterval(() => {
                 this.isServerRunning().then((running) => {
@@ -401,7 +401,7 @@ class AgentSFHandler {
     WaitTillServerStopped() {
         return new Promise((resolve, reject) => {
             let timeoutCounter = 0;
-            let timeoutLimit = 30 * 1000; // 30 Seconds
+            let timeoutLimit = 30; // 30 Seconds
 
             const interval = setInterval(() => {
                 this.isServerRunning().then((running) => {
@@ -412,7 +412,7 @@ class AgentSFHandler {
                     }
 
                     Logger.debug("waiting for server to stop..");
-                    console.log(this._processId, timeoutCounter);
+                    console.log(this._processIds, timeoutCounter);
 
                     if (!running) {
                         clearInterval(interval);

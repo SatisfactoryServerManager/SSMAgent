@@ -85,7 +85,15 @@ class ServerConfig extends iConfig {
 
     UpdateSettings = async (data) => {
         if (data.inp_maxplayers) {
+            const serverConfig = require("./agent_server_config");
+
             super.set("agent.sf.max_players", parseInt(data.inp_maxplayers));
+            serverConfig
+                .getGameConfig()
+                .set(
+                    "/Script/Engine.GameSession.MaxPlayers",
+                    parseInt(data.inp_maxplayers)
+                );
         }
 
         if (data.inp_updatesfonstart) {

@@ -174,9 +174,9 @@ mkdir -p "/SSMAgent/${AGENTNAME}/.config" >/dev/null 2>&1
 docker run -d \
     -e SSM_URL="${SSMURL}" \
     -e SSM_APIKEY="${SSMAPIKEY}" \
-    -p "${SERVERQUERYPORT}:15777" \
-    -p "${BEACONPORT}:15000" \
-    -p "${PORT}:7777" \
+    -p "${SERVERQUERYPORT}:15777/udp" \
+    -p "${BEACONPORT}:15000/udp" \
+    -p "${PORT}:7777/udp" \
     -v "/SSMAgent/${AGENTNAME}/SSM:/home/ssm/SSMAgent" \
     -v "/SSMAgent/${AGENTNAME}/.config:/home/ssm/.config/Epic/FactoryGame" \
     -m $MEMORY \
