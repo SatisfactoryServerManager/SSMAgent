@@ -85,10 +85,7 @@ class ServerConfig extends iConfig {
 
         try {
             await AgentAPI.remoteRequestPOST("api/agent/configData", payload);
-        } catch (err) {
-            console.log(err);
-            throw err;
-        }
+        } catch (err) {}
     };
 
     UpdateSettings = async (data) => {
