@@ -31,6 +31,7 @@ class AgentSFHandler {
     init = async () => {
         await this.getVersionFromSteam();
         await this.UpdateAgentInstalledState();
+        await this.UpdateAgentRunningState();
 
         if (Config.get("agent.sf.checkForUpdatesOnStart")) {
             await this.UpdateSFServer();
@@ -86,13 +87,19 @@ class AgentSFHandler {
         if (process1 == null || process2 == null) {
             this._processIds.pid1 = -1;
             this._processIds.pid2 = -1;
+            this._cpu = 0;
+            this._mem = 0;
             this._running = false;
         } else {
             this._processIds.pid1 = process1.pid;
             this._processIds.pid2 = process2.pid;
+            this._cpu = process2.cpu;
+            this._mem = process2.mem;
             this._running = true;
         }
         if (prevRunning != this._running) await this.UpdateAgentRunningState();
+
+        await this.UpdateAgentUsage(this._cpu, this._mem);
     };
 
     isInstalled = async () => {
@@ -133,6 +140,17 @@ class AgentSFHandler {
         try {
             await AgentAPI.remoteRequestPOST("api/agent/runningstate", {
                 running,
+            });
+        } catch (err) {
+            console.log(err);
+        }
+    };
+
+    UpdateAgentUsage = async (cpu, mem) => {
+        try {
+            await AgentAPI.remoteRequestPOST("api/agent/cpumem", {
+                cpu,
+                mem,
             });
         } catch (err) {
             console.log(err);
