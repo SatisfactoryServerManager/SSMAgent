@@ -1,6 +1,7 @@
 const fs = require("fs-extra");
 const path = require("path");
 const CryptoJS = require("crypto-js");
+const yargs = require("yargs");
 
 const semver = require("semver");
 
@@ -8,11 +9,62 @@ const mrhid6utils = require("mrhid6utils");
 const iConfig = mrhid6utils.Config;
 const platform = process.platform;
 
+const argv = yargs
+    .option("standalone", {
+        alias: "s",
+        description: "Run SSM Agent in standalone mode",
+        type: "boolean",
+    })
+    .option("name", {
+        alias: "n",
+        description: "(Standalone) - Name of the standalone instance",
+        type: "string",
+    })
+    .option("portoffset", {
+        alias: "p",
+        description: "(Standalone) - SF Port Offset of the standalone instance",
+        type: "number",
+    })
+    .option("ssmurl", {
+        alias: "u",
+        description: "(Standalone) - SSM Url",
+        type: "string",
+    })
+    .option("ssmapikey", {
+        alias: "a",
+        description: "(Standalone) - SSM API Key",
+        type: "string",
+    })
+    .help()
+    .alias("help", "h").argv;
+
 let userDataPath = path.resolve(require("os").homedir() + "/SSMAgent");
 
-if (fs.pathExistsSync(userDataPath) == false) {
-    fs.mkdirSync(userDataPath);
+if (argv.standalone) {
+    if (argv.name == null) {
+        throw new Error("Can't start in standalone without name parameter");
+    }
+
+    if (argv.portoffset == null) {
+        throw new Error(
+            "Can't start in standalone without port offset parameter"
+        );
+    }
+
+    if (argv.ssmurl == null) {
+        throw new Error("Can't start in standalone without ssm url parameter");
+    }
+
+    if (argv.ssmapikey == null) {
+        throw new Error(
+            "Can't start in standalone without ssm api key parameter"
+        );
+    }
+
+    userDataPath = path.join(userDataPath, argv.name);
 }
+
+fs.ensureDirSync(userDataPath);
 
 class ServerConfig extends iConfig {
     constructor() {
@@ -25,6 +77,10 @@ class ServerConfig extends iConfig {
     }
 
     setDefaultValues = async () => {
+        super.set("agent.standalone", argv.standalone || false);
+
+        super.set("agent.homedir", userDataPath);
+
         var pjson = require("../package.json");
         super.set("agent.version", pjson.version);
 
@@ -40,17 +96,22 @@ class ServerConfig extends iConfig {
         super.set("agent.backupdir", path.join(userDataPath, "backup"));
         fs.ensureDirSync(super.get("agent.backupdir"));
 
-        super.get(
-            "agent.ssmcloud.url",
-            process.env.SSM_URL || "http://localhost"
-        );
+        if (super.get("agent.standalone")) {
+            super.set("agent.ssmcloud.url", argv.ssmurl);
+            super.set("agent.ssmcloud.apikey", argv.ssmapikey);
+        } else {
+            super.get(
+                "agent.ssmcloud.url",
+                process.env.SSM_URL || "http://localhost"
+            );
 
-        if (super.get("agent.ssmcloud.apikey") != process.env.SSM_APIKEY) {
-            if (
-                process.env.SSM_APIKEY != null &&
-                process.env.SSM_APIKEY != ""
-            ) {
-                super.set("agent.ssmcloud.apikey", process.env.SSM_APIKEY);
+            if (super.get("agent.ssmcloud.apikey") != process.env.SSM_APIKEY) {
+                if (
+                    process.env.SSM_APIKEY != null &&
+                    process.env.SSM_APIKEY != ""
+                ) {
+                    super.set("agent.ssmcloud.apikey", process.env.SSM_APIKEY);
+                }
             }
         }
 

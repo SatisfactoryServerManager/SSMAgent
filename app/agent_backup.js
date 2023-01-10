@@ -18,8 +18,6 @@ const AgentAPI = require("./agent_api");
 
 class BackupManager {
     init() {
-        this.userDataPath = path.resolve(require("os").homedir() + "/SSMAgent");
-
         let PlatformFolder = "";
         if (platform == "win32") {
             PlatformFolder = "WindowsServer";

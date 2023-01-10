@@ -23,7 +23,15 @@ const iLogger = Mrhid6Utils.Logger;
 
 const Logger = require("simple-node-logger");
 
+const yargs = require("yargs");
+
+const argv = yargs.parsed.argv;
+
 let userDataPath = path.resolve(require("os").homedir() + "/SSMAgent");
+
+if (argv.standalone) {
+    userDataPath = path.join(userDataPath, argv.name);
+}
 
 class SteamCMDLogger extends iLogger {
     constructor() {

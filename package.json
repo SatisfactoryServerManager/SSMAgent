@@ -25,7 +25,8 @@
         "systeminformation": "^5.12.3",
         "tar": "^6.1.11",
         "tmp-promise": "^3.0.3",
-        "vdf": "^0.0.2"
+        "vdf": "^0.0.2",
+        "yargs": "^17.6.2"
     },
     "scripts": {
         "start": "node index.js"
@@ -36,6 +37,7 @@
             "public/**/*",
             "scripts/**/*.sh",
             "assets/**/*",
+            "node_modules/**/*.node",
             "node_modules/jquery/dist/**/*",
             "node_modules/jquery-steps/build/**/*",
             "node_modules/@fortawesome/fontawesome-free/css/**/*",
