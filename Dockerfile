@@ -17,7 +17,7 @@ RUN useradd -m -u 9999 -s /bin/bash ssm
 RUN mkdir /opt/SSMAgent
 VOLUME /opt/SSMAgent
 
-COPY release-builds/linux/* /opt/SSMAgent/
+COPY release/linux/* /opt/SSMAgent/
 RUN chown -R ssm:ssm /opt/SSMAgent
 
 RUN mkdir -p /home/ssm/SSMAgent && mkdir -p /home/ssm/.config/Epic/FactoryGame
