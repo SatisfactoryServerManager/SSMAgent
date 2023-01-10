@@ -97,9 +97,11 @@ class ServerConfig extends iConfig {
         fs.ensureDirSync(super.get("agent.backupdir"));
 
         if (super.get("agent.standalone")) {
+            super.set("agent.sf.portoffset", argv.portoffset);
             super.set("agent.ssmcloud.url", argv.ssmurl);
             super.set("agent.ssmcloud.apikey", argv.ssmapikey);
         } else {
+            super.set("agent.sf.portoffset", 0);
             super.get(
                 "agent.ssmcloud.url",
                 process.env.SSM_URL || "http://localhost"

@@ -38,6 +38,10 @@ class AgentSFHandler {
         }
 
         this.StartPollingSFProcess();
+
+        Cleanup.addEventHandler(async () => {
+            await this.StopSFServer();
+        });
     };
 
     getVersionFromSteam = async () => {
@@ -79,10 +83,30 @@ class AgentSFHandler {
             SubExeName = "UE4Server-Linux-Shipping";
         }
 
-        let process1 = processList.list.find(
-            (el) => el.params.includes(ExeName) || el.command.includes(ExeName)
-        );
-        let process2 = processList.list.find((el) => el.name == SubExeName);
+        const { ServerQueryPort } = this.GetPorts();
+
+        const process1 = processList.list.find((el) => {
+            if (el.name == SubExeName) {
+                const search = `-ServerQueryPort=${ServerQueryPort}`;
+                if (el.params.includes(search) || el.command.includes(search)) {
+                    return true;
+                }
+            }
+
+            return false;
+        });
+
+        let process2 = processList.list.find((el) => {
+            if (process1 == null) return false;
+
+            if (el.pid == process1.parentPid) {
+                const search = `-ServerQueryPort=${ServerQueryPort}`;
+                if (el.params.includes(search) || el.command.includes(search)) {
+                    return true;
+                }
+            }
+            return false;
+        });
 
         if (process1 == null || process2 == null) {
             this._processIds.pid1 = -1;
@@ -93,8 +117,8 @@ class AgentSFHandler {
         } else {
             this._processIds.pid1 = process1.pid;
             this._processIds.pid2 = process2.pid;
-            this._cpu = process2.cpu;
-            this._mem = process2.mem;
+            this._cpu = process1.cpu;
+            this._mem = process1.mem;
             this._running = true;
         }
         if (prevRunning != this._running) await this.UpdateAgentRunningState();
@@ -260,6 +284,16 @@ class AgentSFHandler {
         }
     };
 
+    GetPorts = () => {
+        const portOffset = parseInt(Config.get("agent.sf.portoffset"));
+
+        return {
+            ServerQueryPort: 15777 + portOffset,
+            Port: 7777 + portOffset,
+            BeaconPort: 15000 + portOffset,
+        };
+    };
+
     execSFSCmd = async (command) => {
         let ExeFileName = "FactoryServer.sh";
 
@@ -303,9 +337,8 @@ class AgentSFHandler {
             return;
         }
         const workerThreads = Config.get("agent.sf.worker_threads");
-        const ServerQueryPort = 15777;
-        const Port = 7777;
-        const BeaconPort = 15000;
+
+        const { ServerQueryPort, Port, BeaconPort } = this.GetPorts();
 
         try {
             await this.execSFSCmd(
@@ -339,11 +372,16 @@ class AgentSFHandler {
         }
 
         try {
-            process.kill(this._processIds.pid2, "SIGTERM");
             process.kill(this._processIds.pid1, "SIGTERM");
+            process.kill(this._processIds.pid2, "SIGTERM");
+            await this.pollSFProcess();
 
-            process.kill(this._processIds.pid2, "SIGINT");
-            process.kill(this._processIds.pid1, "SIGINT");
+            const running = await this.isServerRunning();
+
+            if (running) {
+                process.kill(this._processIds.pid1, "SIGINT");
+                process.kill(this._processIds.pid2, "SIGINT");
+            }
 
             Logger.debug("Start waiting for server to stop");
             await this.WaitTillServerStopped();
@@ -430,7 +468,6 @@ class AgentSFHandler {
                     }
 
                     Logger.debug("waiting for server to stop..");
-                    console.log(this._processIds, timeoutCounter);
 
                     if (!running) {
                         clearInterval(interval);
