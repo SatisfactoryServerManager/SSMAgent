@@ -156,7 +156,7 @@ if [ "${SSMURL}" == "" ]; then
     read -r -p "Enter SSM Cloud URL [https://ssmcloud.hostxtra.co.uk]: " SSMURL </dev/tty
 
     if [ "${SSMURL}" == "" ]; then
-        SSMURL = "https://ssmcloud.hostxtra.co.uk"
+        SSMURL="https://ssmcloud.hostxtra.co.uk"
     fi
 fi
 if [ "${SSMAPIKEY}" == "" ]; then
