@@ -164,4 +164,4 @@ docker run -d `
 -v "C:\SSMAgent\$($AGENTNAME)\.config:/home/ssm/.config/Epic/FactoryGame" `
 -m $MEMORY `
 --name "$($AGENTNAME)" `
-mrhid6/ssmagent:latest
+mrhid6/ssmagent:next
