@@ -7,17 +7,16 @@ const AgentAPI = require("./agent_api");
 
 var fs = require("fs-extra");
 const path = require("path");
-const sfSavToJson = require("satisfactory-json").sav2json;
 
 class SaveInspector {
     constructor() {
         this._ParsedSaveData = {};
     }
     init = async () => {
-        await this.StartPolling();
+        //await this.StartPolling();
     };
 
-    StartPolling = async () => {
+    /*StartPolling = async () => {
         await this.inspectSaveFile();
 
         setInterval(async () => {
@@ -173,7 +172,7 @@ class SaveInspector {
         } catch (err) {
             console.log(err);
         }
-    };
+    };*/
 }
 
 const saveInspector = new SaveInspector();
