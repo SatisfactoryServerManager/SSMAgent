@@ -72,6 +72,14 @@ class AgentSaveManager {
             filesArray.push(fileData);
         }
 
+        filesArray.sort((a, b) =>
+            a.stats.mtime > b.stats.mtime
+                ? 1
+                : b.stats.mtime > a.stats.mtime
+                ? -1
+                : 0
+        );
+
         return filesArray;
     };
 
