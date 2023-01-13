@@ -1,6 +1,6 @@
 {
     "name": "SSMAgent",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "main": "index.js",
     "license": "MIT",
     "dependencies": {
@@ -25,7 +25,6 @@
         "recursive-readdir": "^2.2.3",
         "recursive-readdir-async": "^1.2.1",
         "rimraf": "^3.0.2",
-        "satisfactory-json": "^0.0.63",
         "systeminformation": "^5.12.3",
         "tar": "^6.1.11",
         "tmp-promise": "^3.0.3",
