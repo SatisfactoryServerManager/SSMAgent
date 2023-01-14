@@ -186,14 +186,18 @@ mkdir -p "/SSMAgent/${AGENTNAME}/.config" >/dev/null 2>&1
 
 chown -R ssm:ssm "/SSMAgent/${AGENTNAME}" >/dev/null 2>&1
 
+DOCKER_IMG="mrhid6/ssmagent:next"
+
+docker pull ${DOCKER_IMG}
+
 docker run -d \
-    -e SSM_URL="${SSMURL}" \
-    -e SSM_APIKEY="${SSMAPIKEY}" \
-    -p "${SERVERQUERYPORT}:15777/udp" \
-    -p "${BEACONPORT}:15000/udp" \
-    -p "${PORT}:7777/udp" \
-    -v "/SSMAgent/${AGENTNAME}/SSM:/home/ssm/SSMAgent" \
-    -v "/SSMAgent/${AGENTNAME}/.config:/home/ssm/.config/Epic/FactoryGame" \
-    -m $MEMORY \
-    --name "${AGENTNAME}" \
-    mrhid6/ssmagent:next
+-e SSM_URL="${SSMURL}" \
+-e SSM_APIKEY="${SSMAPIKEY}" \
+-p "${SERVERQUERYPORT}:15777/udp" \
+-p "${BEACONPORT}:15000/udp" \
+-p "${PORT}:7777/udp" \
+-v "/SSMAgent/${AGENTNAME}/SSM:/home/ssm/SSMAgent" \
+-v "/SSMAgent/${AGENTNAME}/.config:/home/ssm/.config/Epic/FactoryGame" \
+-m $MEMORY \
+--name "${AGENTNAME}" \
+${DOCKER_IMG}

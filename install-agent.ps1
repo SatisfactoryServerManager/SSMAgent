@@ -153,6 +153,9 @@ if($isWorkstation -eq $false){
 
 write-host "* Docker Installed"
 
+$DOCKER_IMG="mrhid6/ssmagent:next"
+
+docker pull $DOCKER_IMG
 
 docker run -d `
 -e SSM_URL="$($SSMURL)" `
@@ -164,4 +167,4 @@ docker run -d `
 -v "C:\SSMAgent\$($AGENTNAME)\.config:/home/ssm/.config/Epic/FactoryGame" `
 -m $MEMORY `
 --name "$($AGENTNAME)" `
-mrhid6/ssmagent:next
+$DOCKER_IMG
