@@ -8,14 +8,16 @@ param(
     [String]$MEMORY=1073741824
 )
 
-write-host $AGENTNAME;
-
 
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 $isAdmin = $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
 $osInfo = Get-CimInstance -ClassName Win32_OperatingSystem
 $isWorkstation = ($osInfo.ProductType -eq 1);
+
+$DOCKERTEST= docker ps -a -q -f name=$AGENTNAME
+$DOCKEREXISTS=![string]::IsNullOrWhiteSpace($DOCKERTEST)
+
 
 if($SSMURL -eq ""){
     $SSMURL = Read-Host -Prompt 'Enter SSM Cloud URL [https://ssmcloud.hostxtra.co.uk]'
@@ -27,12 +29,30 @@ if($SSMURL -eq ""){
 }
 
 if($SSMAPIKEY -eq ""){
-    $SSMAPIKEY = Read-Host -Prompt 'Enter SSM Cloud API Key [AGT-API-XXXXXXX]'
 
-    if ([string]::IsNullOrWhiteSpace($SSMAPIKEY))
-    {
-        write-error "You must enter your agent API key!"
-        exit 1
+    if($DOCKEREXISTS -eq $True){
+        write-host -ForegroundColor Cyan "Found Existing Docker with Name [$($AGENTNAME)]"
+        $response = Read-Host -Prompt 'Do you want to use the existing containers api key? [Y/n]'
+
+        if($response -eq "Y"){
+            $SSMAPIKEYData=(docker inspect --format='{{range .Config.Env}}{{println .}}{{end}}' ${AGENTNAME}).split("=")
+
+            $SSMAPIKEYData | %{
+                if($_.startsWith("AGT-API")){
+                    $SSMAPIKEY = $_;
+                }
+            }
+        }
+    }
+
+    if($SSMAPIKEY -eq ""){
+        $SSMAPIKEY = Read-Host -Prompt 'Enter SSM Cloud API Key [AGT-API-XXXXXXX]'
+
+        if ([string]::IsNullOrWhiteSpace($SSMAPIKEY))
+        {
+            write-error "You must enter your agent API key!"
+            exit 1
+        }
     }
 }
 
@@ -151,11 +171,17 @@ if($isWorkstation -eq $false){
     }
 }
 
+sleep -m 3000
+
 write-host "* Docker Installed"
 
 $DOCKER_IMG="mrhid6/ssmagent:next"
 
-docker pull $DOCKER_IMG
+docker pull -q $DOCKER_IMG
+
+if($DOCKEREXISTS -eq $True){
+    docker rm -f $AGENTNAME
+}
 
 docker run -d `
 -e SSM_URL="$($SSMURL)" `

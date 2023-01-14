@@ -97,6 +97,7 @@ PORT="7777"
 SSMURL=""
 SSMAPIKEY=""
 MEMORY=1073741824
+DOCKEREXISTS=0
 
 PLATFORM="$(uname -s)"
 
@@ -152,6 +153,12 @@ wget -q https://get.docker.com/ -O - | sh >/dev/null 2>&1
 
 stop_spinner $?
 
+if [ ! $(docker ps -a -q -f name=${AGENTNAME}) ]; then
+    DOCKEREXISTS=0
+else
+    DOCKEREXISTS=1
+fi
+
 if [ "${SSMURL}" == "" ]; then
     read -r -p "Enter SSM Cloud URL [https://ssmcloud.hostxtra.co.uk]: " SSMURL </dev/tty
 
@@ -160,11 +167,24 @@ if [ "${SSMURL}" == "" ]; then
     fi
 fi
 if [ "${SSMAPIKEY}" == "" ]; then
-    read -r -p "Enter SSM Cloud API Key [AGT-API-XXXXXXX]: " SSMAPIKEY </dev/tty
+
+    if [ $DOCKEREXISTS == 1 ]; then
+        echo -e "${BLUE}Found Existing Docker with Name [${AGENTNAME}]${NC}"
+        read -r -p "Do you want to use the existing containers api key? [Y/n]: " response </dev/tty
+        case $response in
+        [yY]*)
+            SSMAPIKEY=$(docker inspect --format='{{range .Config.Env}}{{println .}}{{end}}' ${AGENTNAME} | grep -P "^SSM_APIKEY=" | sed 's/[^=]*=//')
+            ;;
+        esac
+    fi
 
     if [ "${SSMAPIKEY}" == "" ]; then
-        echo -e "${RED}You must enter your agent API key${NC}"
-        exit 1
+        read -r -p "Enter SSM Cloud API Key [AGT-API-XXXXXXX]: " SSMAPIKEY </dev/tty
+
+        if [ "${SSMAPIKEY}" == "" ]; then
+            echo -e "${RED}You must enter your agent API key${NC}"
+            exit 1
+        fi
     fi
 fi
 
@@ -188,7 +208,11 @@ chown -R ssm:ssm "/SSMAgent/${AGENTNAME}" >/dev/null 2>&1
 
 DOCKER_IMG="mrhid6/ssmagent:next"
 
-docker pull ${DOCKER_IMG}
+docker pull -q ${DOCKER_IMG}
+
+if [ $DOCKEREXISTS == 1 ]; then
+    docker rm -f ${AGENTNAME}
+fi
 
 docker run -d \
 -e SSM_URL="${SSMURL}" \
