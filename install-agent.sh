@@ -168,8 +168,23 @@ if [ "${SSMAPIKEY}" == "" ]; then
     fi
 fi
 
+start_spinner "${YELLOW}Creating SSM User Account${NC}"
+if id "ssm" &>/dev/null; then
+    usermod -u 9999 ssm
+    groupmod -g 9999 ssm
+
+    chown -R ssm:ssm /home/ssm
+    chown -R ssm:ssm /opt/SSM
+else
+    useradd -m ssm -u 9999 -s /bin/bash >/dev/null 2>&1
+fi
+sleep 1
+stop_spinner $?
+
 mkdir -p "/SSMAgent/${AGENTNAME}/SSM" >/dev/null 2>&1
 mkdir -p "/SSMAgent/${AGENTNAME}/.config" >/dev/null 2>&1
+
+chown -R ssm:ssm "/SSMAgent/${AGENTNAME}" >/dev/null 2>&1
 
 docker run -d \
     -e SSM_URL="${SSMURL}" \
