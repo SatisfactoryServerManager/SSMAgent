@@ -60,7 +60,8 @@ if($SSMAPIKEY -eq ""){
 write-host "* Installing Docker"
 
 if($isWorkstation -eq $false){
-    write-error "Windows Server is no longer supported!"
+    write-host -ForegroundColor Red "Windows Server is no longer supported!"
+    write-host -ForegroundColor Red "Please use the standalone agent instead!"
     exit 1;
 }else{
 
