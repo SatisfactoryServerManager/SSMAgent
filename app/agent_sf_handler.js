@@ -154,7 +154,7 @@ class AgentSFHandler {
                 installed,
             });
         } catch (err) {
-            console.log(err);
+            //console.log(err);
         }
     };
 
@@ -166,7 +166,7 @@ class AgentSFHandler {
                 running,
             });
         } catch (err) {
-            console.log(err);
+            //console.log(err);
         }
     };
 
@@ -177,7 +177,7 @@ class AgentSFHandler {
                 mem,
             });
         } catch (err) {
-            console.log(err);
+            //console.log(err);
         }
     };
 
