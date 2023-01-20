@@ -19,10 +19,10 @@ class AgentApp {
         Cleanup.addEventHandler(async () => {
             Logger.info("[AGENT_APP] [CLEANUP] - Closing Agent App...");
             try {
-                Cleanup.increaseCounter(1);
                 await this.SendAgentOfflineRequest();
-                Cleanup.decreaseCounter(1);
-            } catch (err) {}
+            } catch (err) {
+                console.log(err);
+            }
         });
 
         try {
@@ -45,23 +45,35 @@ class AgentApp {
     };
 
     SendAgentOnlineRequest = async () => {
+        Cleanup.addPendingFunction("App:SendAgentOnlineRequest");
         try {
             await AgentAPI.remoteRequestPOST("api/agent/activestate", {
                 active: true,
             });
             Logger.info("[AGENT_APP] - Sent Online Status to SSM Cloud");
+            Cleanup.completePendingFunction("App:SendAgentOnlineRequest");
         } catch (err) {
+            Logger.error(
+                `[AGENT_APP] - Error Sending Online Status to SSM Cloud: ${err.message} `
+            );
+            Cleanup.completePendingFunction("App:SendAgentOnlineRequest");
             throw err;
         }
     };
 
     SendAgentOfflineRequest = async () => {
+        Cleanup.addPendingFunction("App:SendAgentOfflineRequest");
         try {
             await AgentAPI.remoteRequestPOST("api/agent/activestate", {
                 active: false,
             });
+            Cleanup.completePendingFunction("App:SendAgentOfflineRequest");
             Logger.info("[AGENT_APP] - Sent Offline Status to SSM Cloud");
         } catch (err) {
+            Cleanup.completePendingFunction("App:SendAgentOfflineRequest");
+            Logger.error(
+                `[AGENT_APP] - Error Sending Online Status to SSM Cloud: ${err.message} `
+            );
             throw err;
         }
     };

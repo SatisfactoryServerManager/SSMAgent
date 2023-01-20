@@ -355,19 +355,19 @@ class AgentSFHandler {
 
     StopSFServer = async () => {
         Logger.info("[SF_Handler] - Stopping SF Dedicated Server");
-        Cleanup.increaseCounter(1);
+        Cleanup.addPendingFunction("SFHandler:StopSFServer");
 
         const installed = await this.isInstalled();
         const running = await this.isServerRunning();
 
         if (!installed) {
-            Cleanup.decreaseCounter(1);
+            Cleanup.completePendingFunction("SFHandler:StopSFServer");
             throw new Error("SF Server is not installed!");
         }
 
         if (!running) {
             Logger.warn("[SF_Handler] - SF Server is already stopped");
-            Cleanup.decreaseCounter(1);
+            Cleanup.completePendingFunction("SFHandler:StopSFServer");
             return;
         }
 
@@ -387,9 +387,9 @@ class AgentSFHandler {
             await this.WaitTillServerStopped();
 
             Logger.info("[SF_Handler] - Server has been stopped successfully");
-            Cleanup.decreaseCounter(1);
+            Cleanup.completePendingFunction("SFHandler:StopSFServer");
         } catch (err) {
-            Cleanup.decreaseCounter(1);
+            Cleanup.completePendingFunction("SFHandler:StopSFServer");
             Logger.error("[SF_Handler] - Server failed to stop!");
             console.log(err);
             throw err;
@@ -398,19 +398,19 @@ class AgentSFHandler {
 
     KillSFServer = async () => {
         Logger.info("[SF_Handler] - Killing SF Dedicated Server");
-        Cleanup.increaseCounter(1);
+        Cleanup.addPendingFunction("SFHandler:KillSFServer");
 
         const installed = await this.isInstalled();
         const running = await this.isServerRunning();
 
         if (!installed) {
-            Cleanup.decreaseCounter(1);
+            Cleanup.completePendingFunction("SFHandler:KillSFServer");
             throw new Error("SF Server is not installed!");
         }
 
         if (!running) {
             Logger.warn("[SF_Handler] - SF Server is already stopped");
-            Cleanup.decreaseCounter(1);
+            Cleanup.completePendingFunction("SFHandler:KillSFServer");
             return;
         }
 
@@ -421,9 +421,9 @@ class AgentSFHandler {
             await this.WaitTillServerStopped();
 
             Logger.info("[SF_Handler] - Server has been killed successfully");
-            Cleanup.decreaseCounter(1);
+            Cleanup.completePendingFunction("SFHandler:KillSFServer");
         } catch (err) {
-            Cleanup.decreaseCounter(1);
+            Cleanup.completePendingFunction("SFHandler:KillSFServer");
             Logger.error("[SF_Handler] - Server failed to stop!");
             console.log(err);
             throw err;

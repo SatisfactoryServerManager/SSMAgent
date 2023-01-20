@@ -3,11 +3,11 @@ const path = require("path");
 const CryptoJS = require("crypto-js");
 const yargs = require("yargs");
 
-const semver = require("semver");
-
 const mrhid6utils = require("mrhid6utils");
 const iConfig = mrhid6utils.Config;
 const platform = process.platform;
+
+const VarCache = require("./agent_varcache");
 
 const argv = yargs
     .option("standalone", {
@@ -38,62 +38,74 @@ const argv = yargs
     .help()
     .alias("help", "h").argv;
 
-let userDataPath = path.resolve(require("os").homedir() + "/SSMAgent");
-
-if (argv.standalone) {
-    if (argv.name == null) {
-        throw new Error("Can't start in standalone without name parameter");
-    }
-
-    if (argv.portoffset == null) {
-        throw new Error(
-            "Can't start in standalone without port offset parameter"
-        );
-    }
-
-    if (argv.ssmurl == null) {
-        throw new Error("Can't start in standalone without ssm url parameter");
-    }
-
-    if (argv.ssmapikey == null) {
-        throw new Error(
-            "Can't start in standalone without ssm api key parameter"
-        );
-    }
-
-    userDataPath = path.join(userDataPath, argv.name);
-}
-
-fs.ensureDirSync(userDataPath);
-
 class ServerConfig extends iConfig {
-    constructor() {
-        super({
+    init() {
+        if (argv.standalone) {
+            if (argv.name == null) {
+                throw new Error(
+                    "Can't start in standalone without name parameter"
+                );
+            }
+
+            if (argv.portoffset == null) {
+                throw new Error(
+                    "Can't start in standalone without port offset parameter"
+                );
+            }
+
+            if (argv.ssmurl == null) {
+                throw new Error(
+                    "Can't start in standalone without ssm url parameter"
+                );
+            }
+
+            if (argv.ssmapikey == null) {
+                throw new Error(
+                    "Can't start in standalone without ssm api key parameter"
+                );
+            }
+
+            VarCache.set(
+                "homedir",
+                path.join(VarCache.get("homedir"), argv.name)
+            );
+        }
+
+        super.init({
             configName: "SSMAgent",
             createConfig: true,
             useExactPath: true,
-            configBaseDirectory: path.join(userDataPath, "configs"),
+            configBaseDirectory: path.join(VarCache.get("homedir"), "configs"),
         });
     }
 
     setDefaultValues = async () => {
         super.set("agent.standalone", argv.standalone || false);
 
-        super.set("agent.homedir", userDataPath);
+        super.set("agent.homedir", VarCache.get("homedir"));
 
         var pjson = require("../package.json");
         super.set("agent.version", pjson.version);
 
-        super.set("agent.steamcmd", path.join(userDataPath, "steamcmd"));
+        super.set(
+            "agent.steamcmd",
+            path.join(VarCache.get("homedir"), "steamcmd")
+        );
         fs.ensureDirSync(super.get("agent.steamcmd"));
 
-        super.set("agent.sfserver", path.join(userDataPath, "sfserver"));
+        super.set(
+            "agent.sfserver",
+            path.join(VarCache.get("homedir"), "sfserver")
+        );
         fs.ensureDirSync(super.get("agent.sfserver"));
 
-        super.set("agent.tempdir", path.join(userDataPath, "temp"));
+        super.set("agent.tempdir", path.join(VarCache.get("homedir"), "temp"));
         fs.ensureDirSync(super.get("agent.tempdir"));
 
-        super.set("agent.backupdir", path.join(userDataPath, "backup"));
+        super.set(
+            "agent.backupdir",
+            path.join(VarCache.get("homedir"), "backup")
+        );
         fs.ensureDirSync(super.get("agent.backupdir"));
 
         if (super.get("agent.standalone")) {
