@@ -35,13 +35,15 @@ if (argv.standalone) {
 
 class SteamCMDLogger extends iLogger {
     constructor() {
-        super({
-            logBaseDirectory: path.join(userDataPath, "logs"),
-            logName: "SSMSteamCMD",
-        });
+        super();
     }
 
     init() {
+        super.init({
+            logBaseDirectory: path.join(userDataPath, "logs"),
+            logName: "SSMSteamCMD",
+        });
+
         fs.ensureDirSync(this._options.logDirectory);
 
         const LoggerOpts = {

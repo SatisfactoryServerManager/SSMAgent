@@ -4,6 +4,7 @@ const Config = require("./agent_config");
 
 const AgentSFHandler = require("./agent_sf_handler");
 const AgentSaveManager = require("./agent_save_manager");
+const AgentModManager = require("./agent_mod_manager");
 
 class AgentMessageQueue {
     constructor() {
@@ -80,6 +81,9 @@ class AgentMessageQueue {
                 case "downloadSave":
                     AgentSaveManager.DownloadSaveFile(item.data);
                     break;
+                case "installmod":
+                    await AgentModManager.InstallMod(item.data);
+                    break;
                 default:
                     Logger.error(
                         `[MessageQueue] - Unknown Queue Action (${item.action})`
@@ -89,7 +93,7 @@ class AgentMessageQueue {
             item.completed = true;
             await this.UpdateMessageQueueItemCompleted(item);
         } catch (err) {
-            console.log(err);
+            //console.log(err);
             item.completed = false;
             item.error = err.message;
             item.retries++;

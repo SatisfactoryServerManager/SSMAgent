@@ -137,34 +137,7 @@ if($isWorkstation -eq $false){
             $settingsContent | ConvertTo-Json | Set-Content $dockerSettingPath
 
             restart-service "com.docker.service"
-            dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
-            dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
-
-            $WSLInstaller = Join-Path $Env:Temp "WSL2.0.msi"
-            Invoke-WebRequest "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi" -OutFile $WSLInstaller
-            msiexec.exe /I $WSLInstaller /quiet
-            wsl --set-default-version 2
-
-            sleep -m 3000
-
-            del $WSLInstaller
-
-                $DockerInstaller = Join-Path $Env:Temp InstallDocker.msi
-            Invoke-WebRequest "https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe" -OutFile $DockerInstaller
-
-            cmd /c start /wait $DockerInstaller install --quiet
-
-            sleep -m 3000
-            del $DockerInstaller
-        
-            sleep -m 2000
-
-            $dockerSettingPath = "$($env:APPDATA)\Docker\settings.json"
-            $settingsContent = Get-Content $dockerSettingPath -Raw | ConvertFrom-Json
-            $settingsContent.exposeDockerAPIOnTCP2375 = $true
-            $settingsContent | ConvertTo-Json | Set-Content $dockerSettingPath
-
-            restart-service "com.docker.service"
+           
         }
     }else{
         write-Error "Cant Install docker on this machine! Must be Windows 10 20H2 and Build Number 19041 or higher!"

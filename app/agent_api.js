@@ -27,7 +27,11 @@ class AgentAPI {
                 return data;
             }
         } catch (err) {
-            throw err;
+            const data = err.response.data;
+
+            if (!data.success) {
+                throw new Error("Request returned an error: " + data.error);
+            }
         }
     };
     remoteRequestPOST = async (endpoint, requestdata) => {
