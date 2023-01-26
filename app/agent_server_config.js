@@ -5,13 +5,18 @@ const fs = require("fs-extra");
 const path = require("path");
 
 const Config = require("./agent_config");
+const VarCache = require("./agent_varcache");
 
 class EngineConfig extends iConfig {
-    constructor(configDir) {
-        super({
+    constructor() {
+        super();
+    }
+
+    init(configDir) {
+        super.init({
             useExactPath: true,
             configBaseDirectory: configDir,
-            configName: "Engine",
+            configName: "Game",
             configType: "ini",
             createConfig: true,
         });
@@ -62,8 +67,11 @@ class EngineConfig extends iConfig {
 }
 
 class GameConfig extends iConfig {
-    constructor(configDir) {
-        super({
+    constructor() {
+        super();
+    }
+    init(configDir) {
+        super.init({
             useExactPath: true,
             configBaseDirectory: configDir,
             configName: "Game",
@@ -94,11 +102,7 @@ class AgentServerConfigManager {
     constructor() {}
 
     init = async () => {
-        let PlatformFolder = "LinuxServer";
-
-        if (platform == "win32") {
-            PlatformFolder = "WindowsServer";
-        }
+        let PlatformFolder = VarCache.get("PlatformFolder");
 
         const configDir = path.join(
             Config.get("agent.sfserver"),
@@ -110,7 +114,9 @@ class AgentServerConfigManager {
         fs.ensureDirSync(configDir);
 
         this._GameConfig = new GameConfig(configDir);
+        this._GameConfig.init(configDir);
         this._EngineConfig = new EngineConfig(configDir);
+        this._EngineConfig.init(configDir);
 
         await this._GameConfig.load();
         await this._EngineConfig.load();

@@ -15,10 +15,14 @@ class AgentVarCache extends iVarCache {
 
     setupWindowsVarCache() {
         super.get("homedir", path.join(osHomeDir, "SSMAgent"));
+        super.set("ModPlatform", "WindowsServer");
+        super.set("PlatformFolder", "WindowsServer");
     }
 
     setupLinuxVarCache() {
         super.get("homedir", path.join(osHomeDir, "SSMAgent"));
+        super.set("ModPlatform", "LinuxServer");
+        super.set("PlatformFolder", "LinuxServer");
     }
 }
 

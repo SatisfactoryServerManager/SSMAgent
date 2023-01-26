@@ -17,9 +17,12 @@ class SSM_Log_Handler {
     constructor() {
         this._TotalSFLogLineCount = 0;
         this._UserCount = 0;
+
+        this._lastLogsInfo = {};
     }
 
     init() {
+        this.SendLogData();
         setInterval(async () => {
             try {
                 await this.SendLogData();
@@ -54,7 +57,9 @@ class SSM_Log_Handler {
                 logger._options.logDirectory,
                 path.basename(ssmLogfile)
             );
-        } catch (err) {}
+        } catch (err) {
+            console.log(err);
+        }
 
         const steamLogFiles = await this.getLogFiles(
             SteamLogger._options.logDirectory
@@ -80,7 +85,9 @@ class SSM_Log_Handler {
                 SteamLogger._options.logDirectory,
                 path.basename(steamLogfile)
             );
-        } catch (err) {}
+        } catch (err) {
+            console.log(err);
+        }
 
         const logDir = path.join(
             Config.get("agent.sfserver"),
@@ -97,12 +104,33 @@ class SSM_Log_Handler {
 
         try {
             await this.UploadLogFile(logDir, path.basename(logfile));
-        } catch (err) {}
+        } catch (err) {
+            console.log(err);
+        }
     };
 
     UploadLogFile = async (FileDirectory, FileName) => {
+        let lastLogInfo;
+
+        if (this._lastLogsInfo.hasOwnProperty(FileName)) {
+            lastLogInfo = this._lastLogsInfo[`${FileName}`];
+        } else {
+            this._lastLogsInfo[`${FileName}`] = {
+                mtime: 0,
+            };
+            lastLogInfo = this._lastLogsInfo[`${FileName}`];
+        }
+
         const FilePath = path.join(FileDirectory, FileName);
         const fileStream = fs.createReadStream(FilePath);
+
+        const fileStats = fs.statSync(FilePath);
+
+        if (fileStats.mtimeMs <= lastLogInfo.mtime) {
+            return;
+        }
+
+        lastLogInfo.mtime = fileStats.mtimeMs;
 
         const form = new FormData();
         // Pass file stream directly to form

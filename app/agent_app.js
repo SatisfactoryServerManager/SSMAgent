@@ -11,6 +11,7 @@ const AgentSaveManager = require("./agent_save_manager");
 const AgentSaveInspector = require("./agent_save_inspector");
 const AgentServerConfigManager = require("./agent_server_config");
 const AgentLogHandler = require("./agent_log_handler");
+const AgentModManager = require("./agent_mod_manager");
 
 class AgentApp {
     constructor() {}
@@ -37,6 +38,8 @@ class AgentApp {
             await this.setupSteamCMD();
             await AgentSFHandler.init();
             BackupManager.init();
+
+            await AgentModManager.init();
 
             await AgentMessageQueue.startPollingTask();
         } catch (err) {
