@@ -108,6 +108,12 @@ class AgentModManager {
 
     InstallMod = async (modData, force = false) => {
         await this.GetInstalledMods();
+        await this._InstallMod(modData, force);
+        await this.SendInstalledModList();
+    };
+
+    _InstallMod = async (modData, force = false) => {
+        await this.GetInstalledMods();
 
         const SelectedVersionString = modData.modVersion;
         const ModInfo = modData.modInfo;
@@ -207,6 +213,8 @@ class AgentModManager {
             console.log(err);
             throw err;
         }
+
+        await this.GetInstalledMods();
     };
 
     InstallModDependency = async (modReference, version) => {
@@ -221,7 +229,7 @@ class AgentModManager {
                         modInfo: modData,
                     };
 
-                    await this.InstallMod(data);
+                    await this._InstallMod(data);
                     return;
                 }
             }
@@ -367,6 +375,16 @@ class AgentModManager {
             return res.data;
         } catch (err) {
             throw err;
+        }
+    };
+
+    SendInstalledModList = async () => {
+        try {
+            await AgentAPI.remoteRequestPOST("api/agent/mods", {
+                mods: this._InstalledMods,
+            });
+        } catch (err) {
+            console.log(err);
         }
     };
 }
