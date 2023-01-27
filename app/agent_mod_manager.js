@@ -35,7 +35,7 @@ class InstalledMod {
 class AgentModManager {
     constructor() {
         this._InstalledMods = [];
-        this._FicsitAPI = "https://api.ficsit.app";
+        this._FicsitAPI = "https://api.ficsit.dev";
     }
 
     init = async () => {
@@ -54,6 +54,9 @@ class AgentModManager {
     };
 
     GetInstalledMods = async () => {
+        fs.ensureDirSync(this._ModsDir);
+        fs.ensureDirSync(this._TempModsDir);
+
         this._InstalledMods = [];
 
         const fileList = fs
@@ -107,6 +110,9 @@ class AgentModManager {
     };
 
     InstallMod = async (modData, force = false) => {
+        fs.ensureDirSync(this._ModsDir);
+        fs.ensureDirSync(this._TempModsDir);
+
         await this.GetInstalledMods();
         await this._InstallMod(modData, force);
         await this.SendInstalledModList();
@@ -282,6 +288,7 @@ class AgentModManager {
     };
 
     ExtractModArchive = async (pathToArchive, targetDirectory) => {
+        console.log(pathToArchive, targetDirectory);
         await extractZip(pathToArchive, {
             dir: targetDirectory,
         });
