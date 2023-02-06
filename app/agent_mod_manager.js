@@ -51,6 +51,7 @@ class AgentModManager {
         fs.ensureDirSync(this._TempModsDir);
 
         await this.GetInstalledMods();
+        await this.SendInstalledModList();
     };
 
     GetInstalledMods = async () => {
