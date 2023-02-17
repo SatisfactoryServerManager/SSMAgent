@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.11](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.10...v1.0.11) (2023-02-17)
+
+
+### Features
+
+* Added ability to update mod ([e60caf1](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/e60caf11dda08885b7ef63161b21da30db51ef62))
+* package updates ([c72a6a9](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/c72a6a9f371ea78527f18de093267f82ade0d3e5))
+* Send installed mods to cloud ([42576da](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/42576dab27d4f899cf31c49b08d7f3cd5be875fe))
+
+
+### Bug Fixes
+
+* Fixed redundent traffic for cpu-mem usage ([84d507a](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/84d507a080e6db55120b594f4dffbdcdcc322e4d))
+* Fixes to Mod Manager Reporting ([eb5a84a](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/eb5a84af31d8515c5e5a68c31e04b582e6dbcad8))
+* Make sure mods dir exists ([981cb16](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/981cb161071c9abf9a13a646d93b013624b3ecd9))
+
 ### [1.0.10](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.9...v1.0.10) (2023-01-22)
 
 
