@@ -22,7 +22,7 @@ class AgentApp {
             try {
                 await this.SendAgentOfflineRequest();
             } catch (err) {
-                console.log(err);
+                //console.log(err);
             }
         });
 
@@ -43,7 +43,7 @@ class AgentApp {
 
             await AgentMessageQueue.startPollingTask();
         } catch (err) {
-            console.log(err);
+            //console.log(err);
         }
     };
 
@@ -75,7 +75,7 @@ class AgentApp {
         } catch (err) {
             Cleanup.completePendingFunction("App:SendAgentOfflineRequest");
             Logger.error(
-                `[AGENT_APP] - Error Sending Online Status to SSM Cloud: ${err.message} `
+                `[AGENT_APP] - Error Sending Offline Status to SSM Cloud: ${err.message} `
             );
             throw err;
         }

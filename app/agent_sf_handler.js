@@ -26,6 +26,9 @@ class AgentSFHandler {
             pid1: -1,
             pid2: -1,
         };
+
+        this._cpu = -1;
+        this._mem = -1;
     }
 
     init = async () => {
