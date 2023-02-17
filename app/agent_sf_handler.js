@@ -108,6 +108,9 @@ class AgentSFHandler {
             return false;
         });
 
+        const prevCpu = this._cpu;
+        const prevMem = this._mem;
+
         if (process1 == null || process2 == null) {
             this._processIds.pid1 = -1;
             this._processIds.pid2 = -1;
@@ -123,7 +126,9 @@ class AgentSFHandler {
         }
         if (prevRunning != this._running) await this.UpdateAgentRunningState();
 
-        await this.UpdateAgentUsage(this._cpu, this._mem);
+        if (prevCpu != this._cpu || prevMem != this._mem) {
+            await this.UpdateAgentUsage(this._cpu, this._mem);
+        }
     };
 
     isInstalled = async () => {
