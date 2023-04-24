@@ -171,6 +171,8 @@ class AgentSaveManager {
     UploadSaveFile = async (backupFilePath, backupFileName) => {
         try {
             const backupFile = path.join(backupFilePath, backupFileName);
+            console.log(`Uploading Save File ${backupFile}`);
+
             const fileStream = fs.createReadStream(backupFile);
 
             const form = new FormData();

@@ -21,8 +21,6 @@ const logger = require("./agent_logger");
 const Mrhid6Utils = require("mrhid6utils");
 const iLogger = Mrhid6Utils.Logger;
 
-const Logger = require("simple-node-logger");
-
 const yargs = require("yargs");
 
 const argv = yargs.parsed.argv;
@@ -45,17 +43,6 @@ class SteamCMDLogger extends iLogger {
         });
 
         fs.ensureDirSync(this._options.logDirectory);
-
-        const LoggerOpts = {
-            timestampFormat: "YYYY-MM-DD HH:mm:ss",
-            logDirectory: this._options.logDirectory,
-            fileNamePattern: `<DATE>-${this._options.logName}.log`,
-            dateFormat: "YYYYMMDD",
-            level: this._options.logLevel,
-        };
-
-        const LogManager = Logger.createLogManager(LoggerOpts);
-        this._logger = LogManager.createLogger();
 
         this.debug(`[LOGGER] - Log Directory ${this._options.logDirectory}`);
     }

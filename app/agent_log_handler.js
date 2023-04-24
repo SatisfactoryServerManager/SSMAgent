@@ -33,57 +33,19 @@ class SSM_Log_Handler {
     }
 
     SendLogData = async () => {
-        const ssmLogFiles = await this.getLogFiles(
-            logger._options.logDirectory
-        );
-        const ssmLogfile = ssmLogFiles.find((el) => {
-            const filename = path.basename(el);
-
-            const date = moment().format("YYYYMMDD");
-
-            if (filename.startsWith(date)) {
-                return true;
-            }
-
-            return false;
-        });
-
-        if (ssmLogfile == null) {
-            throw new Error("Can't find log file");
-        }
-
         try {
             await this.UploadLogFile(
                 logger._options.logDirectory,
-                path.basename(ssmLogfile)
+                "SSMAgent-combined.log"
             );
         } catch (err) {
             console.log(err);
         }
 
-        const steamLogFiles = await this.getLogFiles(
-            SteamLogger._options.logDirectory
-        );
-        const steamLogfile = steamLogFiles.find((el) => {
-            const filename = path.basename(el);
-
-            const date = moment().format("YYYYMMDD");
-
-            if (filename.startsWith(date)) {
-                return true;
-            }
-
-            return false;
-        });
-
-        if (steamLogfile == null) {
-            throw new Error("Can't find log file");
-        }
-
         try {
             await this.UploadLogFile(
                 SteamLogger._options.logDirectory,
-                path.basename(steamLogfile)
+                "SSMSteamCMD-combined.log"
             );
         } catch (err) {
             console.log(err);
@@ -122,9 +84,13 @@ class SSM_Log_Handler {
         }
 
         const FilePath = path.join(FileDirectory, FileName);
-        const fileStream = fs.createReadStream(FilePath);
 
-        const fileStats = fs.statSync(FilePath);
+        const copiedFilePath = `${FilePath}.1`;
+        fs.copyFileSync(FilePath, copiedFilePath);
+
+        const fileStream = fs.createReadStream(copiedFilePath);
+
+        const fileStats = fs.statSync(copiedFilePath);
 
         if (fileStats.mtimeMs <= lastLogInfo.mtime) {
             return;
@@ -145,7 +111,11 @@ class SSM_Log_Handler {
                     ...form.getHeaders(),
                 },
             });
-        } catch (err) {}
+
+            fs.unlinkSync(copiedFilePath);
+        } catch (err) {
+            console.log(err);
+        }
     };
 
     getLogFiles(directory) {
