@@ -167,4 +167,5 @@ docker run -d `
 -v "C:\SSMAgent\$($AGENTNAME)\.config:/home/ssm/.config/Epic/FactoryGame" `
 -m $MEMORY `
 --name "$($AGENTNAME)" `
+--restart always `
 $DOCKER_IMG
