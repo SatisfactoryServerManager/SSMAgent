@@ -194,7 +194,6 @@ if id "ssm" &>/dev/null; then
     groupmod -g 9999 ssm
 
     chown -R ssm:ssm /home/ssm
-    chown -R ssm:ssm /opt/SSM
 else
     useradd -m ssm -u 9999 -s /bin/bash >/dev/null 2>&1
 fi
