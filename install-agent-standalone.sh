@@ -259,6 +259,8 @@ fi
 sleep 1
 stop_spinner $?
 
+chmod -R 755 /opt/SSM
+
 
 
 ENV_SYSTEMD=$(pidof systemd | wc -l)
