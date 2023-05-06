@@ -3,7 +3,7 @@ const fs = require("fs-extra");
 const archiver = require("archiver");
 const platform = process.platform;
 const recursive = require("recursive-readdir");
-const rimraf = require("rimraf");
+const { rimraf, rimrafSync, native, nativeSync } = require("rimraf");
 const FormData = require("form-data");
 const axios = require("axios");
 
@@ -171,19 +171,14 @@ class BackupManager {
         });
     }
 
-    RemoveBackupFile(file) {
-        return new Promise((resolve, reject) => {
-            rimraf(file, ["unlink"], (err) => {
-                if (err) {
-                    Logger.error("[BACKUP_MANAGER] - Remove Backup Error");
-                    reject(err);
-                    return;
-                }
-
-                resolve();
-            });
-        });
-    }
+    RemoveBackupFile = async (file) => {
+        try {
+            await rimraf(file, ["unlink"]);
+        } catch (err) {
+            Logger.error("[BACKUP_MANAGER] - Remove Backup Error");
+            throw err;
+        }
+    };
 
     UploadBackupFile = async (backupFilePath, backupFileName) => {
         try {
