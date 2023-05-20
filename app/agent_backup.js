@@ -18,6 +18,8 @@ const AgentAPI = require("./agent_api");
 
 class BackupManager {
     init() {
+        Logger.info("[BACKUP_MANAGER] [INIT] - Backup Manager Initialising.. ");
+
         let PlatformFolder = "";
         if (platform == "win32") {
             PlatformFolder = "WindowsServer";
@@ -33,13 +35,10 @@ class BackupManager {
             PlatformFolder
         );
 
-        this.SetupEventHandlers();
         this.startBackupTimer();
 
-        Logger.info("[BACKUP_MANAGER] [INIT] - Backup Manager Initialized");
+        Logger.info("[BACKUP_MANAGER] [INIT] - Backup Manager Initialised");
     }
-
-    SetupEventHandlers() {}
 
     startBackupTimer() {
         setInterval(() => {

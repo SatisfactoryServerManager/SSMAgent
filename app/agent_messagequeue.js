@@ -81,12 +81,6 @@ class AgentMessageQueue {
                 case "downloadSave":
                     AgentSaveManager.DownloadSaveFile(item.data);
                     break;
-                case "installmod":
-                    await AgentModManager.InstallMod(item.data);
-                    break;
-                case "updatemod":
-                    await AgentModManager.UpdateMod(item.data);
-                    break;
                 default:
                     Logger.error(
                         `[MessageQueue] - Unknown Queue Action (${item.action})`

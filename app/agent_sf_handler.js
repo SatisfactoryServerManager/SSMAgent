@@ -32,6 +32,7 @@ class AgentSFHandler {
     }
 
     init = async () => {
+        Logger.info("[ServerHandler] - Initialising Server Handler...");
         await this.getVersionFromSteam();
         await this.UpdateAgentInstalledState();
         await this.UpdateAgentRunningState();
@@ -45,6 +46,8 @@ class AgentSFHandler {
         Cleanup.addEventHandler(async () => {
             await this.StopSFServer();
         });
+
+        Logger.info("[ServerHandler] - Initialised Server Handler!");
     };
 
     getVersionFromSteam = async () => {

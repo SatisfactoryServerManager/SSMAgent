@@ -39,6 +39,7 @@ class AgentModManager {
     }
 
     init = async () => {
+        Logger.info("[ModManager] - Initialising Mod Manager ...");
         this._ModsDir = path.join(
             Config.get("agent.sfserver"),
             "FactoryGame",
@@ -50,8 +51,26 @@ class AgentModManager {
         fs.ensureDirSync(this._ModsDir);
         fs.ensureDirSync(this._TempModsDir);
 
-        await this.GetInstalledMods();
-        await this.SendInstalledModList();
+        await this.Task_CompareModState();
+
+        setInterval(async () => {
+            try {
+                await this.Task_CompareModState();
+            } catch (err) {
+                console.log(err);
+            }
+        }, 30000);
+
+        Logger.info("[ModManager] - Initialised Mod Manager");
+    };
+
+    GetAgentModState = async () => {
+        try {
+            const res = await AgentAPI.remoteRequestGET("api/agent/modState");
+            this._ModState = res.modState;
+        } catch (err) {
+            Logger.error("Failed to get Agent Mod State!");
+        }
     };
 
     GetInstalledMods = async () => {
@@ -97,6 +116,66 @@ class AgentModManager {
         }
     };
 
+    CompareModState = async () => {
+        Logger.info("[ModManager] - Comparing Mod State..");
+
+        for (let i = 0; i < this._ModState.selectedMods.length; i++) {
+            const selectedMod = this._ModState.selectedMods[i];
+            const isInstalled = this.HasInstalledVersion(
+                selectedMod.mod.modReference,
+                selectedMod.desiredVersion
+            );
+
+            if (isInstalled) {
+                Logger.debug(
+                    `[ModManager] - ModState - ${selectedMod.mod.modReference} installed!`
+                );
+
+                const theInstalledMod = this.GetInstalledVersion(
+                    selectedMod.mod.modReference
+                );
+
+                selectedMod.installed = true;
+                selectedMod.installedVersion = theInstalledMod.GetVersion();
+            } else {
+                selectedMod.installed = false;
+            }
+        }
+
+        //console.log(JSON.stringify(this._ModState, null, 4));
+    };
+
+    TryInstallModsFromState = async () => {
+        for (let i = 0; i < this._ModState.selectedMods.length; i++) {
+            const selectedMod = this._ModState.selectedMods[i];
+
+            if (selectedMod.installed == true) continue;
+
+            await this._InstallMod(selectedMod.mod, selectedMod.desiredVersion);
+        }
+    };
+
+    Task_CompareModState = async () => {
+        await this.GetAgentModState();
+        await this.GetInstalledMods();
+        await this.CompareModState();
+        await this.TryInstallModsFromState();
+        await this.GetInstalledMods();
+        await this.CompareModState();
+        await this.SendModStateToAPI();
+    };
+
+    SendModStateToAPI = async () => {
+        try {
+            const res = await AgentAPI.remoteRequestPOST(
+                "api/agent/modstate",
+                this._ModState
+            );
+        } catch (err) {
+            throw err;
+        }
+    };
+
     HasInstalledVersion(modReference, version) {
         const installedmod = this._InstalledMods.find(
             (mod) =>
@@ -104,6 +183,12 @@ class AgentModManager {
         );
 
         return installedmod != null;
+    }
+
+    GetInstalledVersion(modReference) {
+        return this._InstalledMods.find(
+            (mod) => mod._modReference == modReference
+        );
     }
 
     UpdateMod = async (modData) => {
@@ -119,49 +204,42 @@ class AgentModManager {
         await this.SendInstalledModList();
     };
 
-    _InstallMod = async (modData, force = false) => {
-        await this.GetInstalledMods();
-
-        const SelectedVersionString = modData.modVersion;
-        const ModInfo = modData.modInfo;
+    _InstallMod = async (Mod, DesiredVersion, force = false) => {
         const ModPlatform = VarCache.get("ModPlatform");
 
         Logger.info(
-            `[ModManager] - Installing Mod (${ModInfo.modReference}) (${SelectedVersionString})`
+            `[ModManager] - Installing Mod (${Mod.modReference}) (${DesiredVersion})`
         );
 
         if (
-            this.HasInstalledVersion(
-                ModInfo.modReference,
-                SelectedVersionString
-            ) &&
+            this.HasInstalledVersion(Mod.modReference, DesiredVersion) &&
             !force
         ) {
             Logger.warn(
-                `[ModManager] - Warning: Installing Mod (${ModInfo.modReference}) Skipped, Mod Already Installed!`
+                `[ModManager] - Warning: Installing Mod (${Mod.modReference}) Skipped, Mod Already Installed!`
             );
             return;
         }
 
-        if (ModInfo.versions == null || ModInfo.versions.length == 0) {
+        if (Mod.versions == null || Mod.versions.length == 0) {
             Logger.error(
-                `[ModManager] - Error: Installing Mod (${ModInfo.modReference}) No Versions Available!`
+                `[ModManager] - Error: Installing Mod (${Mod.modReference}) No Versions Available!`
             );
             throw new Error(
-                `Installing Mod (${ModInfo.modReference}) No Versions Available!`
+                `Installing Mod (${Mod.modReference}) No Versions Available!`
             );
         }
 
-        const SelectedVersion = ModInfo.versions.find(
-            (v) => v.version == SelectedVersionString
+        const SelectedVersion = Mod.versions.find(
+            (v) => v.version == DesiredVersion
         );
 
         if (SelectedVersion == null) {
             Logger.error(
-                `[ModManager] - Error: Installing Mod (${ModInfo.modReference}) No Version Matching (${SelectedVersionString})`
+                `[ModManager] - Error: Installing Mod (${Mod.modReference}) No Version Matching (${DesiredVersion})`
             );
             throw new Error(
-                `Installing Mod (${ModInfo.modReference}) No Version Matching (${SelectedVersionString})`
+                `Installing Mod (${Mod.modReference}) No Version Matching (${DesiredVersion})`
             );
         }
 
@@ -169,10 +247,10 @@ class AgentModManager {
 
         if (SelectedVersion.arch == null) {
             Logger.error(
-                `[ModManager] - Error: Installing Mod (${ModInfo.modReference}) No Server Version Matching (${SelectedVersionString})`
+                `[ModManager] - Error: Installing Mod (${Mod.modReference}) No Server Version Matching (${DesiredVersion})`
             );
             throw new Error(
-                `Installing Mod (${ModInfo.modReference}) No Server Version Matching (${SelectedVersionString})`
+                `Installing Mod (${Mod.modReference}) No Server Version Matching (${DesiredVersion})`
             );
         }
 
@@ -182,30 +260,16 @@ class AgentModManager {
 
         if (SelectedArch == null) {
             Logger.error(
-                `[ModManager] - Error: Installing Mod (${ModInfo.modReference}) No Server Version Matching (${SelectedVersionString}) (${ModPlatform})`
+                `[ModManager] - Error: Installing Mod (${Mod.modReference}) No Server Version Matching (${DesiredVersion}) (${ModPlatform})`
             );
             throw new Error(
-                `Installing Mod (${ModInfo.modReference}) No Server Version Matching (${SelectedVersionString}) (${ModPlatform})`
+                `Installing Mod (${Mod.modReference}) No Server Version Matching (${DesiredVersion}) (${ModPlatform})`
             );
-        }
-
-        try {
-            for (let i = 0; i < SelectedVersion.dependencies.length; i++) {
-                const modDependency = SelectedVersion.dependencies[i];
-                if (modDependency.mod_id == "SML") continue;
-
-                await this.InstallModDependency(
-                    modDependency.mod_id,
-                    modDependency.condition
-                );
-            }
-        } catch (err) {
-            throw err;
         }
 
         try {
             await this.DownloadModVersion(
-                ModInfo.modReference,
+                Mod.modReference,
                 SelectedVersion.version,
                 SelectedArch.asset
             );
@@ -218,29 +282,6 @@ class AgentModManager {
             this.InstallSML(SelectedVersion.sml_version, force);
         } catch (err) {
             console.log(err);
-            throw err;
-        }
-
-        await this.GetInstalledMods();
-    };
-
-    InstallModDependency = async (modReference, version) => {
-        try {
-            const modData = await this.GetModFromAPI(modReference);
-
-            for (let i = 0; i < modData.versions.length; i++) {
-                const modVersion = modData.versions[i];
-                if (semver.satisfies(modVersion.version, version)) {
-                    const data = {
-                        modVersion: modVersion.version,
-                        modInfo: modData,
-                    };
-
-                    await this._InstallMod(data);
-                    return;
-                }
-            }
-        } catch (err) {
             throw err;
         }
     };
@@ -289,14 +330,12 @@ class AgentModManager {
     };
 
     ExtractModArchive = async (pathToArchive, targetDirectory) => {
-        console.log(pathToArchive, targetDirectory);
         await extractZip(pathToArchive, {
             dir: targetDirectory,
         });
     };
 
     InstallSML = async (RequestedSMLVersion, force = false) => {
-        await this.GetInstalledMods();
         const SMLInstalledMod = this._InstalledMods.find(
             (mod) => mod._modReference == "SML"
         );
@@ -318,6 +357,8 @@ class AgentModManager {
 
         const Version = semver.coerce(RequestedSMLVersion);
         await this.DownloadSML(`v${Version}`);
+
+        await this.GetInstalledMods();
     };
 
     DownloadSML = async (Version) => {

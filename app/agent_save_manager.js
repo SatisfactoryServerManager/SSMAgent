@@ -20,6 +20,7 @@ class AgentSaveManager {
         this._lastSaveInfo = [];
     }
     init = async () => {
+        Logger.info("[SaveManager] - Initialising Save Manager ...");
         await this.UploadSaveDatas();
         await this.UploadSaveFiles();
 
@@ -30,6 +31,7 @@ class AgentSaveManager {
                 await this.UploadSaveFiles();
             }
         }, 10000);
+        Logger.info("[SaveManager] - Initialised Save Manager!");
     };
 
     DownloadSaveFile = async (data) => {
