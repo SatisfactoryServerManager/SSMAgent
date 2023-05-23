@@ -12,6 +12,7 @@ const Config = require("./agent_config");
 const logger = require("./agent_logger");
 const SteamLogger = require("./agent_steamcmd").SteamLogger;
 const AgentAPI = require("./agent_api");
+const chmodr = require("chmodr");
 
 class SSM_Log_Handler {
     constructor() {
@@ -85,18 +86,29 @@ class SSM_Log_Handler {
 
         const FilePath = path.join(FileDirectory, FileName);
 
-        const copiedFilePath = `${FilePath}.1`;
+        const now = new Date();
+        const copiedFilePath = `${FilePath}-${now.getTime()}`;
+
+        if (fs.existsSync(copiedFilePath)) {
+            rimraf.sync(copiedFilePath);
+        }
+
         fs.copyFileSync(FilePath, copiedFilePath);
 
-        const fileStream = fs.createReadStream(copiedFilePath);
+        fs.chmodSync(copiedFilePath, "0777");
 
         const fileStats = fs.statSync(copiedFilePath);
 
         if (fileStats.mtimeMs <= lastLogInfo.mtime) {
+            if (fs.existsSync(copiedFilePath)) {
+                rimraf.sync(copiedFilePath);
+            }
             return;
         }
 
         lastLogInfo.mtime = fileStats.mtimeMs;
+
+        const fileStream = fs.createReadStream(copiedFilePath);
 
         const form = new FormData();
         // Pass file stream directly to form
@@ -111,10 +123,12 @@ class SSM_Log_Handler {
                     ...form.getHeaders(),
                 },
             });
-
-            fs.unlinkSync(copiedFilePath);
         } catch (err) {
             console.log(err);
+        }
+
+        if (fs.existsSync(copiedFilePath)) {
+            rimraf.sync(copiedFilePath);
         }
     };
 

@@ -128,16 +128,18 @@ class AgentModManager {
             );
 
             if (isInstalled) {
-                Logger.debug(
-                    `[ModManager] - ModState - ${selectedMod.mod.modReference} installed!`
-                );
+                if (!selectedMod.installed) {
+                    Logger.debug(
+                        `[ModManager] - ModState - ${selectedMod.mod.modReference} installed!`
+                    );
 
-                const theInstalledMod = this.GetInstalledVersion(
-                    selectedMod.mod.modReference
-                );
+                    const theInstalledMod = this.GetInstalledVersion(
+                        selectedMod.mod.modReference
+                    );
 
-                selectedMod.installed = true;
-                selectedMod.installedVersion = theInstalledMod.GetVersion();
+                    selectedMod.installed = true;
+                    selectedMod.installedVersion = theInstalledMod.GetVersion();
+                }
             } else {
                 selectedMod.installed = false;
             }
@@ -169,7 +171,13 @@ class AgentModManager {
     };
 
     Task_CompareModState = async () => {
+        const oldModState = this._ModState;
         await this.GetAgentModState();
+
+        if (JSON.stringify(oldModState) === JSON.stringify(this._ModState)) {
+            return;
+        }
+
         await this.GetInstalledMods();
         await this.CompareModState();
         await this.TryInstallModsFromState();
