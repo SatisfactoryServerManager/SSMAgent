@@ -35,10 +35,11 @@ class InstalledMod {
 class AgentModManager {
     constructor() {
         this._InstalledMods = [];
-        this._FicsitAPI = "https://api.ficsit.dev";
     }
 
     init = async () => {
+        this._FicsitAPI = Config.get("agent.mods.api");
+
         Logger.info("[ModManager] - Initialising Mod Manager ...");
         this._ModsDir = path.join(
             Config.get("agent.sfserver"),
@@ -141,8 +142,6 @@ class AgentModManager {
                 selectedMod.installed = false;
             }
         }
-
-        //console.log(JSON.stringify(this._ModState, null, 4));
     };
 
     TryInstallModsFromState = async () => {
@@ -152,6 +151,20 @@ class AgentModManager {
             if (selectedMod.installed == true) continue;
 
             await this._InstallMod(selectedMod.mod, selectedMod.desiredVersion);
+        }
+
+        for (let i = 0; i < this._InstalledMods.length; i++) {
+            const installedMod = this._InstalledMods[i];
+
+            const selectedMod = this._ModState.selectedMods.find(
+                (sm) => sm.mod.modReference == installedMod.GetModReference()
+            );
+
+            if (selectedMod == null) {
+                if (installedMod.GetModReference() != "SML") {
+                    await this.UninstallMod(installedMod.GetModReference());
+                }
+            }
         }
     };
 
@@ -245,7 +258,9 @@ class AgentModManager {
 
         await this.GetSMLVersionsFromAPI();
 
-        if (SelectedVersion.arch == null) {
+        let usingEXP = false;
+
+        if (SelectedVersion.arch == null && SelectedVersion.targets == null) {
             Logger.error(
                 `[ModManager] - Error: Installing Mod (${Mod.modReference}) No Server Version Matching (${DesiredVersion})`
             );
@@ -254,9 +269,19 @@ class AgentModManager {
             );
         }
 
-        const SelectedArch = SelectedVersion.arch.find(
-            (arch) => arch.platform == ModPlatform
-        );
+        let SelectedArch = null;
+        if (SelectedVersion.arch) {
+            SelectedArch = SelectedVersion.arch.find(
+                (arch) => arch.platform == ModPlatform
+            );
+        }
+
+        if (SelectedVersion.targets) {
+            usingEXP = true;
+            SelectedArch = SelectedVersion.targets.find(
+                (target) => target.targetName == ModPlatform
+            );
+        }
 
         if (SelectedArch == null) {
             Logger.error(
@@ -271,7 +296,7 @@ class AgentModManager {
             await this.DownloadModVersion(
                 Mod.modReference,
                 SelectedVersion.version,
-                SelectedArch.asset
+                usingEXP ? SelectedArch.link : SelectedArch.asset
             );
         } catch (err) {
             console.log(err);
@@ -434,6 +459,18 @@ class AgentModManager {
             });
         } catch (err) {
             console.log(err);
+        }
+    };
+
+    UninstallMod = async (modReference) => {
+        Logger.info(`[ModManager] - Uninstalling mod ${modReference}`);
+        const installedMod = this.GetInstalledVersion(modReference);
+
+        if (fs.existsSync(installedMod._modPath)) {
+            rimraf.sync(installedMod._modPath);
+            Logger.info(
+                `[ModManager] - Successfully Uninstalled mod ${modReference}`
+            );
         }
     };
 }

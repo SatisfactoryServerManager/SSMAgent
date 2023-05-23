@@ -140,6 +140,21 @@ class ServerConfig extends iConfig {
         super.get("agent.backup.interval", 1);
         super.get("agent.backup.keep", 24);
         super.get("agent.backup.nextbackup", 0);
+
+        super.get("agent.mods.usedev", true);
+        super.get("agent.mods.useexp", false);
+        if (super.get("agent.mods.usedev")) {
+            if (super.get("agent.mods.useexp")) {
+                super.set(
+                    "agent.mods.api",
+                    "https://ficsit-api.mircearoata.duckdns.org"
+                );
+            } else {
+                super.set("agent.mods.api", "https://api.ficsit.dev");
+            }
+        } else {
+            super.set("agent.mods.api", "https://api.ficsit.app");
+        }
     };
 
     SendConfigToSSMCloud = async () => {
