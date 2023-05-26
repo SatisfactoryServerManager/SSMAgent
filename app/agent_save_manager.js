@@ -1,19 +1,18 @@
 const path = require("path");
 const fs = require("fs-extra");
 const rimraf = require("rimraf");
-const { getDataHome, getHomeFolder } = require("platform-folders");
 const recursive = require("recursive-readdir");
 const Serializer = require("../utils/Serializer");
 const FormData = require("form-data");
 const axios = require("axios");
-
-const platform = process.platform;
 
 const Config = require("./agent_config");
 const Logger = require("./agent_logger");
 const Cleanup = require("./agent_cleanup");
 
 const AgentAPI = require("./agent_api");
+
+const VarCache = require("./agent_varcache");
 
 class AgentSaveManager {
     constructor() {
@@ -46,22 +45,7 @@ class AgentSaveManager {
     };
 
     GetAllSaveFiles = async () => {
-        let localAppdata = "";
-        if (platform == "win32") {
-            localAppdata = path.resolve(
-                getDataHome() + "/../local/FactoryGame"
-            );
-        } else {
-            localAppdata = path.resolve(
-                getHomeFolder() + "/.config/Epic/FactoryGame"
-            );
-        }
-        const SaveFolder = path.join(
-            localAppdata,
-            "Saved",
-            "SaveGames",
-            "server"
-        );
+        const SaveFolder = VarCache.get("savedir");
 
         fs.ensureDirSync(SaveFolder);
 

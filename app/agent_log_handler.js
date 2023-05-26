@@ -40,7 +40,7 @@ class SSM_Log_Handler {
                 "SSMAgent-combined.log"
             );
         } catch (err) {
-            console.log(err);
+            logger.error("[LogHandler] - Failed to upload log file.");
         }
 
         try {
@@ -49,7 +49,7 @@ class SSM_Log_Handler {
                 "SSMSteamCMD-combined.log"
             );
         } catch (err) {
-            console.log(err);
+            logger.error("[LogHandler] - Failed to upload log file.");
         }
 
         const logDir = path.join(
@@ -68,7 +68,7 @@ class SSM_Log_Handler {
         try {
             await this.UploadLogFile(logDir, path.basename(logfile));
         } catch (err) {
-            console.log(err);
+            logger.error("[LogHandler] - Failed to upload log file.");
         }
     };
 
@@ -124,7 +124,7 @@ class SSM_Log_Handler {
                 },
             });
         } catch (err) {
-            console.log(err);
+            throw err;
         }
 
         if (fs.existsSync(copiedFilePath)) {

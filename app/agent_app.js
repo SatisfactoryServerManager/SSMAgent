@@ -27,6 +27,10 @@ class AgentApp {
         });
 
         try {
+            await this.WaitForAPIServerToBeOnline();
+        } catch (err) {}
+
+        try {
             await this.SendAgentOnlineRequest();
             await Config.SendConfigToSSMCloud();
 
@@ -46,6 +50,22 @@ class AgentApp {
             //console.log(err);
         }
     };
+
+    WaitForAPIServerToBeOnline() {
+        return new Promise((resolve, reject) => {
+            var interval = setInterval(async () => {
+                try {
+                    await AgentAPI.remoteRequestGET("api/ping");
+                    clearInterval(interval);
+                    resolve();
+                } catch (err) {
+                    Logger.debug(
+                        "[AGENT_APP] - Waiting for API Server to be online.."
+                    );
+                }
+            }, 2000);
+        });
+    }
 
     SendAgentOnlineRequest = async () => {
         Cleanup.addPendingFunction("App:SendAgentOnlineRequest");

@@ -230,7 +230,6 @@ class AgentModManager {
 
         await this.GetInstalledMods();
         await this._InstallMod(modData, force);
-        await this.SendInstalledModList();
     };
 
     _InstallMod = async (Mod, DesiredVersion, force = false) => {
@@ -271,8 +270,6 @@ class AgentModManager {
                 `Installing Mod (${Mod.modReference}) No Version Matching (${DesiredVersion})`
             );
         }
-
-        await this.GetSMLVersionsFromAPI();
 
         let usingEXP = false;
 
@@ -439,40 +436,6 @@ class AgentModManager {
             Logger.info(`[ModManager] - Extracting SML (${Version})`);
             await this.ExtractModArchive(ZipFilePath, SMLModPath);
             Logger.info(`[ModManager] - Extracted SML (${Version})`);
-        } catch (err) {
-            console.log(err);
-        }
-    };
-
-    GetSMLVersionsFromAPI = async () => {
-        try {
-            const res = await AgentAPI.remoteRequestGET(
-                "api/agent/getsmlversions"
-            );
-
-            this._smlVersions = res.data;
-        } catch (err) {
-            console.log(err);
-        }
-    };
-
-    GetModFromAPI = async (modReference) => {
-        try {
-            const res = await AgentAPI.remoteRequestGET(
-                `api/agent/mod/${modReference}`
-            );
-
-            return res.data;
-        } catch (err) {
-            throw err;
-        }
-    };
-
-    SendInstalledModList = async () => {
-        try {
-            await AgentAPI.remoteRequestPOST("api/agent/mods", {
-                mods: this._InstalledMods,
-            });
         } catch (err) {
             console.log(err);
         }
