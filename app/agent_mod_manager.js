@@ -12,6 +12,8 @@ const semver = require("semver");
 const axios = require("axios");
 const extractZip = require("extract-zip");
 
+const SFHandler = require("./agent_sf_handler");
+
 class InstalledMod {
     constructor(modReference, version, modPath) {
         this._modReference = modReference;
@@ -175,6 +177,12 @@ class AgentModManager {
         await this.GetAgentModState();
 
         if (JSON.stringify(oldModState) === JSON.stringify(this._ModState)) {
+            return;
+        }
+
+        const SFRunning = await SFHandler.isServerRunning();
+
+        if (SFRunning) {
             return;
         }
 
