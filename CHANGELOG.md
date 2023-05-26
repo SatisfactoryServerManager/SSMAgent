@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.17](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.16...v1.0.17) (2023-05-26)
+
+
+### Features
+
+* Check if server is running before mod install ([c0903b8](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/c0903b80766e19c41d1dd5b8b7547cc5a38b7e0b))
+
+
+### Bug Fixes
+
+* Error handling ([9185fb1](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/9185fb186e7e43eda625e23dbd17594423f0472e))
+
 ### [1.0.16](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.15...v1.0.16) (2023-05-23)
 
 
