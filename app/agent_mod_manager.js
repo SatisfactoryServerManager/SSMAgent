@@ -146,6 +146,8 @@ class AgentModManager {
                 selectedMod.installed = false;
             }
         }
+
+        Logger.info("[ModManager] - Compared Mod State successfully!");
     };
 
     TryInstallModsFromState = async () => {
@@ -191,6 +193,12 @@ class AgentModManager {
         await this.TryInstallModsFromState();
         await this.GetInstalledMods();
         await this.CompareModState();
+
+        const InstalledSML = this.GetInstalledVersion("SML");
+        if (InstalledSML) {
+            this._ModState.installedSMLVersion = InstalledSML.GetVersion();
+        }
+
         await this.SendModStateToAPI();
     };
 
