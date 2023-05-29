@@ -76,7 +76,7 @@ class AgentModManager {
         }
     };
 
-    GetInstalledMods = async () => {
+    GetInstalledMods = async (quiet = false) => {
         fs.ensureDirSync(this._ModsDir);
         fs.ensureDirSync(this._TempModsDir);
 
@@ -93,9 +93,11 @@ class AgentModManager {
             const modFolderPath = path.join(this._ModsDir, modFolder);
             const modUPlugin = path.join(modFolderPath, `${modFolder}.uplugin`);
             if (!fs.existsSync(modUPlugin)) {
-                Logger.warn(
-                    `[ModManager] - Skipping mod ${modFolder} - no UPlugin`
-                );
+                if (!quiet) {
+                    Logger.warn(
+                        `[ModManager] - Skipping mod ${modFolder} - no UPlugin`
+                    );
+                }
                 continue;
             }
 
@@ -105,9 +107,11 @@ class AgentModManager {
             } catch (err) {}
 
             if (uPluginJson.SemVersion != null) {
-                Logger.debug(
-                    `[ModManager] - Found Mod (${uPluginJson.FriendlyName}) with version (${uPluginJson.SemVersion})`
-                );
+                if (!quiet) {
+                    Logger.debug(
+                        `[ModManager] - Found Mod (${uPluginJson.FriendlyName}) with version (${uPluginJson.SemVersion})`
+                    );
+                }
 
                 const instalModObj = new InstalledMod(
                     modFolder,
@@ -172,6 +176,35 @@ class AgentModManager {
                 }
             }
         }
+
+        if (this._ModState.selectedMods.length == 0) {
+            await this.UninstallSML();
+        } else {
+            const InstalledSML = this.GetInstalledVersion("SML");
+
+            if (InstalledSML == null) {
+                let MaxSMLVersion = "0.0.0";
+
+                for (let i = 0; i < this._ModState.selectedMods.length; i++) {
+                    const selectedMod = this._ModState.selectedMods[i];
+
+                    const selectedVersion = selectedMod.mod.versions.find(
+                        (v) => v.version == selectedMod.desiredVersion
+                    );
+
+                    if (selectedVersion) {
+                        const smlversion = semver.coerce(
+                            selectedVersion.sml_version
+                        ).version;
+
+                        if (semver.gt(smlversion, MaxSMLVersion)) {
+                            MaxSMLVersion = smlversion;
+                        }
+                    }
+                }
+                await this.InstallSML(MaxSMLVersion, true);
+            }
+        }
     };
 
     Task_CompareModState = async () => {
@@ -197,6 +230,8 @@ class AgentModManager {
         const InstalledSML = this.GetInstalledVersion("SML");
         if (InstalledSML) {
             this._ModState.installedSMLVersion = InstalledSML.GetVersion();
+        } else {
+            this._ModState.installedSMLVersion = "0.0.0";
         }
 
         await this.SendModStateToAPI();
@@ -325,7 +360,7 @@ class AgentModManager {
         }
 
         try {
-            this.InstallSML(SelectedVersion.sml_version, force);
+            await this.InstallSML(SelectedVersion.sml_version, force);
         } catch (err) {
             console.log(err);
             throw err;
@@ -404,7 +439,19 @@ class AgentModManager {
         const Version = semver.coerce(RequestedSMLVersion);
         await this.DownloadSML(`v${Version}`);
 
-        await this.GetInstalledMods();
+        await this.GetInstalledMods(true);
+    };
+
+    UninstallSML = async () => {
+        const InstalledSML = this.GetInstalledVersion("SML");
+
+        if (InstalledSML) {
+            if (fs.existsSync(InstalledSML._modPath)) {
+                Logger.info(`[ModManager] - Uninstalling SML ...`);
+                rimraf.sync(InstalledSML._modPath);
+                Logger.info(`[ModManager] - Successfully Uninstalled SML`);
+            }
+        }
     };
 
     DownloadSML = async (Version) => {
