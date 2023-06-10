@@ -68,7 +68,7 @@ func StartSFServer() error {
 		return err
 	}
 
-	SF_PID = process.Pid
+	SF_PID = int32(process.Pid)
 
 	return nil
 }
