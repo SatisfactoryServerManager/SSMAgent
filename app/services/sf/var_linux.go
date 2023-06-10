@@ -8,6 +8,16 @@ var (
 	SubExeName = "UE4Server-Linux-Shipping"
 )
 
+import(
+	"os"
+	"log"
+	"fmt"
+	"path/filepath"
+	"syscall"
+
+	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
+)
+
 func StartSFServer() error {
 
 	SF_PID = GetSFPID()
@@ -41,8 +51,10 @@ func StartSFServer() error {
 	exeArgs := make([]string, 0)
 	exeArgs = append(exeArgs, GetStartArgs()...)
 
+	sfExe := filepath.Join(config.GetConfig().SFDir, ExeName)
+
 	//fmt.Println(exeArgs)
-	process, err := os.StartProcess(GetExeFilePath(), exeArgs, &attr)
+	process, err := os.StartProcess(sfExe, exeArgs, &attr)
 	if err != nil {
 		return err
 	}
