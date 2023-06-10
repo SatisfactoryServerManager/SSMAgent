@@ -3,19 +3,19 @@
 
 package sf
 
-var (
-	ExeName    = "FactoryServer.sh"
-	SubExeName = "UE4Server-Linux-Shipping"
-)
-
-import(
-	"os"
-	"log"
+import (
 	"fmt"
+	"log"
+	"os"
 	"path/filepath"
 	"syscall"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
+)
+
+var (
+	ExeName    = "FactoryServer.sh"
+	SubExeName = "UE4Server-Linux-Shipping"
 )
 
 func StartSFServer() error {
