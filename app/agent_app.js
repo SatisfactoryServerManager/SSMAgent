@@ -62,6 +62,7 @@ class AgentApp {
                     Logger.debug(
                         "[AGENT_APP] - Waiting for API Server to be online.."
                     );
+                    console.log(err);
                 }
             }, 2000);
         });
@@ -120,7 +121,8 @@ class AgentApp {
             await SteamCMD.run([], true);
             Logger.info("[AGENT_APP] - Successfully Initialized SteamCMD");
         } catch (err) {
-            Logger.error("[AGENT_APP] - Error Initializing SteamCMD");
+            Logger.error(`[AGENT_APP] - Error Initializing SteamCMD`);
+            Logger.error(err.message);
             console.log(err);
         }
     };

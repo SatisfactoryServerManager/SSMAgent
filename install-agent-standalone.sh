@@ -292,7 +292,7 @@ Group=ssm
 
 Type=simple
 WorkingDirectory=${INSTALL_DIR}
-ExecStart=${INSTALL_DIR}/SSMAgent -s -n ${AGENTNAME} -p ${PORTOFFSET} -u ${SSMURL} -a ${SSMAPIKEY}
+ExecStart=${INSTALL_DIR}/SSMAgent -name=${AGENTNAME} -p=${PORTOFFSET} -url=${SSMURL} -apikey=${SSMAPIKEY}
 TimeoutStopSec=20
 KillMode=process
 Restart=on-failure

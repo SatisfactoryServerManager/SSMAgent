@@ -1,8 +1,6 @@
 param(
     [String]$AGENTNAME="",
-    [String]$SERVERQUERYPORT="15777",
-    [String]$BEACONPORT="15000",
-    [String]$PORT="7777",
+    [Int32]$PORTOFFSET=0,
     [String]$SSMURL="",
     [String]$SSMAPIKEY="",
     [String]$MEMORY=1073741824
@@ -18,6 +16,10 @@ $isWorkstation = ($osInfo.ProductType -eq 1);
 $DOCKERTEST= docker ps -a -q -f name=$AGENTNAME
 $DOCKEREXISTS=![string]::IsNullOrWhiteSpace($DOCKERTEST)
 
+
+$SERVERQUERYPORT=15777 + $PORTOFFSET;
+$BEACONPORT = 15000 + $PORTOFFSET;
+$PORT = 7777 + $PORTOFFSET;
 
 if($SSMURL -eq ""){
     $SSMURL = Read-Host -Prompt 'Enter SSM Cloud URL [https://ssmcloud.hostxtra.co.uk]'
@@ -149,7 +151,7 @@ sleep -m 3000
 
 write-host "* Docker Installed"
 
-$DOCKER_IMG="mrhid6/ssmagent:next"
+$DOCKER_IMG="mrhid6/ssmagent:next-go"
 
 docker pull -q $DOCKER_IMG
 
@@ -158,6 +160,7 @@ if($DOCKEREXISTS -eq $True){
 }
 
 docker run -d `
+-e SSM_NAME="$($AGENTNAME)" `
 -e SSM_URL="$($SSMURL)" `
 -e SSM_APIKEY="$($SSMAPIKEY)" `
 -p "$($SERVERQUERYPORT):15777/udp" `
@@ -165,6 +168,7 @@ docker run -d `
 -p "$($PORT):7777/udp" `
 -v "C:\SSMAgent\$($AGENTNAME)\SSM:/home/ssm/SSMAgent" `
 -v "C:\SSMAgent\$($AGENTNAME)\.config:/home/ssm/.config/Epic/FactoryGame" `
+-v "C:\SSMAgent\$($AGENTNAME)\Data:/SSM/data" `
 -m $MEMORY `
 --name "$($AGENTNAME)" `
 --restart always `

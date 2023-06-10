@@ -9,7 +9,7 @@ const rimraf = require("rimraf");
 const fs = require("fs-extra");
 const path = require("path");
 const semver = require("semver");
-const axios = require("axios");
+const request = require("request");
 const extractZip = require("extract-zip");
 
 const SFHandler = require("./agent_sf_handler");
@@ -388,15 +388,18 @@ class AgentModManager {
                 Logger.info(
                     `[ModManager] - Downloading Mod (${modReference}) (${versionAsset})`
                 );
-                const responseStream = await axios.get(downloadUrl, {
-                    responseType: "stream",
-                });
 
                 const tempFileWriteStream = fs.createWriteStream(ZipFilePath);
 
-                responseStream.data.pipe(tempFileWriteStream);
-                await new Promise((resolve) => {
-                    tempFileWriteStream.on("finish", resolve);
+                const req = request(downloadUrl);
+                await new Promise((resolve, reject) => {
+                    req.pipe(tempFileWriteStream);
+                    req.on("error", (err) => {
+                        reject(err);
+                    });
+                    tempFileWriteStream.on("finish", function () {
+                        resolve();
+                    });
                 });
 
                 Logger.info(`[ModManager] - Downloaded Mod (${modReference})`);
@@ -469,20 +472,21 @@ class AgentModManager {
             rimraf.sync(SMLModPath);
         }
 
-        const DownloadURL = `https://github.com/satisfactorymodding/SatisfactoryModLoader/releases/download/${Version}/SML.zip`;
+        const downloadUrl = `https://github.com/satisfactorymodding/SatisfactoryModLoader/releases/download/${Version}/SML.zip`;
 
         try {
             if (!skipDownload) {
                 Logger.info(`[ModManager] - Downloading SML (${Version})`);
-                const responseStream = await axios.get(DownloadURL, {
-                    responseType: "stream",
-                });
-
                 const tempFileWriteStream = fs.createWriteStream(ZipFilePath);
-
-                responseStream.data.pipe(tempFileWriteStream);
-                await new Promise((resolve) => {
-                    tempFileWriteStream.on("finish", resolve);
+                const req = request(downloadUrl);
+                await new Promise((resolve, reject) => {
+                    req.pipe(tempFileWriteStream);
+                    req.on("error", (err) => {
+                        reject(err);
+                    });
+                    tempFileWriteStream.on("finish", function () {
+                        resolve();
+                    });
                 });
 
                 Logger.info(`[ModManager] - Downloaded SML (${Version})`);

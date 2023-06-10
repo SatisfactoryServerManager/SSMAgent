@@ -4,7 +4,6 @@ const rimraf = require("rimraf");
 const recursive = require("recursive-readdir");
 const Serializer = require("../utils/Serializer");
 const FormData = require("form-data");
-const axios = require("axios");
 
 const Config = require("./agent_config");
 const Logger = require("./agent_logger");
@@ -169,7 +168,9 @@ class AgentSaveManager {
                 "agent.ssmcloud.url"
             )}/api/agent/uploadsave`;
 
-            await axios.post(url, form, {
+            const res = await fetch(url, {
+                method: "POST",
+                body: form,
                 headers: {
                     "x-ssm-key": Config.get("agent.ssmcloud.apikey"),
                     ...form.getHeaders(),

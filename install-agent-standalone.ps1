@@ -140,7 +140,7 @@ if($SSM_Service -ne $null){
 }
 
 write-host "* Create SSM Service"
-& "$($INSTALL_DIR)\nssm.exe" "install" "$($SSM_SeriveName)" "$($INSTALL_DIR)\SSMAgent.exe" "-s -n $($AGENTNAME) -p $($PORTOFFSET) -u $($SSMURL) -a $($SSMAPIKEY)" | out-null
+& "$($INSTALL_DIR)\nssm.exe" "install" "$($SSM_SeriveName)" "$($INSTALL_DIR)\SSMAgent.exe" "-name=$($AGENTNAME) -p=$($PORTOFFSET) -url=$($SSMURL) -apikey=$($SSMAPIKEY)" | out-null
 & "$($INSTALL_DIR)\nssm.exe" "set" "$($SSM_SeriveName)" "AppDirectory" "$($INSTALL_DIR)" | out-null
 & "$($INSTALL_DIR)\nssm.exe" "set" "$($SSM_SeriveName)" "DisplayName" "SSMAgent_$($AGENTNAME)" | out-null
 & "$($INSTALL_DIR)\nssm.exe" "set" "$($SSM_SeriveName)" "Description" "Service for SSM Agent" | out-null

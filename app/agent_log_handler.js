@@ -6,7 +6,7 @@ const recursive = require("recursive-readdir");
 const es = require("event-stream");
 const rimraf = require("rimraf");
 const FormData = require("form-data");
-const axios = require("axios");
+const fetch = require("isomorphic-fetch");
 
 const Config = require("./agent_config");
 const logger = require("./agent_logger");
@@ -117,7 +117,9 @@ class SSM_Log_Handler {
         const url = `${Config.get("agent.ssmcloud.url")}/api/agent/uploadlog`;
 
         try {
-            await axios.post(url, form, {
+            const res = await fetch(url, {
+                method: "POST",
+                body: form,
                 headers: {
                     "x-ssm-key": Config.get("agent.ssmcloud.apikey"),
                     ...form.getHeaders(),

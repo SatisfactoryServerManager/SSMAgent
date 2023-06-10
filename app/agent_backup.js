@@ -5,7 +5,8 @@ const platform = process.platform;
 const recursive = require("recursive-readdir");
 const { rimraf, rimrafSync, native, nativeSync } = require("rimraf");
 const FormData = require("form-data");
-const axios = require("axios");
+
+const fetch = require("isomorphic-fetch");
 
 const { getDataHome, getHomeFolder } = require("platform-folders");
 
@@ -193,7 +194,9 @@ class BackupManager {
                 "agent.ssmcloud.url"
             )}/api/agent/uploadbackup`;
 
-            await axios.post(url, form, {
+            const res = await fetch(url, {
+                method: "POST",
+                body: form,
                 headers: {
                     "x-ssm-key": Config.get("agent.ssmcloud.apikey"),
                     ...form.getHeaders(),

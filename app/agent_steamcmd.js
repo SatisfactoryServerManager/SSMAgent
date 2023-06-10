@@ -1,8 +1,6 @@
 const fs = require("fs-extra");
 const path = require("path");
 const childProcess = require("child_process");
-const axios = require("axios");
-const stripAnsi = require("@electerm/strip-ansi").default;
 
 const { file } = require("tmp-promise");
 
@@ -20,6 +18,8 @@ const logger = require("./agent_logger");
 
 const Mrhid6Utils = require("mrhid6utils");
 const iLogger = Mrhid6Utils.Logger;
+
+const request = require("request");
 
 const yargs = require("yargs");
 
@@ -110,15 +110,17 @@ class AgentSteamCMD {
         logger.debug("[STEAM CMD] [DOWNLOAD] - TempFile: " + tempFile.path);
 
         try {
-            const responseStream = await axios.get(this.options.downloadUrl, {
-                responseType: "stream",
-            });
-
             const tempFileWriteStream = fs.createWriteStream(tempFile.path);
 
-            responseStream.data.pipe(tempFileWriteStream);
-            await new Promise((resolve) => {
-                tempFileWriteStream.on("finish", resolve);
+            const req = request(this.options.downloadUrl);
+            await new Promise((resolve, reject) => {
+                req.pipe(tempFileWriteStream);
+                req.on("error", (err) => {
+                    reject(err);
+                });
+                tempFileWriteStream.on("finish", function () {
+                    resolve();
+                });
             });
 
             logger.debug(
@@ -243,7 +245,7 @@ class AgentSteamCMD {
                 .replace(/\r\n/g, "\n")
                 .replace(/\r/, "")
                 .trim();
-            const line = `${stripAnsi(normalisedLine)}`;
+            const line = `${normalisedLine}`;
 
             if (shouldLog) {
                 SteamLogger.debug(line);
