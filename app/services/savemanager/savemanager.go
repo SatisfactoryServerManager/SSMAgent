@@ -37,6 +37,10 @@ type SaveSession struct {
 	SaveFiles   []SaveFile `json:"saveFiles"`
 }
 
+type HttpRequestBody_SaveInfo struct {
+	SaveDatas []SaveSession `json:"saveDatas"`
+}
+
 var (
 	_SaveSessions []SaveSession
 	_quit         = make(chan int)
@@ -223,10 +227,6 @@ func UploadSaveFile(filePath string) error {
 	return err
 }
 
-type HttpRequestBody_SaveInfo struct {
-	SaveDatas []SaveSession `json:"saveDatas"`
-}
-
 func UploadSaveInfo() {
 	var data = HttpRequestBody_SaveInfo{}
 	data.SaveDatas = _SaveSessions
@@ -237,4 +237,26 @@ func UploadSaveInfo() {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
+}
+
+func DownloadSaveFile(fileName string) error {
+
+	fileName = strings.Replace(fileName, "\"", "", -1)
+	fmt.Printf("Downloading Save File: %s\r\n", fileName)
+
+	saveDir, err := GetSaveDir()
+	if err != nil {
+		return err
+	}
+
+	newFilePath := filepath.Join(saveDir, filepath.Clean(fileName))
+
+	err = api.DownloadFile("/api/agent/saves/download/"+fileName, newFilePath)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Downloaded Save File to: %s\r\n", newFilePath)
+
+	return nil
 }

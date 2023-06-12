@@ -1,12 +1,14 @@
 package messagequeue
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/services/savemanager"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/sf"
 )
 
@@ -113,9 +115,14 @@ func ProcessMessageQueueItem(messageItem *MessageQueueItem) error {
 	case "killsfserver":
 		return sf.KillSFServer()
 	case "installsfserver":
-		return sf.InstallSFServer(true);
+		return sf.InstallSFServer(true)
 	case "updatesfserver":
-		return sf.UpdateSFServer();
+		return sf.UpdateSFServer()
+	case "downloadSave":
+		var objmap map[string]json.RawMessage
+		b, _ := json.Marshal(messageItem.Data)
+		json.Unmarshal(b, &objmap)
+		return savemanager.DownloadSaveFile(string(objmap["saveFile"]))
 	default:
 		return errors.New("unknown message queue action")
 	}
