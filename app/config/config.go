@@ -21,7 +21,6 @@ var (
 	ConfigFileName = "SSM.json"
 	ConfigFile     = ""
 	SSMHomeDir     = ""
-	PlatformFolder = "WindowsServer"
 )
 
 type Backup struct {
@@ -98,7 +97,7 @@ func LoadConfigFile() {
 
 func SetDefaultValues() {
 
-	_config.Version = "v0.0.24"
+	_config.Version = "v0.0.25"
 
 	if _config.HomeDir == "" {
 		_config.HomeDir = SSMHomeDir
