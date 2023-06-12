@@ -8,6 +8,7 @@ import (
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/services/backup"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/loghandler"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/messagequeue"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/savemanager"
@@ -63,6 +64,9 @@ func main() {
 		"savemanager": func(ctx context.Context) error {
 			return savemanager.ShutdownSaveManager()
 		},
+		"backupmanager": func(ctx context.Context) error {
+			return backup.ShutdownBackupManager()
+		},
 	})
 
 	config.GetConfig()
@@ -94,6 +98,7 @@ func main() {
 	go messagequeue.InitMessageQueue()
 	go loghandler.InitLogHandler()
 	go savemanager.InitSaveManager()
+	go backup.InitBackupManager()
 
 	<-wait
 

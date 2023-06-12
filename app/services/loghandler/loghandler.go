@@ -3,11 +3,12 @@ package loghandler
 import (
 	"fmt"
 	"log"
-	"path"
+	"path/filepath"
 	"time"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 )
 
 var (
@@ -45,7 +46,23 @@ func ShutdownLogHandler() error {
 func SendLogFiles() {
 	fmt.Println("Sending Log Files")
 
-	ssmlogfile := path.Join(config.GetConfig().LogDir, "SSMAgent-combined.log")
+	ssmlogfile := filepath.Join(config.GetConfig().LogDir, "SSMAgent-combined.log")
 
 	api.SendFile("/api/agent/uploadlog", ssmlogfile)
+
+	gamelogdir := filepath.Join(
+		config.GetConfig().SFDir,
+		"FactoryGame",
+		"Saved",
+		"Logs",
+	)
+
+	utils.CreateFolder(gamelogdir)
+
+	gamelogfile := filepath.Join(
+		gamelogdir,
+		"FactoryGame.log",
+	)
+
+	api.SendFile("/api/agent/uploadlog", gamelogfile)
 }

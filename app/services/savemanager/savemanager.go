@@ -71,6 +71,10 @@ func InitSaveManager() {
 	log.Println("Initialised Save Manager")
 }
 
+func GetSaveSessions() []SaveSession {
+	return _SaveSessions
+}
+
 func ShutdownSaveManager() error {
 	log.Println("Shutting down Save Manager")
 

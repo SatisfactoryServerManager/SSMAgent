@@ -45,6 +45,7 @@ type Config struct {
 	DataDir     string   `json:"datadir"`
 	SFDir       string   `json:"sfdir"`
 	LogDir      string   `json:"logdir"`
+	BackupDir   string   `json:"backupdir"`
 	SFConfigDir string   `json:"sfconfigdir"`
 	APIKey      string   `json:"apikey"`
 	URL         string   `json:"ssmurl"`
@@ -117,6 +118,10 @@ func SetDefaultValues() {
 	_config.DataDir = flag.Lookup("datadir").Value.(flag.Getter).Get().(string)
 	_config.DataDir, _ = filepath.Abs(_config.DataDir)
 	_config.SFDir = filepath.Join(_config.DataDir, "sfserver")
+
+	_config.BackupDir = filepath.Join(_config.DataDir, "backups")
+
+	utils.CreateFolder(_config.BackupDir)
 
 	_config.SFConfigDir = filepath.Join(
 		_config.SFDir,
