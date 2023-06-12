@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.24](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.23...v1.0.24) (2023-06-12)
+
+
+### Features
+
+* Backup manager implementation ([dc6c857](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/dc6c857563c33591ed6572a51092700508ee7cb9))
+* Download save file ([e9886e8](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/e9886e8953d22d47d14d9a38f092d4135dc8972d))
+* Poll config and update ini files ([b3e1afe](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/b3e1afe2f6daad4450a928c402151d73a7e9a28d))
+
 ### [1.0.23](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.22...v1.0.23) (2023-06-10)
 
 
