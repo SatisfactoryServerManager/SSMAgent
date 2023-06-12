@@ -16,4 +16,5 @@ require (
 	github.com/yhirose/go-peg v0.0.0-20210804202551-de25d6753cf1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	golang.org/x/sys v0.6.0 // indirect
+	gopkg.in/ini.v1 v1.67.0 // indirect
 )

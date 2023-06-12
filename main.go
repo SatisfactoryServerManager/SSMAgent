@@ -16,6 +16,8 @@ import (
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 )
 
+var _quit = make(chan int)
+
 func isFlagPassed(name string) bool {
 	found := false
 	flag.Visit(func(f *flag.Flag) {
@@ -45,7 +47,9 @@ func main() {
 
 	wait := gracefulShutdown(context.Background(), 30*time.Second, map[string]operation{
 		"main": func(ctx context.Context) error {
-			return MarkAgentOffline()
+			MarkAgentOffline()
+			_quit <- 0
+			return nil
 		},
 		"sf": func(ctx context.Context) error {
 			return sf.ShutdownSFHandler()
@@ -66,8 +70,23 @@ func main() {
 	err := TestSSMCloudAPI()
 	utils.CheckError(err)
 
-	err = MarkAgentOnline()
-	utils.CheckError(err)
+	MarkAgentOnline()
+
+	SendConfig()
+	GetConfigFromAPI()
+
+	ticker := time.NewTicker(20 * time.Second)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				GetConfigFromAPI()
+			case <-_quit:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
 
 	steamcmd.InitSteamCMD()
 	sf.InitSFHandler()
@@ -96,23 +115,60 @@ func TestSSMCloudAPI() error {
 
 }
 
-func MarkAgentOnline() error {
+func MarkAgentOnline() {
 	bodyData := api.HttpRequestBody_ActiveState{}
 	bodyData.Active = true
 
 	var resData interface{}
 
 	err := api.SendPostRequest("/api/agent/activestate", &bodyData, &resData)
-
-	return err
+	utils.CheckError(err)
 }
 
-func MarkAgentOffline() error {
+func MarkAgentOffline() {
 	var body api.HttpRequestBody_ActiveState
 	body.Active = false
 
 	var resData interface{}
 
 	err := api.SendPostRequest("/api/agent/activestate", body, &resData)
-	return err
+	utils.CheckError(err)
+}
+
+func SendConfig() {
+
+	ip := api.GetPublicIP()
+
+	var req = api.HTTPRequestBody_Config{
+		Version:     config.GetConfig().Version,
+		SFInstalled: config.GetConfig().SF.InstalledVer,
+		SFAvailable: config.GetConfig().SF.AvilableVer,
+		IP:          ip,
+	}
+
+	var resData interface{}
+	err := api.SendPostRequest("/api/agent/config", req, &resData)
+
+	utils.CheckError(err)
+}
+
+func GetConfigFromAPI() {
+	var resData = api.HttpResponseBody_Config{}
+	err := api.SendGetRequest("/api/agent/config", &resData)
+
+	if err != nil {
+		return
+	}
+
+	config.GetConfig().SF.MaxPlayers = resData.MaxPlayers
+	config.GetConfig().SF.WorkerThreads = resData.WorkerThreads
+	config.GetConfig().SF.SFBranch = resData.SFBranch
+	config.GetConfig().Backup.Interval = resData.Backup.Interval
+	config.GetConfig().Backup.Keep = resData.Backup.Keep
+	config.GetConfig().SF.UpdateSFOnStart = resData.UpdateOnStart
+
+	config.SaveConfig()
+
+	config.UpdateIniFiles()
+
 }

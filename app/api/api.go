@@ -34,6 +34,27 @@ type HttpRequestBody_SFState struct {
 	Running   bool `json:"running"`
 }
 
+type HTTPRequestBody_Config struct {
+	Version     string `json:"version"`
+	SFInstalled int    `json:"sfinstalledver"`
+	SFAvailable int    `json:"sfavailablever"`
+	IP          string `json:"ipaddress"`
+}
+
+type HttpResponseBody_Backup struct {
+	Interval   int `json:"interval"`
+	Keep       int `json:"keep"`
+	NextBackup int `json:"nextbackup"`
+}
+
+type HttpResponseBody_Config struct {
+	SFBranch      string                  `json:"sfBranch"`
+	WorkerThreads int                     `json:"workerThreads"`
+	MaxPlayers    int                     `json:"maxPlayers"`
+	UpdateOnStart bool                    `json:"checkForUpdatesOnStart"`
+	Backup        HttpResponseBody_Backup `json:"backup"`
+}
+
 func SendGetRequest(endpoint string, returnModel interface{}) error {
 
 	if _client == nil {
@@ -148,7 +169,12 @@ func SendFile(endpoint string, filepath string) error {
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req.Header.Set("x-ssm-key", config.GetConfig().APIKey)
 
-	rsp, _ := _client.Do(req)
+	rsp, err := _client.Do(req)
+
+	if err != nil {
+		return err
+	}
+
 	if rsp.StatusCode != http.StatusOK {
 		return errors.New("request failed with response code: " + strconv.Itoa(rsp.StatusCode))
 	}
@@ -162,4 +188,26 @@ func SendFile(endpoint string, filepath string) error {
 	}
 
 	return nil
+}
+
+type IP struct {
+	Query string
+}
+
+func GetPublicIP() string {
+	req, err := http.Get("http://ip-api.com/json/")
+	if err != nil {
+		return err.Error()
+	}
+	defer req.Body.Close()
+
+	body, err := io.ReadAll(req.Body)
+	if err != nil {
+		return err.Error()
+	}
+
+	var ip IP
+	json.Unmarshal(body, &ip)
+
+	return ip.Query
 }

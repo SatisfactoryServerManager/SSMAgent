@@ -8,7 +8,6 @@ import (
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
-	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 )
 
 var (
@@ -48,8 +47,5 @@ func SendLogFiles() {
 
 	ssmlogfile := path.Join(config.GetConfig().LogDir, "SSMAgent-combined.log")
 
-	err := api.SendFile("/api/agent/uploadlog", ssmlogfile)
-	if err != nil {
-		utils.CheckError(err)
-	}
+	api.SendFile("/api/agent/uploadlog", ssmlogfile)
 }
