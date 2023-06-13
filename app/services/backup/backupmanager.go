@@ -129,6 +129,10 @@ func CreateBackupFile() error {
 
 func AddFileToZipZile(zipWriter *zip.Writer, filePath string, destPath string) error {
 
+	if !utils.CheckFileExists(filePath) {
+		return nil
+	}
+
 	fmt.Printf("Adding File: %s\r\n", filePath)
 	f1, err := os.Open(filePath)
 	if err != nil {
