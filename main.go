@@ -11,6 +11,7 @@ import (
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/backup"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/loghandler"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/messagequeue"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/services/mod"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/savemanager"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/sf"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/steamcmd"
@@ -99,6 +100,7 @@ func main() {
 	go loghandler.InitLogHandler()
 	go savemanager.InitSaveManager()
 	go backup.InitBackupManager()
+	go mod.InitModManager()
 
 	<-wait
 
