@@ -47,11 +47,6 @@ func main() {
 	}
 
 	wait := gracefulShutdown(context.Background(), 30*time.Second, map[string]operation{
-		"main": func(ctx context.Context) error {
-			MarkAgentOffline()
-			_quit <- 0
-			return nil
-		},
 		"sf": func(ctx context.Context) error {
 			return sf.ShutdownSFHandler()
 		},
@@ -66,6 +61,11 @@ func main() {
 		},
 		"backupmanager": func(ctx context.Context) error {
 			return backup.ShutdownBackupManager()
+		},
+		"main": func(ctx context.Context) error {
+			_quit <- 0
+			MarkAgentOffline()
+			return nil
 		},
 	})
 

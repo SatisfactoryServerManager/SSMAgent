@@ -3,6 +3,7 @@ package loghandler
 import (
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -13,6 +14,8 @@ import (
 
 var (
 	_quit = make(chan int)
+
+	FactoryGameLogTime time.Time
 )
 
 func InitLogHandler() {
@@ -48,7 +51,9 @@ func SendLogFiles() {
 
 	ssmlogfile := filepath.Join(config.GetConfig().LogDir, "SSMAgent-combined.log")
 
-	api.SendFile("/api/agent/uploadlog", ssmlogfile)
+	if utils.CheckFileExists(ssmlogfile) {
+		api.SendFile("/api/agent/uploadlog", ssmlogfile)
+	}
 
 	gamelogdir := filepath.Join(
 		config.GetConfig().SFDir,
@@ -64,5 +69,17 @@ func SendLogFiles() {
 		"FactoryGame.log",
 	)
 
-	api.SendFile("/api/agent/uploadlog", gamelogfile)
+	if utils.CheckFileExists(gamelogfile) {
+
+		stats, err := os.Stat(gamelogfile)
+
+		if err != nil {
+			return
+		}
+
+		if stats.ModTime().After(FactoryGameLogTime) {
+			api.SendFile("/api/agent/uploadlog", gamelogfile)
+			FactoryGameLogTime = stats.ModTime()
+		}
+	}
 }
