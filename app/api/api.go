@@ -218,7 +218,33 @@ func DownloadFile(endpoint string, filePath string) error {
 	// Write the body to file
 	_, err = io.Copy(out, r.Body)
 	return err
+}
 
+func DownloadNonSSMFile(url string, filePath string) error {
+	if _client == nil {
+		_client = http.DefaultClient
+	}
+
+	fmt.Printf("#### DOWNLOAD #### url: %s\r\n", url)
+
+	req, _ := http.NewRequest("GET", url, nil)
+
+	r, err := _client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer r.Body.Close()
+
+	// Create the file
+	out, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	// Write the body to file
+	_, err = io.Copy(out, r.Body)
+	return err
 }
 
 type IP struct {

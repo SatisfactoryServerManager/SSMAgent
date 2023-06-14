@@ -88,7 +88,7 @@ func GetSaveFiles() {
 	saveDir, err := GetSaveDir()
 	utils.CheckError(err)
 
-	fmt.Printf("Finding Save Files in: %s", saveDir)
+	fmt.Printf("Finding Save Files in: %s\r\n", saveDir)
 
 	files, err := os.ReadDir(saveDir)
 	if err != nil {

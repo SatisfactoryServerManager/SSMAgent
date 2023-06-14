@@ -1,6 +1,3 @@
-//go:build windows
-// +build windows
-
 package sf
 
 import (
@@ -9,11 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
-)
-
-var (
-	ExeName    = "FactoryServer.exe"
-	SubExeName = "UE4Server-Win64-Shipping.exe"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/vars"
 )
 
 func StartSFServer() error {
@@ -26,7 +19,7 @@ func StartSFServer() error {
 	}
 
 	log.Println("Starting SF Server..")
-	sfExe := filepath.Join(config.GetConfig().SFDir, ExeName)
+	sfExe := filepath.Join(config.GetConfig().SFDir, vars.ExeName)
 
 	cmd := exec.Command(sfExe, GetStartArgs()...)
 

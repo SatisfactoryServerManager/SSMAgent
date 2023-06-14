@@ -15,12 +15,6 @@ import (
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 )
 
-var (
-	DownloadURL = "https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip"
-	ExeName     = "steamcmd.exe"
-	Extension   = "zip"
-)
-
 func ExtractArchive(file *os.File) error {
 	log.Println("Extracting Steam CMD...")
 	defer os.Remove(file.Name())

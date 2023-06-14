@@ -1,5 +1,4 @@
 //go:build linux
-// +build linux
 
 package steamcmd
 
@@ -12,12 +11,8 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-)
 
-var (
-	DownloadURL = "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz"
-	ExeName     = "steamcmd.sh"
-	Extension   = "tar.gz"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/vars"
 )
 
 func ExtractArchive(file *os.File) error {

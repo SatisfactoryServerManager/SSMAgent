@@ -1,5 +1,4 @@
 //go:build linux
-// +build linux
 
 package sf
 
@@ -11,11 +10,7 @@ import (
 	"syscall"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
-)
-
-var (
-	ExeName    = "FactoryServer.sh"
-	SubExeName = "UE4Server-Linux-Shipping"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/vars"
 )
 
 func StartSFServer() error {
@@ -51,7 +46,7 @@ func StartSFServer() error {
 	exeArgs := make([]string, 0)
 	exeArgs = append(exeArgs, GetStartArgs()...)
 
-	sfExe := filepath.Join(config.GetConfig().SFDir, ExeName)
+	sfExe := filepath.Join(config.GetConfig().SFDir, vars.ExeName)
 
 	//fmt.Println(exeArgs)
 	process, err := os.StartProcess(sfExe, exeArgs, &attr)

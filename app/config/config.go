@@ -46,6 +46,7 @@ type Config struct {
 	LogDir      string   `json:"logdir"`
 	BackupDir   string   `json:"backupdir"`
 	SFConfigDir string   `json:"sfconfigdir"`
+	ModsDir     string   `json:"sfmodsdir"`
 	APIKey      string   `json:"apikey"`
 	URL         string   `json:"ssmurl"`
 	SF          SFConfig `json:"sf"`
@@ -120,7 +121,10 @@ func SetDefaultValues() {
 
 	_config.BackupDir = filepath.Join(_config.DataDir, "backups")
 
+	_config.ModsDir = filepath.Join(_config.SFDir, "FactoryGame", "Mods")
+
 	utils.CreateFolder(_config.BackupDir)
+	utils.CreateFolder(_config.ModsDir)
 
 	_config.SFConfigDir = filepath.Join(
 		_config.SFDir,
@@ -210,7 +214,7 @@ func UpdateIniFiles() {
 
 	cfg, err := ini.Load(EngineFilePath)
 	if err != nil {
-		fmt.Printf("Fail to read file: %v", err)
+		fmt.Printf("Fail to read file: %v\r\n", err)
 		return
 	}
 
@@ -231,7 +235,7 @@ func UpdateIniFiles() {
 
 	cfg, err = ini.Load(GameFilePath)
 	if err != nil {
-		fmt.Printf("Fail to read file: %v", err)
+		fmt.Printf("Fail to read file: %v\r\n", err)
 		return
 	}
 

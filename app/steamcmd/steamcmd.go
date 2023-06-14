@@ -15,6 +15,7 @@ import (
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/vars"
 )
 
 var (
@@ -40,21 +41,21 @@ func InitSteamCMD() {
 
 func DownloadSteamCMD() error {
 
-	steamExe := filepath.Join(SteamDir, ExeName)
+	steamExe := filepath.Join(SteamDir, vars.SteamExeName)
 
 	_, err := os.Stat(steamExe)
 	if !os.IsNotExist(err) {
 		return nil
 	}
 
-	file, err := os.CreateTemp(os.TempDir(), "ssm_temp_*."+Extension)
+	file, err := os.CreateTemp(os.TempDir(), "ssm_temp_*."+vars.Extension)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	log.Printf("Downloading Steam CMD to: %s\r\n", file.Name())
 
-	resp, err := http.Get(DownloadURL)
+	resp, err := http.Get(vars.DownloadURL)
 	if err != nil {
 		return err
 	}
@@ -77,12 +78,9 @@ func DownloadSteamCMD() error {
 }
 
 func IsInstalled() bool {
-	steamExe := filepath.Join(SteamDir, ExeName)
+	steamExe := filepath.Join(SteamDir, vars.SteamExeName)
 	_, err := os.Stat(steamExe)
-	if !os.IsNotExist(err) {
-		return true
-	}
-	return false
+	return !os.IsNotExist(err)
 }
 
 func BuildScriptFile(commands []string) string {
@@ -119,7 +117,7 @@ func BuildScriptFile(commands []string) string {
 }
 
 func Run(commands []string) (string, error) {
-	steamExe := filepath.Join(SteamDir, ExeName)
+	steamExe := filepath.Join(SteamDir, vars.SteamExeName)
 
 	tempFilePath := BuildScriptFile(commands)
 
@@ -193,11 +191,6 @@ func appInfoFormat(appInfo string) (string, error) {
 
 	// Return the parsed result
 	return string(result), nil
-}
-
-func isJSONString(s string) bool {
-	var js string
-	return json.Unmarshal([]byte(s), &js) == nil
 }
 
 func isJSON(s string) bool {

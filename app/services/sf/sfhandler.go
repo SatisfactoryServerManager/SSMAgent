@@ -14,6 +14,7 @@ import (
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/steamcmd"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/vars"
 	"github.com/buger/jsonparser"
 	"github.com/shirou/gopsutil/process"
 )
@@ -249,7 +250,7 @@ func IsRunning() bool {
 }
 
 func IsInstalled() bool {
-	sfExe := filepath.Join(config.GetConfig().SFDir, ExeName)
+	sfExe := filepath.Join(config.GetConfig().SFDir, vars.ExeName)
 	_, err := os.Stat(sfExe)
 	return !os.IsNotExist(err)
 }

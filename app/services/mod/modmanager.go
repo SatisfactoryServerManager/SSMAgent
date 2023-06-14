@@ -1,15 +1,29 @@
 package mod
 
 import (
+	"archive/zip"
+	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"log"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/services/sf"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/vars"
+	"golang.org/x/mod/semver"
 )
 
 type ModState struct {
 	ID                  string        `json:"_id"`
 	InstalledSMLVersion string        `json:"installedSMLVersion"`
+	SMLInstalled        bool          `json:"smlInstalled"`
 	SelectedMods        []SelectedMod `json:"selectedMods"`
 }
 
@@ -42,21 +56,109 @@ type ModVersionTarget struct {
 	Link       string `json:"link"`
 }
 
-var _ModState ModState
+type InstalledMod struct {
+	ModReference   string
+	ModPath        string
+	ModDisplayName string `json:"FriendlyName"`
+	ModUPluginPath string
+	ModVersion     string `json:"SemVersion"`
+}
+
+var (
+	_ModState      ModState
+	_InstalledMods []InstalledMod
+	_ModCachePath  string
+)
 
 func InitModManager() {
 
 	log.Println("Initialising Mod Manager...")
-	FindInstalledMods()
+
+	_ModCachePath = filepath.Join(config.GetConfig().DataDir, "modcache")
+	utils.CreateFolder(_ModCachePath)
+
 	GetModState()
 	log.Println("Initialised Mod Manager")
 }
 
 func FindInstalledMods() {
+	fmt.Printf("Finding Mods in: %s\r\n", config.GetConfig().ModsDir)
 
+	files, err := os.ReadDir(config.GetConfig().ModsDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_InstalledMods = make([]InstalledMod, 0)
+
+	for _, file := range files {
+		if !file.IsDir() {
+			continue
+		}
+
+		modName := file.Name()
+		modPath := filepath.Join(config.GetConfig().ModsDir, modName)
+		UPluginPath := filepath.Join(modPath, modName+".uplugin")
+
+		if !utils.CheckFileExists(UPluginPath) {
+			continue
+		}
+
+		fmt.Printf("Found Mod (%s) at %s\r\n", modName, modPath)
+
+		var newInstalledMod = InstalledMod{
+			ModReference:   modName,
+			ModPath:        modPath,
+			ModUPluginPath: UPluginPath,
+		}
+
+		file, _ := os.ReadFile(UPluginPath)
+		_ = json.Unmarshal([]byte(file), &newInstalledMod)
+
+		_InstalledMods = append(_InstalledMods, newInstalledMod)
+	}
+
+	fmt.Println(_InstalledMods)
+}
+
+func GetInstalledMod(modReference string) *InstalledMod {
+
+	for idx := range _InstalledMods {
+		mod := &_InstalledMods[idx]
+
+		if mod.ModReference == modReference {
+			return mod
+		}
+	}
+
+	return nil
+}
+
+func IsModInstalled(modReference string) bool {
+	return GetInstalledMod(modReference) != nil
+}
+
+func DoesInstalledModMeetVersion(modReference string, version string) bool {
+
+	mod := GetInstalledMod(modReference)
+
+	if mod == nil {
+		return false
+	}
+
+	installedVersion := "v" + mod.ModVersion
+	desiredVersion := "v" + version
+
+	versionDiff := semver.Compare(installedVersion, desiredVersion)
+
+	// fmt.Printf("mod Ref: %s, version dif %d\r\n", modReference, versionDiff)
+	// fmt.Printf("installed ver: %s, version %s\r\n", installedVersion, desiredVersion)
+	return versionDiff == 0
 }
 
 func GetModState() {
+
+	FindInstalledMods()
 
 	err := api.SendGetRequest("/api/agent/modstate", &_ModState)
 	if err != nil {
@@ -64,11 +166,179 @@ func GetModState() {
 		return
 	}
 
-	fmt.Println(_ModState)
-
 	ProcessModState()
+
+	stateJson, _ := json.Marshal(_ModState)
+
+	fmt.Println(bytes.NewBuffer(stateJson))
 }
 
 func ProcessModState() {
 
+	for idx := range _ModState.SelectedMods {
+		selectedMod := &_ModState.SelectedMods[idx]
+
+		if !IsModInstalled(selectedMod.Mod.ModReference) {
+			selectedMod.Installed = false
+			continue
+		}
+
+		if !DoesInstalledModMeetVersion(selectedMod.Mod.ModReference, selectedMod.DesiredVersion) {
+			selectedMod.Installed = false
+			continue
+		}
+
+		selectedMod.Installed = true
+
+	}
+
+	SMLMod := GetInstalledMod("SML")
+
+	if SMLMod != nil {
+		_ModState.SMLInstalled = true
+		_ModState.InstalledSMLVersion = SMLMod.ModVersion
+	} else {
+		_ModState.SMLInstalled = false
+		_ModState.InstalledSMLVersion = "0.0.0"
+	}
+
+	InstallAllMods()
+}
+
+func InstallAllMods() {
+
+	if sf.IsRunning() {
+		return
+	}
+
+	for idx := range _ModState.SelectedMods {
+		selectedMod := &_ModState.SelectedMods[idx]
+
+		if selectedMod.Installed {
+			continue
+		}
+
+		var modVersion ModVersion
+
+		for _, mv := range selectedMod.Mod.Versions {
+			versiondiff := semver.Compare(selectedMod.DesiredVersion, mv.Version)
+
+			if versiondiff == 0 {
+				modVersion = mv
+			}
+		}
+
+		if len(modVersion.Targets) == 0 {
+			continue
+		}
+
+		err := DownloadMod(selectedMod.Mod.ModReference, modVersion)
+
+		if err != nil {
+			log.Printf("Failed to download mod (%s)\r\n", selectedMod.Mod.ModReference)
+			continue
+		}
+
+		log.Printf("Downloaded mod (%s)\r\n", selectedMod.Mod.ModReference)
+
+		ModFileName := selectedMod.Mod.ModReference + "." + modVersion.Version + ".zip"
+		DownloadedModFilePath := filepath.Join(_ModCachePath, ModFileName)
+
+		modFile, err := os.Open(DownloadedModFilePath)
+
+		if err != nil {
+			continue
+		}
+		modPath := filepath.Join(config.GetConfig().ModsDir, selectedMod.Mod.ModReference)
+
+		ExtractArchive(modFile, modPath)
+	}
+
+	FindInstalledMods()
+}
+
+func DownloadMod(modReference string, modVersion ModVersion) error {
+
+	ModFileName := modReference + "." + modVersion.Version + ".zip"
+	DownloadedModFilePath := filepath.Join(_ModCachePath, ModFileName)
+
+	if utils.CheckFileExists(DownloadedModFilePath) {
+		return nil
+	}
+
+	var versionTarget ModVersionTarget
+
+	for _, vt := range modVersion.Targets {
+		if vt.TargetName == vars.ModPlatform {
+			versionTarget = vt
+		}
+	}
+
+	if versionTarget.Link == "" {
+		return errors.New("mod version has no link")
+	}
+
+	url := "https://ficsit-api.mircearoata.duckdns.org" + versionTarget.Link
+
+	err := api.DownloadNonSSMFile(url, DownloadedModFilePath)
+
+	return err
+}
+
+func ExtractArchive(file *os.File, modDirectory string) error {
+	log.Printf("Extracting Mod (%s) ...\r\n", file.Name())
+
+	archive, err := zip.OpenReader(file.Name())
+	if err != nil {
+		return err
+	}
+	defer archive.Close()
+
+	if utils.CheckFileExists(modDirectory) {
+		os.RemoveAll(modDirectory)
+	}
+
+	for _, f := range archive.File {
+		filePath := filepath.Join(modDirectory, f.Name)
+		fmt.Println("unzipping file ", filePath)
+
+		if !strings.HasPrefix(filePath, filepath.Clean(modDirectory)+string(os.PathSeparator)) {
+			return nil
+		}
+		if f.FileInfo().IsDir() {
+			os.MkdirAll(filePath, os.ModePerm)
+			continue
+		}
+
+		if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+			return err
+		}
+
+		dstFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+		if err != nil {
+			return err
+		}
+
+		fileInArchive, err := f.Open()
+		if err != nil {
+			return err
+		}
+
+		if _, err := io.Copy(dstFile, fileInArchive); err != nil {
+			return err
+		}
+
+		dstFile.Close()
+		fileInArchive.Close()
+	}
+
+	err = file.Close()
+	utils.CheckError(err)
+
+	err = archive.Close()
+	utils.CheckError(err)
+
+	log.Printf("Extracted Mod (%s)\r\n", file.Name())
+
+	return nil
 }
