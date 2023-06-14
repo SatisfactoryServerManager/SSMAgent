@@ -203,6 +203,7 @@ func ProcessModState() {
 	}
 
 	InstallAllMods()
+	InstallSML()
 }
 
 func InstallAllMods() {
@@ -341,4 +342,33 @@ func ExtractArchive(file *os.File, modDirectory string) error {
 	log.Printf("Extracted Mod (%s)\r\n", file.Name())
 
 	return nil
+}
+
+func InstallSML() {
+
+	var MaxSMLVersion = "v0.0.0"
+
+	for idx := range _ModState.SelectedMods {
+		selectedMod := &_ModState.SelectedMods[idx]
+
+		desiredVer := "v" + selectedMod.DesiredVersion
+		for _, mv := range selectedMod.Mod.Versions {
+
+			mvVersion := "v" + mv.Version
+
+			verdiff := semver.Compare(mvVersion, desiredVer)
+
+			if verdiff == 0 {
+				smlver := "v" + strings.Replace(mv.SMLVersion, "^", "", -1)
+
+				if semver.Compare(smlver, MaxSMLVersion) > 0 {
+					MaxSMLVersion = smlver
+				}
+			}
+
+		}
+	}
+
+	fmt.Printf("Found Max SML Version: %s\r\n", MaxSMLVersion)
+
 }
