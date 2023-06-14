@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.26](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.25...v1.0.26) (2023-06-14)
+
+
+### Features
+
+* Check file before adding to backup zip ([77b2903](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/77b2903dd015356a9179f581e81b5596ce9aa1e6))
+* Install SML ([f1ef3e8](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/f1ef3e8ef1df8848663729967d82d8f1232d37a1))
+* Mod installation process ([07ed01f](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/07ed01f65d69baa6da035245bf79e92ae337f30c))
+* Started work on mod manager ([4cfb140](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/4cfb1401c42923bf2c7d1321861c818f64043218))
+
+
+### Performance
+
+* Optimized sending log file to api ([357ca0c](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/357ca0c478919e16aa730ffc74cb6890f808f9d7))
+
 ### [1.0.25](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.24...v1.0.25) (2023-06-12)
 
 ### [1.0.24](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.23...v1.0.24) (2023-06-12)
