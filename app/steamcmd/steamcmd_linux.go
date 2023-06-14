@@ -11,8 +11,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-
-	"github.com/SatisfactoryServerManager/SSMAgent/app/vars"
 )
 
 func ExtractArchive(file *os.File) error {
