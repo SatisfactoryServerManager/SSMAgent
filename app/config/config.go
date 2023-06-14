@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/vars"
 	"gopkg.in/ini.v1"
 )
 
@@ -131,7 +132,7 @@ func SetDefaultValues() {
 		"FactoryGame",
 		"Saved",
 		"Config",
-		PlatformFolder)
+		vars.PlatformFolder)
 
 	utils.CreateFolder(_config.SFConfigDir)
 

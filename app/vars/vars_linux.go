@@ -1,11 +1,10 @@
-// +build:linux
-
 package vars
 
 var (
 	// SF
-	ExeName    = "FactoryServer.sh"
-	SubExeName = "UE4Server-Linux-Shipping"
+	ExeName        = "FactoryServer.sh"
+	SubExeName     = "UE4Server-Linux-Shipping"
+	PlatformFolder = "LinuxServer"
 
 	//Mods
 	ModPlatform = "LinuxServer"
