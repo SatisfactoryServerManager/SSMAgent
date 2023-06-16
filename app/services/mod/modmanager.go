@@ -2,7 +2,6 @@ package mod
 
 import (
 	"archive/zip"
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
@@ -28,6 +28,7 @@ type ModState struct {
 }
 
 type SelectedMod struct {
+	ID               string `json:"_id"`
 	Mod              Mod    `json:"mod"`
 	DesiredVersion   string `json:"desiredVersion"`
 	InstalledVersion string `json:"installedVersion"`
@@ -68,6 +69,7 @@ var (
 	_ModState      ModState
 	_InstalledMods []InstalledMod
 	_ModCachePath  string
+	_quit          = make(chan int)
 )
 
 func InitModManager() {
@@ -79,6 +81,27 @@ func InitModManager() {
 
 	GetModState()
 	log.Println("Initialised Mod Manager")
+
+	ticker := time.NewTicker(30 * time.Second)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				GetModState()
+			case <-_quit:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+}
+
+func ShutdownModManager() error {
+	log.Println("Shutting Down Mod Manager...")
+	_quit <- 0
+	log.Println("Shutdown Mod Manager")
+
+	return nil
 }
 
 func FindInstalledMods() {
@@ -118,7 +141,6 @@ func FindInstalledMods() {
 		_InstalledMods = append(_InstalledMods, newInstalledMod)
 	}
 
-	fmt.Println(_InstalledMods)
 }
 
 func GetInstalledMod(modReference string) *InstalledMod {
@@ -167,10 +189,7 @@ func GetModState() {
 	}
 
 	ProcessModState()
-
-	stateJson, _ := json.Marshal(_ModState)
-
-	fmt.Println(bytes.NewBuffer(stateJson))
+	SendModState()
 }
 
 func ProcessModState() {
@@ -188,7 +207,10 @@ func ProcessModState() {
 			continue
 		}
 
+		mod := GetInstalledMod(selectedMod.Mod.ModReference)
+
 		selectedMod.Installed = true
+		selectedMod.InstalledVersion = mod.ModVersion
 
 	}
 
@@ -370,5 +392,68 @@ func InstallSML() {
 	}
 
 	fmt.Printf("Found Max SML Version: %s\r\n", MaxSMLVersion)
+
+	installedSMLVersion := "v" + _ModState.InstalledSMLVersion
+
+	verDiff := semver.Compare(installedSMLVersion, MaxSMLVersion)
+
+	fmt.Printf("SML Version %s,%s\r\n", installedSMLVersion, MaxSMLVersion)
+
+	if verDiff == 0 {
+		return
+	}
+
+	MaxSMLVersion = strings.Replace(MaxSMLVersion, "v", "", -1)
+
+	err := DownloadSML(MaxSMLVersion)
+
+	if err != nil {
+		log.Printf("[Error] - Couldn't Download SML error: %s\r\n", err.Error())
+		_ModState.InstalledSMLVersion = "0.0.0"
+		return
+	}
+
+	ModFileName := "SML." + MaxSMLVersion + ".zip"
+	DownloadedModFilePath := filepath.Join(_ModCachePath, ModFileName)
+
+	modFile, err := os.Open(DownloadedModFilePath)
+
+	if err != nil {
+		return
+	}
+	modPath := filepath.Join(config.GetConfig().ModsDir, "SML")
+
+	err = ExtractArchive(modFile, modPath)
+	if err != nil {
+		log.Printf("[Error] - Couldn't Extract SML error: %s\r\n", err.Error())
+		_ModState.InstalledSMLVersion = "0.0.0"
+		return
+	}
+
+	_ModState.InstalledSMLVersion = MaxSMLVersion
+}
+
+func DownloadSML(smlVersion string) error {
+
+	ModFileName := "SML." + smlVersion + ".zip"
+	DownloadedModFilePath := filepath.Join(_ModCachePath, ModFileName)
+
+	if utils.CheckFileExists(DownloadedModFilePath) {
+		return nil
+	}
+
+	url := "https://github.com/satisfactorymodding/SatisfactoryModLoader/releases/download/v" + smlVersion + "/SML.zip"
+
+	err := api.DownloadNonSSMFile(url, DownloadedModFilePath)
+
+	return err
+}
+
+func SendModState() error {
+
+	var resData interface{}
+
+	err := api.SendPostRequest("/api/agent/modstate", _ModState, resData)
+	return err
 
 }

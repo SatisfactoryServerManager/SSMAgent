@@ -63,6 +63,9 @@ func main() {
 		"backupmanager": func(ctx context.Context) error {
 			return backup.ShutdownBackupManager()
 		},
+		"modmanager": func(ctx context.Context) error {
+			return mod.ShutdownModManager()
+		},
 		"main": func(ctx context.Context) error {
 			_quit <- 0
 			MarkAgentOffline()
