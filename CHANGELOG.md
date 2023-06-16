@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.29](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.28...v1.0.29) (2023-06-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* Removed JS dependencies
+* Removed all JS source code
+
+### Features
+
+* Cleanup build tags ([c3b2db6](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/c3b2db69466f849e01ef065b64a30c86a4e8a26a))
+* Removed all JS source code ([4de4766](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/4de4766f492941b7a399280daa5f8d2654cc3da4))
+* Removed JS dependencies ([f8fbb2c](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/f8fbb2c6d076710477952161814c5ca9bbdebd99))
+
 ### [1.0.28](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.27...v1.0.28) (2023-06-14)
 
 
