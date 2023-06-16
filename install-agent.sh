@@ -91,7 +91,7 @@ function stop_spinner {
 }
 
 AGENTNAME=""
-PORTOFFSET="0";
+PORTOFFSET="0"
 SSMURL=""
 SSMAPIKEY=""
 MEMORY=1073741824
@@ -194,7 +194,7 @@ mkdir -p "/SSMAgent/${AGENTNAME}/Data" >/dev/null 2>&1
 
 chown -R ssm:ssm "/SSMAgent/${AGENTNAME}" >/dev/null 2>&1
 
-DOCKER_IMG="mrhid6/ssmagent:next-go"
+DOCKER_IMG="mrhid6/ssmagent:latest"
 
 docker pull -q ${DOCKER_IMG}
 
@@ -202,22 +202,21 @@ if [ $DOCKEREXISTS == 1 ]; then
     docker rm -f ${AGENTNAME}
 fi
 
-
 SERVERQUERYPORT=$((15777 + $PORTOFFSET))
 BEACONPORT=$((15000 + $PORTOFFSET))
 PORT=$((7777 + $PORTOFFSET))
 
 docker run -d \
--e SSM_NAME=${AGENTNAME} \
--e SSM_URL="${SSMURL}" \
--e SSM_APIKEY="${SSMAPIKEY}" \
--p "${SERVERQUERYPORT}:15777/udp" \
--p "${BEACONPORT}:15000/udp" \
--p "${PORT}:7777/udp" \
--v "/SSMAgent/${AGENTNAME}/SSM:/home/ssm/SSMAgent" \
--v "/SSMAgent/${AGENTNAME}/.config:/home/ssm/.config/Epic/FactoryGame" \
--v "/SSMAgent/${AGENTNAME}/Data:/SSM/data" \
--m $MEMORY \
---name "${AGENTNAME}" \
---restart always \
-${DOCKER_IMG}
+    -e SSM_NAME=${AGENTNAME} \
+    -e SSM_URL="${SSMURL}" \
+    -e SSM_APIKEY="${SSMAPIKEY}" \
+    -p "${SERVERQUERYPORT}:15777/udp" \
+    -p "${BEACONPORT}:15000/udp" \
+    -p "${PORT}:7777/udp" \
+    -v "/SSMAgent/${AGENTNAME}/SSM:/home/ssm/SSMAgent" \
+    -v "/SSMAgent/${AGENTNAME}/.config:/home/ssm/.config/Epic/FactoryGame" \
+    -v "/SSMAgent/${AGENTNAME}/Data:/SSM/data" \
+    -m $MEMORY \
+    --name "${AGENTNAME}" \
+    --restart always \
+    ${DOCKER_IMG}

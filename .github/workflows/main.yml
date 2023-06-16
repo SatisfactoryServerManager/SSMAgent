@@ -38,7 +38,7 @@ jobs:
               with:
                   context: .
                   push: true
-                  tags: mrhid6/ssmagent:next-go
+                  tags: mrhid6/ssmagent:latest
     build-windows:
         runs-on: self-hosted
         steps:
@@ -82,7 +82,7 @@ jobs:
                   tag_name: v${{ steps.package-version.outputs.current-version }}
                   release_name: Release v${{ steps.package-version.outputs.current-version }}
                   draft: false
-                  prerelease: true
+                  prerelease: false
             - name: Upload Linux Release Asset
               id: upload-linux-release-asset
               uses: actions/upload-release-asset@v1

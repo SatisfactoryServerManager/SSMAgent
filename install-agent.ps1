@@ -151,7 +151,7 @@ sleep -m 3000
 
 write-host "* Docker Installed"
 
-$DOCKER_IMG="mrhid6/ssmagent:next-go"
+$DOCKER_IMG="mrhid6/ssmagent:latest"
 
 docker pull -q $DOCKER_IMG
 
