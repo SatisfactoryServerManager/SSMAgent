@@ -11,6 +11,7 @@ import (
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/savemanager/savedecoder"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 )
 
 type SaveFileInfo struct {
@@ -86,7 +87,15 @@ func ShutdownSaveManager() error {
 func GetSaveFiles() {
 	saveDir, err := GetSaveDir()
 	if err != nil {
-		log.Printf("Error getting Save Directory %s\r\n", err.Error())
+		log.Printf("Error getting Save Directory path %s\r\n", err.Error())
+		return
+	}
+
+	err = utils.CreateFolder(saveDir)
+
+	if err != nil {
+		log.Printf("Error creating Save Directory %s\r\n", err.Error())
+		return
 	}
 
 	fmt.Printf("Finding Save Files in: %s\r\n", saveDir)

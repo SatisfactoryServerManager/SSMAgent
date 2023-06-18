@@ -55,6 +55,14 @@ type HttpResponseBody_Config struct {
 	Backup        HttpResponseBody_Backup `json:"backup"`
 }
 
+type APIError struct {
+	ResponseCode int
+}
+
+func (e *APIError) Error() string {
+	return fmt.Sprintf("API returned code: %d", e.ResponseCode)
+}
+
 func SendGetRequest(endpoint string, returnModel interface{}) error {
 
 	if _client == nil {
@@ -69,8 +77,13 @@ func SendGetRequest(endpoint string, returnModel interface{}) error {
 	req.Header.Set("x-ssm-key", config.GetConfig().APIKey)
 
 	r, err := _client.Do(req)
+
 	if err != nil {
 		return err
+	}
+
+	if r.StatusCode != http.StatusOK {
+		return &APIError{ResponseCode: r.StatusCode}
 	}
 	defer r.Body.Close()
 
@@ -109,9 +122,15 @@ func SendPostRequest(endpoint string, bodyModel interface{}, returnModel interfa
 	req.Header.Set("Content-Type", "application/json")
 
 	r, err := _client.Do(req)
+
 	if err != nil {
 		return err
 	}
+
+	if r.StatusCode != http.StatusOK {
+		return &APIError{ResponseCode: r.StatusCode}
+	}
+
 	defer r.Body.Close()
 
 	responseObject := HttpResponseBody{}
@@ -119,6 +138,7 @@ func SendPostRequest(endpoint string, bodyModel interface{}, returnModel interfa
 	json.NewDecoder(r.Body).Decode(&responseObject)
 
 	if !responseObject.Success {
+		fmt.Println(r.Body);
 		return errors.New("api returned an error: " + responseObject.Error)
 	}
 

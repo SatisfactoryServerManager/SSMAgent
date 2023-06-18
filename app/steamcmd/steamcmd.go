@@ -197,6 +197,7 @@ func appInfoFormat(appInfo string) (string, error) {
 
 	// // Remove newlines last
 	result = strings.Replace(result, "\n", "", -1)
+	result = strings.Replace(result, "\r", "", -1)
 
 	// Validate that we have a proper JSON string
 	if !isJSON(result) {

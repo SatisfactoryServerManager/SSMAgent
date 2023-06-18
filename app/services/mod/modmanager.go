@@ -58,11 +58,12 @@ type ModVersionTarget struct {
 }
 
 type InstalledMod struct {
-	ModReference   string
-	ModPath        string
-	ModDisplayName string `json:"FriendlyName"`
-	ModUPluginPath string
-	ModVersion     string `json:"SemVersion"`
+	ModReference    string
+	ModPath         string
+	ModDisplayName  string `json:"FriendlyName"`
+	ModUPluginPath  string
+	ModVersion      string `json:"SemVersion"`
+	ShouldUninstall bool
 }
 
 var (
@@ -213,6 +214,26 @@ func ProcessModState() {
 		selectedMod.Installed = true
 		selectedMod.InstalledVersion = mod.ModVersion
 
+	}
+
+	for idx := range _InstalledMods {
+		installedMod := &_InstalledMods[idx]
+
+		foundSelectedMod := false
+
+		for _, sm := range _ModState.SelectedMods {
+			if sm.Mod.ModReference == installedMod.ModReference {
+				foundSelectedMod = true
+			}
+		}
+
+		if !foundSelectedMod {
+			err := UninstallMod(installedMod.ModReference)
+			if err != nil {
+				log.Printf("Error failed to uninstall mod (%s) with error: %s\r\n", installedMod.ModReference, err.Error())
+				continue
+			}
+		}
 	}
 
 	SMLMod := GetInstalledMod("SML")
@@ -396,6 +417,11 @@ func InstallSML() {
 		}
 	}
 
+	if MaxSMLVersion == "v0.0.0" {
+		UninstallMod("SML")
+		return
+	}
+
 	fmt.Printf("Found Max SML Version: %s\r\n", MaxSMLVersion)
 
 	installedSMLVersion := "v" + _ModState.InstalledSMLVersion
@@ -460,5 +486,28 @@ func SendModState() error {
 
 	err := api.SendPostRequest("/api/agent/modstate", _ModState, resData)
 	return err
+}
 
+func UninstallMod(modReference string) error {
+
+	installedMod := GetInstalledMod(modReference)
+
+	if installedMod == nil {
+		return nil
+	}
+
+	if !utils.CheckFileExists(installedMod.ModPath) {
+		return nil
+	}
+
+	log.Printf("Uninstalling Mod (%s) ...\r\n", modReference)
+
+	err := os.RemoveAll(installedMod.ModPath)
+
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Uninstalled mod (%s)\r\n", modReference)
+	return nil
 }

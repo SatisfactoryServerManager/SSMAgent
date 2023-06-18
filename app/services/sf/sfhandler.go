@@ -183,7 +183,7 @@ func GetLatestedVersion() {
 	val, err := jsonparser.GetString(in, "depots", "branches", branch, "buildid")
 
 	if err != nil {
-		log.Println("Couldn't get latest version from steam json!")
+		log.Printf("Couldn't get latest version from steam json! %s\r\n", err.Error())
 		fmt.Println(out)
 		return
 	}
