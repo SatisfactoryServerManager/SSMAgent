@@ -89,6 +89,7 @@ func main() {
 			select {
 			case <-ticker.C:
 				GetConfigFromAPI()
+				SendConfig()
 			case <-_quit:
 				ticker.Stop()
 				return
@@ -183,6 +184,7 @@ func GetConfigFromAPI() {
 
 	if oldBranch != config.GetConfig().SF.SFBranch {
 		sf.GetLatestedVersion()
+		SendConfig()
 	}
 
 	if !sf.IsInstalled() {

@@ -106,6 +106,9 @@ func ShutdownModManager() error {
 }
 
 func FindInstalledMods() {
+
+	utils.CreateFolder(config.GetConfig().ModsDir)
+
 	fmt.Printf("Finding Mods in: %s\r\n", config.GetConfig().ModsDir)
 
 	files, err := os.ReadDir(config.GetConfig().ModsDir)

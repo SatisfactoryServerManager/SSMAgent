@@ -123,6 +123,8 @@ func ProcessMessageQueueItem(messageItem *MessageQueueItem) error {
 		b, _ := json.Marshal(messageItem.Data)
 		json.Unmarshal(b, &objmap)
 		return savemanager.DownloadSaveFile(string(objmap["saveFile"]))
+	case "updateconfig":
+		return nil
 	default:
 		return errors.New("unknown message queue action")
 	}
