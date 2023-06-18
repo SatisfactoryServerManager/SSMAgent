@@ -13,7 +13,6 @@ import (
 	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/steamcmd"
-	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/vars"
 	"github.com/buger/jsonparser"
 	"github.com/shirou/gopsutil/process"
@@ -33,7 +32,9 @@ func InitSFHandler() {
 
 	if config.GetConfig().SF.UpdateSFOnStart {
 		err := UpdateSFServer()
-		utils.CheckError(err)
+		if err != nil {
+			log.Printf("Error updating SF server: %s\r\n", err.Error())
+		}
 	}
 
 	SF_PID = GetSFPID()
@@ -90,7 +91,10 @@ func InstallSFServer(force bool) error {
 		return nil
 	} else if IsInstalled() && force {
 		err := RemoveSFServer()
-		utils.CheckError(err)
+		if err != nil {
+			log.Printf("Error removing existing SF Server install %s\r\n", err.Error())
+			return err
+		}
 	}
 
 	log.Println("Installing SF Server..")
@@ -99,7 +103,10 @@ func InstallSFServer(force bool) error {
 	commands = append(commands, "app_update 1690800 -beta public")
 
 	_, err := steamcmd.Run(commands)
-	utils.CheckError(err)
+	if err != nil {
+		log.Printf("Error installing SF Server %s\r\n", err.Error())
+		return err
+	}
 
 	log.Println("Installed SF Server!")
 
@@ -164,7 +171,10 @@ func KillSFServer() error {
 func GetLatestedVersion() {
 
 	out, err := steamcmd.AppInfo()
-	utils.CheckError(err)
+	if err != nil {
+		log.Println("Couldn't get latest version from steam app info!")
+		return
+	}
 	//fmt.Println(out)
 
 	in := []byte(out)
@@ -172,7 +182,11 @@ func GetLatestedVersion() {
 	branch := config.GetConfig().SF.SFBranch
 	val, err := jsonparser.GetString(in, "depots", "branches", branch, "buildid")
 
-	utils.CheckError(err)
+	if err != nil {
+		log.Println("Couldn't get latest version from steam json!")
+		fmt.Println(out)
+		return
+	}
 
 	config.GetConfig().SF.AvilableVer, _ = strconv.Atoi(val)
 	config.SaveConfig()
@@ -204,7 +218,10 @@ func GetSFPID() int32 {
 
 	fmt.Println("Getting process id for SF Server")
 	processes, err := process.Processes()
-	utils.CheckError(err)
+	if err != nil {
+		fmt.Printf("Error getting SF Process %s\r\n", err.Error())
+		return -1
+	}
 
 	agentName := flag.Lookup("name").Value.(flag.Getter).Get().(string)
 

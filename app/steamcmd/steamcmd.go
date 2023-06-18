@@ -26,15 +26,24 @@ func InitSteamCMD() {
 
 	SteamDir = filepath.Join(config.GetConfig().DataDir, "steamcmd")
 	err := utils.CreateFolder(SteamDir)
-	utils.CheckError(err)
+	if err != nil {
+		log.Printf("Error creating steam cmd dir %s\r\n", err.Error())
+		return
+	}
 
 	err = DownloadSteamCMD()
-	utils.CheckError(err)
+	if err != nil {
+		log.Printf("Error downloading steam cmd %s\r\n", err.Error())
+		return
+	}
 
 	log.Println("Running Steam CMD Validation..")
 	commands := make([]string, 0)
 	_, err = Run(commands)
-	utils.CheckError(err)
+	if err != nil {
+		log.Printf("Error running steam validation %s\r\n", err.Error())
+		return
+	}
 
 	log.Println("Steam CMD is Valid")
 }
@@ -50,7 +59,7 @@ func DownloadSteamCMD() error {
 
 	file, err := os.CreateTemp(os.TempDir(), "ssm_temp_*."+vars.Extension)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	log.Printf("Downloading Steam CMD to: %s\r\n", file.Name())
@@ -69,10 +78,14 @@ func DownloadSteamCMD() error {
 
 	// Write the body to file
 	_, err = io.Copy(out, resp.Body)
-	utils.CheckError(err)
+	if err != nil {
+		return err
+	}
 
 	err = out.Close()
-	utils.CheckError(err)
+	if err != nil {
+		return err
+	}
 
 	return ExtractArchive(file)
 }
@@ -83,7 +96,7 @@ func IsInstalled() bool {
 	return !os.IsNotExist(err)
 }
 
-func BuildScriptFile(commands []string) string {
+func BuildScriptFile(commands []string) (string, error) {
 
 	allCommands := make([]string, 0)
 
@@ -95,13 +108,13 @@ func BuildScriptFile(commands []string) string {
 
 	tempfile, err := os.CreateTemp(os.TempDir(), "ssm_temp_*.txt")
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	file, err := os.OpenFile(tempfile.Name(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 
 	if err != nil {
-		log.Fatalf("failed creating file: %s", err)
+		return "", err
 	}
 
 	datawriter := bufio.NewWriter(file)
@@ -113,13 +126,17 @@ func BuildScriptFile(commands []string) string {
 	datawriter.Flush()
 	file.Close()
 
-	return tempfile.Name()
+	return tempfile.Name(), nil
 }
 
 func Run(commands []string) (string, error) {
 	steamExe := filepath.Join(SteamDir, vars.SteamExeName)
 
-	tempFilePath := BuildScriptFile(commands)
+	tempFilePath, err := BuildScriptFile(commands)
+
+	if err != nil {
+		return "", err
+	}
 
 	exeArgs := make([]string, 0)
 	exeArgs = append(exeArgs, steamExe)
@@ -143,7 +160,9 @@ func Run(commands []string) (string, error) {
 
 func AppInfo() (string, error) {
 	out, err := Run([]string{"app_info_update 1", "app_info_print 1690800"})
-	utils.CheckError(err)
+	if err != nil {
+		return "", err
+	}
 
 	return appInfoFormat(out)
 }

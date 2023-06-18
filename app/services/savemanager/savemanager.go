@@ -11,7 +11,6 @@ import (
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/savemanager/savedecoder"
-	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 )
 
 type SaveFileInfo struct {
@@ -86,13 +85,16 @@ func ShutdownSaveManager() error {
 
 func GetSaveFiles() {
 	saveDir, err := GetSaveDir()
-	utils.CheckError(err)
+	if err != nil {
+		log.Printf("Error getting Save Directory %s\r\n", err.Error())
+	}
 
 	fmt.Printf("Finding Save Files in: %s\r\n", saveDir)
 
 	files, err := os.ReadDir(saveDir)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error cant open save directory %s\r\n", err.Error())
+		return
 	}
 
 	var saveFileInfos = make([]SaveFileInfo, 0)
@@ -104,6 +106,10 @@ func GetSaveFiles() {
 
 		filepath := path.Join(saveDir, file.Name())
 		fileInfo := GetSaveInfo(filepath)
+
+		if fileInfo.Level == "" {
+			continue
+		}
 
 		saveFileInfos = append(saveFileInfos, fileInfo)
 	}
@@ -181,7 +187,8 @@ func GetSaveInfo(filePath string) SaveFileInfo {
 	fmt.Printf("Reading File: %s\r\n", filePath)
 	file, err := os.Open(filePath)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Failed to open save file %s with error: %s\r\n", filePath, err.Error())
+		return SaveFileInfo{}
 	}
 
 	res.FileName = filepath.Base(filePath)
@@ -202,6 +209,9 @@ func GetSaveInfo(filePath string) SaveFileInfo {
 
 	file.Close()
 
+	//fmt.Println(sessionString)
+
+	//return SaveFileInfo{}
 	return res
 }
 

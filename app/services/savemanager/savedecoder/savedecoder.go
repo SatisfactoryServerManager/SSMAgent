@@ -47,7 +47,7 @@ func ReadString() (string, error) {
 		return "", err
 	}
 
-	Seek(int(strlen))
+	Seek(int(strlen) + 1)
 	return string(buf), nil
 
 }

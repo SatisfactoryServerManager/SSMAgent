@@ -86,16 +86,24 @@ func ExtractArchive(file *os.File) error {
 	}
 
 	err = gzipStream.Close()
-	utils.CheckError(err)
+	if err != nil {
+		return err
+	}
 
 	err = gzr.Close()
-	utils.CheckError(err)
+	if err != nil {
+		return err
+	}
 
 	err = file.Close()
-	utils.CheckError(err)
+	if err != nil {
+		return err
+	}
 
 	err = os.Remove(file.Name())
-	utils.CheckError(err)
+	if err != nil {
+		return err
+	}
 
 	log.Println("Extracted Steam CMD")
 

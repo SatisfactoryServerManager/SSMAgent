@@ -109,7 +109,8 @@ func FindInstalledMods() {
 
 	files, err := os.ReadDir(config.GetConfig().ModsDir)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error cand open mods directory %s\r\n", err.Error())
+		return
 	}
 
 	_InstalledMods = make([]InstalledMod, 0)
@@ -356,10 +357,14 @@ func ExtractArchive(file *os.File, modDirectory string) error {
 	}
 
 	err = file.Close()
-	utils.CheckError(err)
+	if err != nil {
+		return err
+	}
 
 	err = archive.Close()
-	utils.CheckError(err)
+	if err != nil {
+		return err
+	}
 
 	log.Printf("Extracted Mod (%s)\r\n", file.Name())
 

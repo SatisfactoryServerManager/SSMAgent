@@ -170,6 +170,8 @@ func GetConfigFromAPI() {
 		return
 	}
 
+	oldBranch := config.GetConfig().SF.SFBranch
+
 	config.GetConfig().SF.MaxPlayers = resData.MaxPlayers
 	config.GetConfig().SF.WorkerThreads = resData.WorkerThreads
 	config.GetConfig().SF.SFBranch = resData.SFBranch
@@ -178,6 +180,14 @@ func GetConfigFromAPI() {
 	config.GetConfig().SF.UpdateSFOnStart = resData.UpdateOnStart
 
 	config.SaveConfig()
+
+	if oldBranch != config.GetConfig().SF.SFBranch {
+		sf.GetLatestedVersion()
+	}
+
+	if !sf.IsInstalled() {
+		return
+	}
 
 	config.UpdateIniFiles()
 
