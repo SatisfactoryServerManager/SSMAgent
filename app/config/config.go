@@ -99,7 +99,7 @@ func LoadConfigFile() {
 
 func SetDefaultValues() {
 
-	_config.Version = "v1.0.31"
+	_config.Version = "v1.0.34"
 
 	if _config.HomeDir == "" {
 		_config.HomeDir = SSMHomeDir
