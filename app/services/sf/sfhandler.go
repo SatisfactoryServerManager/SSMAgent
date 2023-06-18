@@ -19,9 +19,11 @@ import (
 )
 
 var (
-	SF_PID     int32 = -1
-	SF_SUB_PID int32 = -1
-	_quit            = make(chan int)
+	SF_PID     int32   = -1
+	SF_SUB_PID int32   = -1
+	_quit              = make(chan int)
+	cpu        float64 = 0.0
+	mem        float32 = 0.0
 )
 
 func InitSFHandler() {
@@ -234,6 +236,9 @@ func GetSFPID() int32 {
 			continue
 		}
 
+		cpu, _ = process.CPUPercent()
+		mem, _ = process.MemoryPercent()
+
 		processAgentName := ""
 		for _, c := range cmd {
 
@@ -259,6 +264,9 @@ func GetSFPID() int32 {
 
 	fmt.Println("Couldn't find process id, Server not running?")
 
+	cpu = 0.0
+	mem = 0.0
+
 	return -1
 }
 
@@ -276,6 +284,8 @@ func SendStates() {
 	bodyData := api.HttpRequestBody_SFState{}
 	bodyData.Installed = IsInstalled()
 	bodyData.Running = IsRunning()
+	bodyData.CPU = cpu
+	bodyData.MEM = mem
 
 	var resData interface{}
 

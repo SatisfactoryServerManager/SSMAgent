@@ -160,7 +160,9 @@ func SendConfig() {
 	var resData interface{}
 	err := api.SendPostRequest("/api/agent/config", req, &resData)
 
-	utils.CheckError(err)
+	if err != nil {
+		log.Printf("Error sending config data to API with error: %s\r\n", err.Error())
+	}
 }
 
 func GetConfigFromAPI() {

@@ -204,13 +204,19 @@ func UpdateIniFiles() {
 	GameFilePath := filepath.Join(GetConfig().SFConfigDir, "Game.ini")
 
 	if !utils.CheckFileExists(EngineFilePath) {
-		log.Printf("SF Engine config file doesn't exist!\r\n")
-		return
+		file, err := os.Create(EngineFilePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		file.Close()
 	}
 
 	if !utils.CheckFileExists(GameFilePath) {
-		log.Printf("SF Game config file doesn't exist!\r\n")
-		return
+		file, err := os.Create(GameFilePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		file.Close()
 	}
 
 	cfg, err := ini.Load(EngineFilePath)

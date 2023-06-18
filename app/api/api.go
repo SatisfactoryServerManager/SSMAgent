@@ -30,8 +30,10 @@ type HttpRequestBody_ActiveState struct {
 }
 
 type HttpRequestBody_SFState struct {
-	Installed bool `json:"installed"`
-	Running   bool `json:"running"`
+	Installed bool    `json:"installed"`
+	Running   bool    `json:"running"`
+	CPU       float64 `json:"cpu"`
+	MEM       float32 `json:"mem"`
 }
 
 type HTTPRequestBody_Config struct {
@@ -138,7 +140,7 @@ func SendPostRequest(endpoint string, bodyModel interface{}, returnModel interfa
 	json.NewDecoder(r.Body).Decode(&responseObject)
 
 	if !responseObject.Success {
-		fmt.Println(r.Body);
+		fmt.Println(r.Body)
 		return errors.New("api returned an error: " + responseObject.Error)
 	}
 
