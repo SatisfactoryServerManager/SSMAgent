@@ -4,16 +4,16 @@ package steamcmd
 
 import (
 	"archive/zip"
-	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 )
 
 func ExtractArchive(file *os.File) error {
-	log.Println("Extracting Steam CMD...")
+	utils.InfoLogger.Println("Extracting Steam CMD...")
 	defer os.Remove(file.Name())
 
 	archive, err := zip.OpenReader(file.Name())
@@ -24,14 +24,14 @@ func ExtractArchive(file *os.File) error {
 
 	for _, f := range archive.File {
 		filePath := filepath.Join(SteamDir, f.Name)
-		fmt.Println("unzipping file ", filePath)
+		utils.DebugLogger.Println("unzipping file ", filePath)
 
 		if !strings.HasPrefix(filePath, filepath.Clean(SteamDir)+string(os.PathSeparator)) {
-			fmt.Println("invalid file path")
+			utils.DebugLogger.Println("invalid file path")
 			return nil
 		}
 		if f.FileInfo().IsDir() {
-			fmt.Println("creating directory...")
+			utils.DebugLogger.Println("creating directory...")
 			os.MkdirAll(filePath, os.ModePerm)
 			continue
 		}
@@ -73,7 +73,7 @@ func ExtractArchive(file *os.File) error {
 		return err
 	}
 
-	log.Println("Extracted Steam CMD")
+	utils.InfoLogger.Println("Extracted Steam CMD")
 
 	return nil
 }

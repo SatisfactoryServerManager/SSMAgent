@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -155,29 +154,9 @@ func SetDefaultValues() {
 	utils.CreateFolder(_config.SFDir)
 	utils.CreateFolder(_config.LogDir)
 
-	//fmt.Println(_config)
-	setupLogger()
+	utils.SetupLoggers(_config.LogDir)
 
-	log.Printf("Config File Location: %s", ConfigFile)
-}
-
-func setupLogger() {
-	logFile := path.Join(_config.LogDir, "SSMAgent-combined.log")
-
-	if utils.CheckFileExists(logFile) {
-		os.Remove(logFile)
-	}
-
-	f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-
-	wrt := io.MultiWriter(os.Stdout, f)
-
-	log.SetOutput(wrt)
-
-	log.Printf("Log File Location: %s", logFile)
+	utils.DebugLogger.Printf("Config File Location: %s", ConfigFile)
 }
 
 func GetConfig() *Config {
@@ -221,7 +200,7 @@ func UpdateIniFiles() {
 
 	cfg, err := ini.Load(EngineFilePath)
 	if err != nil {
-		fmt.Printf("Fail to read file: %v\r\n", err)
+		utils.WarnLogger.Printf("Fail to read file: %v\r\n", err)
 		return
 	}
 
@@ -242,7 +221,7 @@ func UpdateIniFiles() {
 
 	cfg, err = ini.Load(GameFilePath)
 	if err != nil {
-		fmt.Printf("Fail to read file: %v\r\n", err)
+		utils.WarnLogger.Printf("Fail to read file: %v\r\n", err)
 		return
 	}
 

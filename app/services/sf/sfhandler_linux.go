@@ -4,12 +4,12 @@ package sf
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"syscall"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/vars"
 )
 
@@ -18,11 +18,11 @@ func StartSFServer() error {
 	SF_PID = GetSFPID()
 
 	if IsRunning() {
-		log.Println("Server is already running")
+		utils.InfoLogger.Println("Server is already running")
 		return nil
 	}
 
-	log.Println("Starting SF Server..")
+	utils.InfoLogger.Println("Starting SF Server..")
 
 	// The Credential fields are used to set UID, GID and attitional GIDS of the process
 	// You need to run the program as  root to do this
@@ -48,15 +48,14 @@ func StartSFServer() error {
 
 	sfExe := filepath.Join(config.GetConfig().SFDir, vars.ExeName)
 
-	//fmt.Println(exeArgs)
 	process, err := os.StartProcess(sfExe, exeArgs, &attr)
 	if err != nil {
 		return err
 	}
 
-	log.Println("Started SF Server")
+	utils.InfoLogger.Println("Started SF Server")
 
-	fmt.Printf("Started process with pid: %d\r\n", process.Pid)
+	utils.DebugLogger.Printf("Started process with pid: %d\r\n", process.Pid)
 	// It is not clear from docs, but Realease actually detaches the process
 	err = process.Release()
 	if err != nil {

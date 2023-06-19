@@ -3,13 +3,12 @@ package messagequeue
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
-	"log"
 	"time"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/savemanager"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/sf"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 )
 
 var (
@@ -32,7 +31,7 @@ type HttpRequestBody_MessageItem struct {
 }
 
 func InitMessageQueue() {
-	log.Println("Initialising Message Queue...")
+	utils.InfoLogger.Println("Initialising Message Queue...")
 
 	GetMessageQueue()
 
@@ -50,15 +49,15 @@ func InitMessageQueue() {
 		}
 	}()
 
-	log.Println("Initialised Message Queue")
+	utils.InfoLogger.Println("Initialised Message Queue")
 }
 
 func ShutdownMessageQueue() error {
-	log.Println("Shutting down Message Queue")
+	utils.InfoLogger.Println("Shutting down Message Queue")
 
 	_quit <- 0
 
-	log.Println("Shutdown Message Queue")
+	utils.InfoLogger.Println("Shutdown Message Queue")
 	return nil
 }
 
@@ -66,7 +65,7 @@ func GetMessageQueue() {
 
 	err := api.SendGetRequest("/api/agent/messagequeue", &_messageQueue)
 	if err != nil {
-		log.Println(err.Error())
+		utils.ErrorLogger.Println(err.Error())
 	}
 }
 
@@ -98,7 +97,7 @@ func ProcessAllMessageQueueItems() {
 		err := api.SendPostRequest("/api/agent/messagequeue", itemBody, &resData)
 
 		if err != nil {
-			fmt.Printf("Error sending message queue item update %s\r\n", messageQueueItem.ID)
+			utils.ErrorLogger.Printf("Error sending message queue item update %s\r\n", messageQueueItem.ID)
 		}
 
 	}
@@ -106,7 +105,7 @@ func ProcessAllMessageQueueItems() {
 
 func ProcessMessageQueueItem(messageItem *MessageQueueItem) error {
 
-	fmt.Printf("Processing Message action %s\r\n", messageItem.Action)
+	utils.DebugLogger.Printf("Processing Message action %s\r\n", messageItem.Action)
 	switch messageItem.Action {
 	case "startsfserver":
 		return sf.StartSFServer()

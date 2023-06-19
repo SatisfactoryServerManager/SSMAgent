@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -19,7 +18,7 @@ var _quit = make(chan int)
 
 func InitBackupManager() {
 
-	log.Println("Initialising Backup Manager...")
+	utils.InfoLogger.Println("Initialising Backup Manager...")
 	CreateBackupFile()
 
 	ticker := time.NewTicker(1 * time.Minute)
@@ -35,7 +34,7 @@ func InitBackupManager() {
 		}
 	}()
 
-	log.Println("Initialised Backup Manager")
+	utils.InfoLogger.Println("Initialised Backup Manager")
 }
 
 func ShutdownBackupManager() error {
@@ -66,7 +65,7 @@ func CreateBackupFile() error {
 	zipFileName := "Backup_" + formatted + ".zip"
 	zipFilePath := filepath.Join(config.GetConfig().BackupDir, zipFileName)
 
-	log.Printf("Creating backup %s\r\n", zipFileName)
+	utils.InfoLogger.Printf("Creating backup %s\r\n", zipFileName)
 
 	archive, err := os.Create(zipFilePath)
 	if err != nil {
@@ -118,7 +117,7 @@ func CreateBackupFile() error {
 
 	zipWriter.Close()
 
-	log.Println("Backup created successfully")
+	utils.InfoLogger.Println("Backup created successfully")
 
 	err = api.SendFile("/api/agent/uploadbackup", zipFilePath)
 	if err != nil {
@@ -133,7 +132,7 @@ func AddFileToZipZile(zipWriter *zip.Writer, filePath string, destPath string) e
 		return nil
 	}
 
-	fmt.Printf("Adding File: %s\r\n", filePath)
+	utils.DebugLogger.Printf("Adding File: %s\r\n", filePath)
 	f1, err := os.Open(filePath)
 	if err != nil {
 		return err

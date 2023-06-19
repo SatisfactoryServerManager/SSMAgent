@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 )
 
 // operation is a clean up function on shutting down
@@ -23,11 +24,11 @@ func gracefulShutdown(ctx context.Context, timeout time.Duration, ops map[string
 		signal.Notify(s, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 		<-s
 
-		log.Println("shutting down")
+		utils.InfoLogger.Println("shutting down")
 
 		// set timeout for the ops to be done to prevent system hang
 		timeoutFunc := time.AfterFunc(timeout, func() {
-			log.Printf("timeout %d ms has been elapsed, force exit", timeout.Milliseconds())
+			utils.WarnLogger.Printf("timeout %d ms has been elapsed, force exit", timeout.Milliseconds())
 			os.Exit(0)
 		})
 
@@ -43,13 +44,13 @@ func gracefulShutdown(ctx context.Context, timeout time.Duration, ops map[string
 			go func() {
 				defer wg.Done()
 
-				log.Printf("cleaning up: %s", innerKey)
+				utils.InfoLogger.Printf("cleaning up: %s", innerKey)
 				if err := innerOp(ctx); err != nil {
-					log.Printf("%s: clean up failed: %s", innerKey, err.Error())
+					utils.InfoLogger.Printf("%s: clean up failed: %s", innerKey, err.Error())
 					return
 				}
 
-				log.Printf("%s was shutdown gracefully", innerKey)
+				utils.InfoLogger.Printf("%s was shutdown gracefully", innerKey)
 			}()
 
 			wg.Wait()

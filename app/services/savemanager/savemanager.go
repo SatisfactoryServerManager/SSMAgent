@@ -1,8 +1,6 @@
 package savemanager
 
 import (
-	"fmt"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -47,7 +45,7 @@ var (
 )
 
 func InitSaveManager() {
-	log.Println("Initialising Save Manager...")
+	utils.InfoLogger.Println("Initialising Save Manager...")
 
 	GetSaveFiles()
 	UploadSaveFiles()
@@ -68,7 +66,7 @@ func InitSaveManager() {
 		}
 	}()
 
-	log.Println("Initialised Save Manager")
+	utils.InfoLogger.Println("Initialised Save Manager")
 }
 
 func GetSaveSessions() []SaveSession {
@@ -76,33 +74,33 @@ func GetSaveSessions() []SaveSession {
 }
 
 func ShutdownSaveManager() error {
-	log.Println("Shutting down Save Manager")
+	utils.InfoLogger.Println("Shutting down Save Manager")
 
 	_quit <- 0
 
-	log.Println("Shutdown Save Manager")
+	utils.InfoLogger.Println("Shutdown Save Manager")
 	return nil
 }
 
 func GetSaveFiles() {
 	saveDir, err := GetSaveDir()
 	if err != nil {
-		log.Printf("Error getting Save Directory path %s\r\n", err.Error())
+		utils.ErrorLogger.Printf("Error getting Save Directory path %s\r\n", err.Error())
 		return
 	}
 
 	err = utils.CreateFolder(saveDir)
 
 	if err != nil {
-		log.Printf("Error creating Save Directory %s\r\n", err.Error())
+		utils.ErrorLogger.Printf("Error creating Save Directory %s\r\n", err.Error())
 		return
 	}
 
-	fmt.Printf("Finding Save Files in: %s\r\n", saveDir)
+	utils.DebugLogger.Printf("Finding Save Files in: %s\r\n", saveDir)
 
 	files, err := os.ReadDir(saveDir)
 	if err != nil {
-		log.Printf("Error cant open save directory %s\r\n", err.Error())
+		utils.ErrorLogger.Printf("Error cant open save directory %s\r\n", err.Error())
 		return
 	}
 
@@ -193,10 +191,10 @@ func GetSaveInfo(filePath string) SaveFileInfo {
 	res.ModTime = fileInfo.ModTime()
 	res.Size = fileInfo.Size()
 
-	fmt.Printf("Reading File: %s\r\n", filePath)
+	utils.DebugLogger.Printf("Reading File: %s\r\n", filePath)
 	file, err := os.Open(filePath)
 	if err != nil {
-		log.Printf("Failed to open save file %s with error: %s\r\n", filePath, err.Error())
+		utils.ErrorLogger.Printf("Failed to open save file %s with error: %s\r\n", filePath, err.Error())
 		return SaveFileInfo{}
 	}
 
@@ -217,10 +215,6 @@ func GetSaveInfo(filePath string) SaveFileInfo {
 	}
 
 	file.Close()
-
-	//fmt.Println(sessionString)
-
-	//return SaveFileInfo{}
 	return res
 }
 
@@ -235,7 +229,7 @@ func UploadSaveFiles() {
 				err := UploadSaveFile(saveFile.FilePath)
 
 				if err != nil {
-					log.Printf("Error uploading save file: %s with error: %s\r\n", saveFile.FileName, err.Error())
+					utils.ErrorLogger.Printf("Error uploading save file: %s with error: %s\r\n", saveFile.FileName, err.Error())
 					continue
 				}
 
@@ -258,14 +252,14 @@ func UploadSaveInfo() {
 	err := api.SendPostRequest("/api/agent/saves/newinfo", data, &res)
 
 	if err != nil {
-		fmt.Println(err.Error())
+		utils.ErrorLogger.Println(err.Error())
 	}
 }
 
 func DownloadSaveFile(fileName string) error {
 
 	fileName = strings.Replace(fileName, "\"", "", -1)
-	fmt.Printf("Downloading Save File: %s\r\n", fileName)
+	utils.DebugLogger.Printf("Downloading Save File: %s\r\n", fileName)
 
 	saveDir, err := GetSaveDir()
 	if err != nil {
@@ -279,7 +273,7 @@ func DownloadSaveFile(fileName string) error {
 		return err
 	}
 
-	fmt.Printf("Downloaded Save File to: %s\r\n", newFilePath)
+	utils.DebugLogger.Printf("Downloaded Save File to: %s\r\n", newFilePath)
 
 	return nil
 }

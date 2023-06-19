@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -27,25 +26,25 @@ func InitSteamCMD() {
 	SteamDir = filepath.Join(config.GetConfig().DataDir, "steamcmd")
 	err := utils.CreateFolder(SteamDir)
 	if err != nil {
-		log.Printf("Error creating steam cmd dir %s\r\n", err.Error())
+		utils.ErrorLogger.Printf("Error creating steam cmd dir %s\r\n", err.Error())
 		return
 	}
 
 	err = DownloadSteamCMD()
 	if err != nil {
-		log.Printf("Error downloading steam cmd %s\r\n", err.Error())
+		utils.ErrorLogger.Printf("Error downloading steam cmd %s\r\n", err.Error())
 		return
 	}
 
-	log.Println("Running Steam CMD Validation..")
+	utils.InfoLogger.Println("Running Steam CMD Validation..")
 	commands := make([]string, 0)
 	_, err = Run(commands)
 	if err != nil {
-		log.Printf("Error running steam validation %s\r\n", err.Error())
+		utils.ErrorLogger.Printf("Error running steam validation %s\r\n", err.Error())
 		return
 	}
 
-	log.Println("Steam CMD is Valid")
+	utils.InfoLogger.Println("Steam CMD is Valid")
 }
 
 func DownloadSteamCMD() error {
@@ -62,7 +61,7 @@ func DownloadSteamCMD() error {
 		return err
 	}
 
-	log.Printf("Downloading Steam CMD to: %s\r\n", file.Name())
+	utils.InfoLogger.Printf("Downloading Steam CMD to: %s\r\n", file.Name())
 
 	resp, err := http.Get(vars.DownloadURL)
 	if err != nil {

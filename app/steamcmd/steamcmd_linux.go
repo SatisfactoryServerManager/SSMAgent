@@ -13,7 +13,7 @@ import (
 
 func ExtractArchive(file *os.File) error {
 
-	log.Println("Extracting Steam CMD...")
+	utils.InfoLogger.Println("Extracting Steam CMD...")
 	gzipStream, err := os.Open(file.Name())
 	if err != nil {
 		return err
@@ -105,7 +105,7 @@ func ExtractArchive(file *os.File) error {
 		return err
 	}
 
-	log.Println("Extracted Steam CMD")
+	utils.InfoLogger.Println("Extracted Steam CMD")
 
 	return nil
 }

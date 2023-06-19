@@ -1,8 +1,6 @@
 package loghandler
 
 import (
-	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -19,7 +17,7 @@ var (
 )
 
 func InitLogHandler() {
-	log.Println("Initialising Log Handler...")
+	utils.InfoLogger.Println("Initialising Log Handler...")
 
 	ticker := time.NewTicker(30 * time.Second)
 	go func() {
@@ -34,20 +32,20 @@ func InitLogHandler() {
 		}
 	}()
 
-	log.Println("Initialised Log Handler")
+	utils.InfoLogger.Println("Initialised Log Handler")
 }
 
 func ShutdownLogHandler() error {
-	log.Println("Shutting down Log Handler")
+	utils.InfoLogger.Println("Shutting down Log Handler")
 
 	_quit <- 0
 
-	log.Println("Shutdown Log Handler")
+	utils.InfoLogger.Println("Shutdown Log Handler")
 	return nil
 }
 
 func SendLogFiles() {
-	fmt.Println("Sending Log Files")
+	utils.DebugLogger.Println("Sending Log Files")
 
 	ssmlogfile := filepath.Join(config.GetConfig().LogDir, "SSMAgent-combined.log")
 

@@ -2,8 +2,6 @@ package sf
 
 import (
 	"flag"
-	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -13,6 +11,7 @@ import (
 	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/steamcmd"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/vars"
 	"github.com/buger/jsonparser"
 	"github.com/shirou/gopsutil/process"
@@ -28,14 +27,14 @@ var (
 
 func InitSFHandler() {
 
-	log.Println("Initalising SF Handler...")
+	utils.InfoLogger.Println("Initalising SF Handler...")
 
 	GetLatestedVersion()
 
 	if config.GetConfig().SF.UpdateSFOnStart {
 		err := UpdateSFServer()
 		if err != nil {
-			log.Printf("Error updating SF server: %s\r\n", err.Error())
+			utils.ErrorLogger.Printf("Error updating SF server: %s\r\n", err.Error())
 		}
 	}
 
@@ -56,11 +55,11 @@ func InitSFHandler() {
 		}
 	}()
 
-	log.Println("Initalised SF Handler")
+	utils.InfoLogger.Println("Initalised SF Handler")
 }
 
 func ShutdownSFHandler() error {
-	log.Println("Shutting down SF Handler")
+	utils.InfoLogger.Println("Shutting down SF Handler")
 
 	_quit <- 0
 	err := ShutdownSFServer()
@@ -71,19 +70,19 @@ func ShutdownSFHandler() error {
 	SF_PID = -1
 	SendStates()
 
-	log.Println("Shut down SF Handler")
+	utils.InfoLogger.Println("Shut down SF Handler")
 	return nil
 }
 
 func RemoveSFServer() error {
 
-	log.Println("Removing existing SF Installation..")
+	utils.InfoLogger.Println("Removing existing SF Installation..")
 	err := os.RemoveAll(config.GetConfig().SFDir)
 
 	if err != nil {
 		return err
 	}
-	log.Println("Removed SF Installation")
+	utils.InfoLogger.Println("Removed SF Installation")
 	return nil
 }
 
@@ -94,23 +93,23 @@ func InstallSFServer(force bool) error {
 	} else if IsInstalled() && force {
 		err := RemoveSFServer()
 		if err != nil {
-			log.Printf("Error removing existing SF Server install %s\r\n", err.Error())
+			utils.InfoLogger.Printf("Error removing existing SF Server install %s\r\n", err.Error())
 			return err
 		}
 	}
 
-	log.Println("Installing SF Server..")
+	utils.InfoLogger.Println("Installing SF Server..")
 	commands := make([]string, 0)
 	commands = append(commands, "force_install_dir "+config.GetConfig().SFDir)
 	commands = append(commands, "app_update 1690800 -beta public")
 
 	_, err := steamcmd.Run(commands)
 	if err != nil {
-		log.Printf("Error installing SF Server %s\r\n", err.Error())
+		utils.ErrorLogger.Printf("Error installing SF Server %s\r\n", err.Error())
 		return err
 	}
 
-	log.Println("Installed SF Server!")
+	utils.InfoLogger.Println("Installed SF Server!")
 
 	config.GetConfig().SF.InstalledVer = config.GetConfig().SF.AvilableVer
 	config.SaveConfig()
@@ -133,11 +132,11 @@ func UpdateSFServer() error {
 func ShutdownSFServer() error {
 
 	if !IsRunning() {
-		log.Println("Shutdown skipped - Server not running")
+		utils.InfoLogger.Println("Shutdown skipped - Server not running")
 		return nil
 	}
 
-	log.Println("Shutting down SF Server...")
+	utils.InfoLogger.Println("Shutting down SF Server...")
 
 	newProcess, err := process.NewProcess(SF_PID)
 	if err != nil {
@@ -146,18 +145,18 @@ func ShutdownSFServer() error {
 
 	err = newProcess.Terminate()
 	SF_PID = GetSFPID()
-	log.Println("SF Server is now shutdown")
+	utils.InfoLogger.Println("SF Server is now shutdown")
 	return err
 }
 
 func KillSFServer() error {
 
 	if !IsRunning() {
-		log.Println("Kill skipped - Server not running")
+		utils.InfoLogger.Println("Kill skipped - Server not running")
 		return nil
 	}
 
-	log.Println("Killing SF Server...")
+	utils.InfoLogger.Println("Killing SF Server...")
 
 	newProcess, err := process.NewProcess(SF_PID)
 	if err != nil {
@@ -166,7 +165,7 @@ func KillSFServer() error {
 
 	err = newProcess.Kill()
 	SF_PID = GetSFPID()
-	log.Println("SF Server is now killed")
+	utils.InfoLogger.Println("SF Server is now killed")
 	return err
 }
 
@@ -174,10 +173,9 @@ func GetLatestedVersion() {
 
 	out, err := steamcmd.AppInfo()
 	if err != nil {
-		log.Println("Couldn't get latest version from steam app info!")
+		utils.ErrorLogger.Println("Couldn't get latest version from steam app info!")
 		return
 	}
-	//fmt.Println(out)
 
 	in := []byte(out)
 
@@ -185,8 +183,8 @@ func GetLatestedVersion() {
 	val, err := jsonparser.GetString(in, "depots", "branches", branch, "buildid")
 
 	if err != nil {
-		log.Printf("Couldn't get latest version from steam json! %s\r\n", err.Error())
-		fmt.Println(out)
+		utils.ErrorLogger.Printf("Couldn't get latest version from steam json! %s\r\n", err.Error())
+		utils.DebugLogger.Println(out)
 		return
 	}
 
@@ -218,10 +216,10 @@ func GetStartArgs() []string {
 
 func GetSFPID() int32 {
 
-	fmt.Println("Getting process id for SF Server")
+	utils.DebugLogger.Println("Getting process id for SF Server")
 	processes, err := process.Processes()
 	if err != nil {
-		fmt.Printf("Error getting SF Process %s\r\n", err.Error())
+		utils.ErrorLogger.Printf("Error getting SF Process %s\r\n", err.Error())
 		return -1
 	}
 
@@ -257,12 +255,12 @@ func GetSFPID() int32 {
 		}
 
 		if processAgentName == agentName {
-			fmt.Printf("Successfully found SF Server PID: %s\r\n", strconv.Itoa(int(pid)))
+			utils.DebugLogger.Printf("Successfully found SF Server PID: %s\r\n", strconv.Itoa(int(pid)))
 			return pid
 		}
 	}
 
-	fmt.Println("Couldn't find process id, Server not running?")
+	utils.DebugLogger.Println("Couldn't find process id, Server not running?")
 
 	cpu = 0.0
 	mem = 0.0
@@ -291,6 +289,6 @@ func SendStates() {
 
 	err := api.SendPostRequest("/api/agent/state", bodyData, &resData)
 	if err != nil {
-		log.Println(err.Error())
+		utils.ErrorLogger.Println(err.Error())
 	}
 }

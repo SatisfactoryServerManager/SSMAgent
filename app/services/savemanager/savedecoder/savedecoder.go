@@ -2,8 +2,9 @@ package savedecoder
 
 import (
 	"encoding/binary"
-	"fmt"
 	"os"
+
+	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 )
 
 var (
@@ -24,7 +25,7 @@ func Reset() {
 }
 
 func DebugSeek() {
-	fmt.Printf("Current Seek: %d\r\n", _currentSeek)
+	utils.DebugLogger.Printf("Current Seek: %d\r\n", _currentSeek)
 }
 
 func ReadInt() uint16 {

@@ -73,7 +73,7 @@ func SendGetRequest(endpoint string, returnModel interface{}) error {
 
 	url := config.GetConfig().URL + endpoint
 
-	fmt.Printf("#### GET #### url: %s\r\n", url)
+	utils.DebugLogger.Printf("#### GET #### url: %s\r\n", url)
 
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Set("x-ssm-key", config.GetConfig().APIKey)
@@ -117,7 +117,7 @@ func SendPostRequest(endpoint string, bodyModel interface{}, returnModel interfa
 
 	url := config.GetConfig().URL + endpoint
 
-	fmt.Printf("#### POST #### url: %s, data: %s\r\n", url, bytes.NewBuffer(bodyJSON))
+	utils.DebugLogger.Printf("#### POST #### url: %s, data: %s\r\n", url, bytes.NewBuffer(bodyJSON))
 
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(bodyJSON))
 	req.Header.Set("x-ssm-key", config.GetConfig().APIKey)
@@ -140,7 +140,7 @@ func SendPostRequest(endpoint string, bodyModel interface{}, returnModel interfa
 	json.NewDecoder(r.Body).Decode(&responseObject)
 
 	if !responseObject.Success {
-		fmt.Println(r.Body)
+		utils.DebugLogger.Println(r.Body)
 		return errors.New("api returned an error: " + responseObject.Error)
 	}
 
@@ -165,7 +165,7 @@ func SendFile(endpoint string, filepath string) error {
 
 	url := config.GetConfig().URL + endpoint
 
-	fmt.Printf("#### FILE #### url: %s, file: %s\r\n", url, filepath)
+	utils.DebugLogger.Printf("#### FILE #### url: %s, file: %s\r\n", url, filepath)
 
 	// New multipart writer.
 	body := &bytes.Buffer{}
@@ -219,7 +219,7 @@ func DownloadFile(endpoint string, filePath string) error {
 
 	url := config.GetConfig().URL + endpoint
 
-	fmt.Printf("#### DOWNLOAD #### url: %s\r\n", url)
+	utils.DebugLogger.Printf("#### DOWNLOAD #### url: %s\r\n", url)
 
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Set("x-ssm-key", config.GetConfig().APIKey)
@@ -247,7 +247,7 @@ func DownloadNonSSMFile(url string, filePath string) error {
 		_client = http.DefaultClient
 	}
 
-	fmt.Printf("#### DOWNLOAD #### url: %s\r\n", url)
+	utils.DebugLogger.Printf("#### DOWNLOAD #### url: %s\r\n", url)
 
 	req, _ := http.NewRequest("GET", url, nil)
 

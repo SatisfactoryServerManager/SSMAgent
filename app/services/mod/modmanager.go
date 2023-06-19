@@ -4,9 +4,7 @@ import (
 	"archive/zip"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -75,13 +73,13 @@ var (
 
 func InitModManager() {
 
-	log.Println("Initialising Mod Manager...")
+	utils.InfoLogger.Println("Initialising Mod Manager...")
 
 	_ModCachePath = filepath.Join(config.GetConfig().DataDir, "modcache")
 	utils.CreateFolder(_ModCachePath)
 
 	GetModState()
-	log.Println("Initialised Mod Manager")
+	utils.InfoLogger.Println("Initialised Mod Manager")
 
 	ticker := time.NewTicker(30 * time.Second)
 	go func() {
@@ -98,9 +96,9 @@ func InitModManager() {
 }
 
 func ShutdownModManager() error {
-	log.Println("Shutting Down Mod Manager...")
+	utils.InfoLogger.Println("Shutting Down Mod Manager...")
 	_quit <- 0
-	log.Println("Shutdown Mod Manager")
+	utils.InfoLogger.Println("Shutdown Mod Manager")
 
 	return nil
 }
@@ -109,11 +107,11 @@ func FindInstalledMods() {
 
 	utils.CreateFolder(config.GetConfig().ModsDir)
 
-	fmt.Printf("Finding Mods in: %s\r\n", config.GetConfig().ModsDir)
+	utils.DebugLogger.Printf("Finding Mods in: %s\r\n", config.GetConfig().ModsDir)
 
 	files, err := os.ReadDir(config.GetConfig().ModsDir)
 	if err != nil {
-		log.Printf("Error cand open mods directory %s\r\n", err.Error())
+		utils.ErrorLogger.Printf("Error cand open mods directory %s\r\n", err.Error())
 		return
 	}
 
@@ -132,7 +130,7 @@ func FindInstalledMods() {
 			continue
 		}
 
-		fmt.Printf("Found Mod (%s) at %s\r\n", modName, modPath)
+		utils.DebugLogger.Printf("Found Mod (%s) at %s\r\n", modName, modPath)
 
 		var newInstalledMod = InstalledMod{
 			ModReference:   modName,
@@ -178,8 +176,6 @@ func DoesInstalledModMeetVersion(modReference string, version string) bool {
 
 	versionDiff := semver.Compare(installedVersion, desiredVersion)
 
-	// fmt.Printf("mod Ref: %s, version dif %d\r\n", modReference, versionDiff)
-	// fmt.Printf("installed ver: %s, version %s\r\n", installedVersion, desiredVersion)
 	return versionDiff == 0
 }
 
@@ -189,7 +185,7 @@ func GetModState() {
 
 	err := api.SendGetRequest("/api/agent/modstate", &_ModState)
 	if err != nil {
-		log.Printf("Failed to get Mod State with error: %s\r\n", err.Error())
+		utils.ErrorLogger.Printf("Failed to get Mod State with error: %s\r\n", err.Error())
 		return
 	}
 
@@ -233,7 +229,7 @@ func ProcessModState() {
 		if !foundSelectedMod {
 			err := UninstallMod(installedMod.ModReference)
 			if err != nil {
-				log.Printf("Error failed to uninstall mod (%s) with error: %s\r\n", installedMod.ModReference, err.Error())
+				utils.ErrorLogger.Printf("Error failed to uninstall mod (%s) with error: %s\r\n", installedMod.ModReference, err.Error())
 				continue
 			}
 		}
@@ -283,11 +279,11 @@ func InstallAllMods() {
 		err := DownloadMod(selectedMod.Mod.ModReference, modVersion)
 
 		if err != nil {
-			log.Printf("Failed to download mod (%s)\r\n", selectedMod.Mod.ModReference)
+			utils.WarnLogger.Printf("Failed to download mod (%s)\r\n", selectedMod.Mod.ModReference)
 			continue
 		}
 
-		log.Printf("Downloaded mod (%s)\r\n", selectedMod.Mod.ModReference)
+		utils.InfoLogger.Printf("Downloaded mod (%s)\r\n", selectedMod.Mod.ModReference)
 
 		ModFileName := selectedMod.Mod.ModReference + "." + modVersion.Version + ".zip"
 		DownloadedModFilePath := filepath.Join(_ModCachePath, ModFileName)
@@ -334,7 +330,7 @@ func DownloadMod(modReference string, modVersion ModVersion) error {
 }
 
 func ExtractArchive(file *os.File, modDirectory string) error {
-	log.Printf("Extracting Mod (%s) ...\r\n", file.Name())
+	utils.InfoLogger.Printf("Extracting Mod (%s) ...\r\n", file.Name())
 
 	archive, err := zip.OpenReader(file.Name())
 	if err != nil {
@@ -348,7 +344,7 @@ func ExtractArchive(file *os.File, modDirectory string) error {
 
 	for _, f := range archive.File {
 		filePath := filepath.Join(modDirectory, f.Name)
-		fmt.Println("unzipping file ", filePath)
+		utils.DebugLogger.Println("unzipping file ", filePath)
 
 		if !strings.HasPrefix(filePath, filepath.Clean(modDirectory)+string(os.PathSeparator)) {
 			return nil
@@ -390,7 +386,7 @@ func ExtractArchive(file *os.File, modDirectory string) error {
 		return err
 	}
 
-	log.Printf("Extracted Mod (%s)\r\n", file.Name())
+	utils.InfoLogger.Printf("Extracted Mod (%s)\r\n", file.Name())
 
 	return nil
 }
@@ -425,13 +421,11 @@ func InstallSML() {
 		return
 	}
 
-	fmt.Printf("Found Max SML Version: %s\r\n", MaxSMLVersion)
+	utils.DebugLogger.Printf("Found Max SML Version: %s\r\n", MaxSMLVersion)
 
 	installedSMLVersion := "v" + _ModState.InstalledSMLVersion
 
 	verDiff := semver.Compare(installedSMLVersion, MaxSMLVersion)
-
-	fmt.Printf("SML Version %s,%s\r\n", installedSMLVersion, MaxSMLVersion)
 
 	if verDiff == 0 {
 		return
@@ -442,7 +436,7 @@ func InstallSML() {
 	err := DownloadSML(MaxSMLVersion)
 
 	if err != nil {
-		log.Printf("[Error] - Couldn't Download SML error: %s\r\n", err.Error())
+		utils.ErrorLogger.Printf("Couldn't Download SML error: %s\r\n", err.Error())
 		_ModState.InstalledSMLVersion = "0.0.0"
 		return
 	}
@@ -459,7 +453,7 @@ func InstallSML() {
 
 	err = ExtractArchive(modFile, modPath)
 	if err != nil {
-		log.Printf("[Error] - Couldn't Extract SML error: %s\r\n", err.Error())
+		utils.ErrorLogger.Printf("Couldn't Extract SML error: %s\r\n", err.Error())
 		_ModState.InstalledSMLVersion = "0.0.0"
 		return
 	}
@@ -503,7 +497,7 @@ func UninstallMod(modReference string) error {
 		return nil
 	}
 
-	log.Printf("Uninstalling Mod (%s) ...\r\n", modReference)
+	utils.InfoLogger.Printf("Uninstalling Mod (%s) ...\r\n", modReference)
 
 	err := os.RemoveAll(installedMod.ModPath)
 
@@ -511,6 +505,6 @@ func UninstallMod(modReference string) error {
 		return err
 	}
 
-	log.Printf("Uninstalled mod (%s)\r\n", modReference)
+	utils.InfoLogger.Printf("Uninstalled mod (%s)\r\n", modReference)
 	return nil
 }

@@ -112,7 +112,7 @@ func main() {
 
 func TestSSMCloudAPI() error {
 
-	log.Printf("Testing connection to: %s\r\n", config.GetConfig().URL)
+	utils.InfoLogger.Printf("Testing connection to: %s\r\n", config.GetConfig().URL)
 	var test interface{}
 	err := api.SendGetRequest("/api/ping", &test)
 
@@ -120,7 +120,7 @@ func TestSSMCloudAPI() error {
 		return err
 	}
 
-	log.Println("Connection test succeeded!")
+	utils.InfoLogger.Println("Connection test succeeded!")
 
 	return nil
 
@@ -161,7 +161,7 @@ func SendConfig() {
 	err := api.SendPostRequest("/api/agent/config", req, &resData)
 
 	if err != nil {
-		log.Printf("Error sending config data to API with error: %s\r\n", err.Error())
+		utils.ErrorLogger.Printf("Error sending config data to API with error: %s\r\n", err.Error())
 	}
 }
 
