@@ -5,7 +5,6 @@ import (
 	"compress/gzip"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 	"io"
-	"log"
 	"os"
 	"path"
 	"path/filepath"

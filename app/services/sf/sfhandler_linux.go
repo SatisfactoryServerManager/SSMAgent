@@ -3,7 +3,6 @@
 package sf
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -37,8 +36,8 @@ func StartSFServer() error {
 		Env: os.Environ(),
 		Files: []*os.File{
 			os.Stdin,
-			nil,
-			nil,
+			os.Stdout,
+			os.Stderr,
 		},
 		Sys: sysproc,
 	}
