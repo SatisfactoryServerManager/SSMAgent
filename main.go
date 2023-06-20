@@ -148,7 +148,11 @@ func MarkAgentOffline() {
 
 func SendConfig() {
 
-	ip := api.GetPublicIP()
+	ip, err := api.GetPublicIP()
+	if err != nil {
+		utils.ErrorLogger.Printf("Failed to get public IP with error: %s\r\n", err.Error())
+		ip = ""
+	}
 
 	var req = api.HTTPRequestBody_Config{
 		Version:     config.GetConfig().Version,
@@ -158,7 +162,7 @@ func SendConfig() {
 	}
 
 	var resData interface{}
-	err := api.SendPostRequest("/api/agent/config", req, &resData)
+	err = api.SendPostRequest("/api/agent/config", req, &resData)
 
 	if err != nil {
 		utils.ErrorLogger.Printf("Error sending config data to API with error: %s\r\n", err.Error())

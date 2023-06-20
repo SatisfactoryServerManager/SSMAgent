@@ -273,20 +273,23 @@ type IP struct {
 	Query string
 }
 
-func GetPublicIP() string {
+func GetPublicIP() (string, error) {
 	req, err := http.Get("http://ip-api.com/json/")
 	if err != nil {
-		return err.Error()
+		return "", err
 	}
 	defer req.Body.Close()
 
 	body, err := io.ReadAll(req.Body)
 	if err != nil {
-		return err.Error()
+		return "", err
 	}
 
 	var ip IP
-	json.Unmarshal(body, &ip)
+	err = json.Unmarshal(body, &ip)
+	if err != nil {
+		return "", err
+	}
 
-	return ip.Query
+	return ip.Query, nil
 }
