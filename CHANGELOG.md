@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.36](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.35...v1.0.36) (2023-06-20)
+
+
+### Bug Fixes
+
+* Fixed api call for public ip ([abd442a](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/abd442ab07505bcb7895b9fc3a47c9dc459c5824))
+* SF startup on linux ([cc5baab](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/cc5baab44a1a9ae528ff194f24ea6211f1711331))
+
 ### [1.0.35](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.34...v1.0.35) (2023-06-20)
 
 
