@@ -20,7 +20,7 @@ RUN ls -l
 COPY release/linux/* /opt/SSMAgent/
 RUN chown -R ssm:ssm /opt/SSMAgent
 
-RUN mkdir -p /home/ssm/SSMAgent && mkdir -p /home/ssm/.config/Epic/FactoryGame && mkdir -p /SSM/data
+RUN mkdir -p /home/ssm/SSM/Agents && mkdir -p /home/ssm/.config/Epic/FactoryGame && mkdir -p /SSM/data
 RUN chown -R ssm:ssm /home/ssm
 RUN chown -R ssm:ssm /SSM/data
 

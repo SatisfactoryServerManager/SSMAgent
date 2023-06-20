@@ -166,7 +166,7 @@ docker run -d `
 -p "$($SERVERQUERYPORT):15777/udp" `
 -p "$($BEACONPORT):15000/udp" `
 -p "$($PORT):7777/udp" `
--v "C:\SSMAgent\$($AGENTNAME)\SSM:/home/ssm/SSMAgent" `
+-v "C:\SSMAgent\$($AGENTNAME)\SSM:/home/ssm/SSM/Agents/$($AGENTNAME)" `
 -v "C:\SSMAgent\$($AGENTNAME)\.config:/home/ssm/.config/Epic/FactoryGame" `
 -v "C:\SSMAgent\$($AGENTNAME)\Data:/SSM/data" `
 -m $MEMORY `
