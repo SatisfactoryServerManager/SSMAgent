@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.35](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.34...v1.0.35) (2023-06-20)
+
+
+### Features
+
+* Better logger ([500b535](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/500b53559892be4573fdf58f2207497375dfa586))
+
+
+### Bug Fixes
+
+* Fixed missing mount point ([9a4ffda](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/9a4ffda342a2b9cc9ee06164cf473515bf9dfb27))
+* Linux server start ([606480c](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/606480c1b473add0912f27588413edc7ac2551de))
+* Linux server start ([69c7b4b](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/69c7b4b33560759c4540f4c489b093be6f03df8a))
+
 ### [1.0.34](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.33...v1.0.34) (2023-06-18)
 
 ### [1.0.33](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.32...v1.0.33) (2023-06-18)
