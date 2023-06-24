@@ -144,6 +144,7 @@ write-host "* Create SSM Service"
 & "$($INSTALL_DIR)\nssm.exe" "set" "$($SSM_SeriveName)" "AppDirectory" "$($INSTALL_DIR)" | out-null
 & "$($INSTALL_DIR)\nssm.exe" "set" "$($SSM_SeriveName)" "DisplayName" "SSMAgent_$($AGENTNAME)" | out-null
 & "$($INSTALL_DIR)\nssm.exe" "set" "$($SSM_SeriveName)" "Description" "Service for SSM Agent" | out-null
+& "$($INSTALL_DIR)\nssm.exe" "set" "$($SSM_SeriveName)" "ObjectName" "$($Env:UserName)" "" | out-null
 
 
 
