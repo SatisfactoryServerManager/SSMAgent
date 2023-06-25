@@ -2,7 +2,9 @@ param(
     [String]$AGENTNAME="",
     [Int32]$PORTOFFSET=0,
     [String]$SSMURL="",
-    [String]$SSMAPIKEY=""
+    [String]$SSMAPIKEY="",
+    [String]$ServiceUser="",
+    [String]$ServicePassword=""
 )
 
 echo "#-----------------------------#"
@@ -139,12 +141,29 @@ if($SSM_Service -ne $null){
     sleep -m 2000
 }
 
+
+if($ServiceUser -eq "" -or $ServicePassword -eq ""){
+    write-host "Please provide a Service User Account to run the SSM Agent"
+    $ServiceUser = Read-Host -Prompt "Service Username [$(whoami)]:"
+
+    if($ServiceUser -eq ""){
+        $ServiceUser = $(whoami)
+    }
+
+    $ServicePassword = Read-Host -Prompt -MaskInput "Service Password:"
+
+    if($ServicePassword -eq ""){
+        Write-host -ForegroundColor RED "Error please provide a service account password!"
+        exit 1;
+    }
+}
+
 write-host "* Create SSM Service"
 & "$($INSTALL_DIR)\nssm.exe" "install" "$($SSM_SeriveName)" "$($INSTALL_DIR)\SSMAgent.exe" "-name=$($AGENTNAME) -p=$($PORTOFFSET) -url=$($SSMURL) -apikey=$($SSMAPIKEY) -datadir=C:\SSM\data\$($AGENTNAME)" | out-null
 & "$($INSTALL_DIR)\nssm.exe" "set" "$($SSM_SeriveName)" "AppDirectory" "$($INSTALL_DIR)" | out-null
 & "$($INSTALL_DIR)\nssm.exe" "set" "$($SSM_SeriveName)" "DisplayName" "SSMAgent_$($AGENTNAME)" | out-null
 & "$($INSTALL_DIR)\nssm.exe" "set" "$($SSM_SeriveName)" "Description" "Service for SSM Agent" | out-null
-& "$($INSTALL_DIR)\nssm.exe" "set" "$($SSM_SeriveName)" "ObjectName" "$($Env:UserName)" "" | out-null
+& "$($INSTALL_DIR)\nssm.exe" "set" "$($SSM_SeriveName)" "ObjectName" "$UserResponse" "$ServicePassword" | out-null
 
 
 
