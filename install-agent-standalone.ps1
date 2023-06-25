@@ -144,10 +144,11 @@ if($SSM_Service -ne $null){
 
 if($ServiceUser -eq "" -or $ServicePassword -eq ""){
     write-host "Please provide a Service User Account to run the SSM Agent"
-    $ServiceUser = Read-Host -Prompt "Service Username [$(whoami)]"
+    $CurrentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+    $ServiceUser = Read-Host -Prompt "Service Username [$($CurrentUser)]"
 
     if($ServiceUser -eq ""){
-        $ServiceUser = $(whoami)
+        $ServiceUser = $($CurrentUser)
     }
 
     $ServicePasswordRes = Read-Host -AsSecureString -Prompt "Service Password"
