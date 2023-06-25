@@ -144,14 +144,14 @@ if($SSM_Service -ne $null){
 
 if($ServiceUser -eq "" -or $ServicePassword -eq ""){
     write-host "Please provide a Service User Account to run the SSM Agent"
-    $ServiceUser = Read-Host -Prompt "Service Username [$(whoami)]:"
+    $ServiceUser = Read-Host -Prompt "Service Username [$(whoami)]"
 
     if($ServiceUser -eq ""){
         $ServiceUser = $(whoami)
     }
 
-    $ServicePassword = Read-Host -Prompt -MaskInput "Service Password:"
-
+    $ServicePasswordRes = Read-Host -AsSecureString -Prompt "Service Password"
+    $ServicePassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($ServicePasswordRes))
     if($ServicePassword -eq ""){
         Write-host -ForegroundColor RED "Error please provide a service account password!"
         exit 1;
