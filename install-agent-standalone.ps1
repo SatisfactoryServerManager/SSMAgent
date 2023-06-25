@@ -161,10 +161,21 @@ if($ServiceUser -eq "" -or $ServicePassword -eq ""){
 
 write-host "* Create SSM Service"
 & "$($INSTALL_DIR)\nssm.exe" "install" "$($SSM_SeriveName)" "$($INSTALL_DIR)\SSMAgent.exe" "-name=$($AGENTNAME) -p=$($PORTOFFSET) -url=$($SSMURL) -apikey=$($SSMAPIKEY) -datadir=C:\SSM\data\$($AGENTNAME)" | out-null
+
+if($LASTEXITCODE -ne 0){
+    Write-host -ForegroundColor RED "Error setting up SSM Agent Service!"
+    exit $LASTEXITCODE
+}
+
 & "$($INSTALL_DIR)\nssm.exe" "set" "$($SSM_SeriveName)" "AppDirectory" "$($INSTALL_DIR)" | out-null
 & "$($INSTALL_DIR)\nssm.exe" "set" "$($SSM_SeriveName)" "DisplayName" "SSMAgent_$($AGENTNAME)" | out-null
 & "$($INSTALL_DIR)\nssm.exe" "set" "$($SSM_SeriveName)" "Description" "Service for SSM Agent" | out-null
 & "$($INSTALL_DIR)\nssm.exe" "set" "$($SSM_SeriveName)" "ObjectName" "$ServiceUser" "$ServicePassword" | out-null
+
+if($LASTEXITCODE -ne 0){
+    Write-host -ForegroundColor RED "Error setting up SSM Agent Service!"
+    exit $LASTEXITCODE
+}
 
 
 
