@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.37](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.36...v1.0.37) (2023-10-11)
+
+
+### Features
+
+* Added steam logger ([19d89c9](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/19d89c9254102d1f46fe0a851dfeb78d007c39c1))
+
+
+### Bug Fixes
+
+* Fixed standalone install service account ([c69b324](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/c69b32415fdabcc4d248eb6ea9a466ec62bcb8b3))
+* Install script service account ([e5283b2](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/e5283b21a8fc8506d98044dcdf220cd3847a7c53))
+* Install script service account ([3401a31](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/3401a3121682d2aee2ab8ea265b5d6e57c632715))
+* Install script service account ([066f3e1](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/066f3e13324308f0dd6432248240edc2ec7c7b75))
+* Install script service account ([9fd5c62](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/9fd5c62c0596ace47cc5499d64b9eed33a6332b3))
+* Install script service account ([685b35b](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/685b35b3bd1381e55d162d11bc463192f2837eb0))
+
 ### [1.0.36](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.35...v1.0.36) (2023-06-20)
 
 
