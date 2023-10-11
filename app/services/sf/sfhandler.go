@@ -202,7 +202,7 @@ func GetLatestedVersion() {
 
 	out, err := steamcmd.AppInfo()
 	if err != nil {
-		utils.ErrorLogger.Println("Couldn't get latest version from steam app info!")
+		utils.ErrorLogger.Printf("Couldn't get latest version from steam app info with error: %s", err.Error())
 		return
 	}
 

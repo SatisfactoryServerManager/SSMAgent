@@ -2,7 +2,6 @@ package steamcmd
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"errors"
 	"io"
@@ -143,18 +142,36 @@ func Run(commands []string) (string, error) {
 
 	cmd := exec.Command(steamExe, exeArgs...)
 
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		if err.Error() != "exit status 7" {
-			return "", err
-		}
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		utils.ErrorLogger.Printf("error steamcmd stdpipe with error: %s ", err.Error())
+		return "", err
 	}
 
-	return out.String(), nil
+	err = cmd.Start()
+	utils.DebugLogger.Println("The steamcmd command is running")
+
+	if err != nil {
+		if err.Error() != "exit status 7" {
+			utils.ErrorLogger.Printf("error steamcmd start with error: %s", err.Error())
+			return "", err
+		}
+
+	}
+
+	// print the output of the subprocess
+
+	var output string
+
+	scanner := bufio.NewScanner(stdout)
+	for scanner.Scan() {
+		m := scanner.Text()
+		output += m + "\n"
+		utils.SteamLogger.Println(m)
+	}
+	cmd.Wait()
+
+	return output, nil
 }
 
 func AppInfo() (string, error) {
@@ -162,7 +179,6 @@ func AppInfo() (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	return appInfoFormat(out)
 }
 

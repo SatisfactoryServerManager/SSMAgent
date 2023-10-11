@@ -13,6 +13,7 @@ var (
 	InfoLogger  *log.Logger
 	WarnLogger  *log.Logger
 	ErrorLogger *log.Logger
+	SteamLogger *log.Logger
 )
 
 func CheckError(err error) {
@@ -39,12 +40,16 @@ func CheckFileExists(filepath string) bool {
 func SetupLoggers(logDir string) {
 	logFile := filepath.Join(logDir, "SSMAgent-combined.log")
 	errorlogFile := filepath.Join(logDir, "SSMAgent-error.log")
+	steamlogFile := filepath.Join(logDir, "SSMAgent-steam.log")
 
 	if CheckFileExists(logFile) {
 		os.Remove(logFile)
 	}
 	if CheckFileExists(errorlogFile) {
 		os.Remove(errorlogFile)
+	}
+	if CheckFileExists(steamlogFile) {
+		os.Remove(steamlogFile)
 	}
 
 	f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
@@ -56,8 +61,14 @@ func SetupLoggers(logDir string) {
 		log.Fatalf("error opening file: %v", err)
 	}
 
+	steamf, err := os.OpenFile(steamlogFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+
 	wrt := io.MultiWriter(os.Stdout, f)
 	errorwrt := io.MultiWriter(wrt, errorf)
+	steamwrt := io.MultiWriter(wrt, steamf)
 
 	log.SetOutput(wrt)
 
@@ -65,6 +76,7 @@ func SetupLoggers(logDir string) {
 	InfoLogger = log.New(wrt, "[ INFO ] ", log.Ldate|log.Ltime)
 	WarnLogger = log.New(wrt, "[ WARN ] ", log.Ldate|log.Ltime)
 	ErrorLogger = log.New(errorwrt, "[ ERROR ] ", log.Ldate|log.Ltime)
+	SteamLogger = log.New(steamwrt, "[ STEAM ] ", log.Ldate|log.Ltime)
 
 	InfoLogger.Printf("Log File Location: %s", logFile)
 }
