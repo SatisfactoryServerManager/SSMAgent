@@ -3,7 +3,7 @@ package mod
 import (
 	"archive/zip"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -14,69 +14,22 @@ import (
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/sf"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
-	"github.com/SatisfactoryServerManager/SSMAgent/app/vars"
 	"golang.org/x/mod/semver"
 )
 
-type ModState struct {
-	ID                  string        `json:"_id"`
-	InstalledSMLVersion string        `json:"installedSMLVersion"`
-	SMLInstalled        bool          `json:"smlInstalled"`
-	SelectedMods        []SelectedMod `json:"selectedMods"`
-}
-
-type SelectedMod struct {
-	ID               string `json:"_id"`
-	Mod              Mod    `json:"mod"`
-	DesiredVersion   string `json:"desiredVersion"`
-	InstalledVersion string `json:"installedVersion"`
-	Installed        bool   `json:"installed"`
-	NeedsUpdate      bool   `json:"needsUpdate"`
-}
-
-type Mod struct {
-	ID           string       `json:"_id"`
-	ModID        string       `json:"modId"`
-	ModName      string       `json:"modName"`
-	ModReference string       `json:"modReference"`
-	Hidden       bool         `json:"hidden"`
-	Versions     []ModVersion `json:"versions"`
-}
-
-type ModVersion struct {
-	Version    string             `json:"version"`
-	Link       string             `json:"link"`
-	SMLVersion string             `json:"sml_version"`
-	Targets    []ModVersionTarget `json:"targets"`
-}
-
-type ModVersionTarget struct {
-	TargetName string `json:"targetName"`
-	Link       string `json:"link"`
-}
-
-type InstalledMod struct {
-	ModReference    string
-	ModPath         string
-	ModDisplayName  string `json:"FriendlyName"`
-	ModUPluginPath  string
-	ModVersion      string `json:"SemVersion"`
-	ShouldUninstall bool
-}
-
 var (
-	_ModState      ModState
-	_InstalledMods []InstalledMod
-	_ModCachePath  string
-	_quit          = make(chan int)
+	_ModState     ModState
+	ModCachePatch string
+	_quit         = make(chan int)
+	_SMLConfig    SMLConfig
 )
 
 func InitModManager() {
 
 	utils.InfoLogger.Println("Initialising Mod Manager...")
 
-	_ModCachePath = filepath.Join(config.GetConfig().DataDir, "modcache")
-	utils.CreateFolder(_ModCachePath)
+	ModCachePatch = filepath.Join(config.GetConfig().DataDir, "modcache")
+	utils.CreateFolder(ModCachePatch)
 
 	GetModState()
 	utils.InfoLogger.Println("Initialised Mod Manager")
@@ -103,19 +56,31 @@ func ShutdownModManager() error {
 	return nil
 }
 
-func FindInstalledMods() {
+func GetModState() {
 
-	utils.CreateFolder(config.GetConfig().ModsDir)
+	FindModsOnDisk()
+
+	err := api.SendGetRequest("/api/agent/modstate", &_ModState)
+	if err != nil {
+		utils.ErrorLogger.Printf("Failed to get Mod State with error: %s\r\n", err.Error())
+		return
+	}
+
+	ProcessModState()
+	SendModState()
+}
+
+func FindModsOnDisk() []InstalledMod {
+
+	installedMods := make([]InstalledMod, 0)
 
 	utils.DebugLogger.Printf("Finding Mods in: %s\r\n", config.GetConfig().ModsDir)
 
 	files, err := os.ReadDir(config.GetConfig().ModsDir)
 	if err != nil {
 		utils.ErrorLogger.Printf("Error cand open mods directory %s\r\n", err.Error())
-		return
+		return installedMods
 	}
-
-	_InstalledMods = make([]InstalledMod, 0)
 
 	for _, file := range files {
 		if !file.IsDir() {
@@ -141,82 +106,33 @@ func FindInstalledMods() {
 		file, _ := os.ReadFile(UPluginPath)
 		_ = json.Unmarshal([]byte(file), &newInstalledMod)
 
-		_InstalledMods = append(_InstalledMods, newInstalledMod)
+		installedMods = append(installedMods, newInstalledMod)
 	}
 
-}
-
-func GetInstalledMod(modReference string) *InstalledMod {
-
-	for idx := range _InstalledMods {
-		mod := &_InstalledMods[idx]
-
-		if mod.ModReference == modReference {
-			return mod
-		}
-	}
-
-	return nil
-}
-
-func IsModInstalled(modReference string) bool {
-	return GetInstalledMod(modReference) != nil
-}
-
-func DoesInstalledModMeetVersion(modReference string, version string) bool {
-
-	mod := GetInstalledMod(modReference)
-
-	if mod == nil {
-		return false
-	}
-
-	installedVersion := "v" + mod.ModVersion
-	desiredVersion := "v" + version
-
-	versionDiff := semver.Compare(installedVersion, desiredVersion)
-
-	return versionDiff == 0
-}
-
-func GetModState() {
-
-	FindInstalledMods()
-
-	err := api.SendGetRequest("/api/agent/modstate", &_ModState)
-	if err != nil {
-		utils.ErrorLogger.Printf("Failed to get Mod State with error: %s\r\n", err.Error())
-		return
-	}
-
-	ProcessModState()
-	SendModState()
+	return installedMods
 }
 
 func ProcessModState() {
 
+	utils.CreateFolder(config.GetConfig().ModsDir)
+
 	for idx := range _ModState.SelectedMods {
 		selectedMod := &_ModState.SelectedMods[idx]
 
-		if !IsModInstalled(selectedMod.Mod.ModReference) {
-			selectedMod.Installed = false
+		if err := selectedMod.Init(); err != nil {
+			utils.ErrorLogger.Printf("error initialising selected mod with error %s\n", err.Error())
 			continue
 		}
-
-		if !DoesInstalledModMeetVersion(selectedMod.Mod.ModReference, selectedMod.DesiredVersion) {
-			selectedMod.Installed = false
-			continue
-		}
-
-		mod := GetInstalledMod(selectedMod.Mod.ModReference)
-
-		selectedMod.Installed = true
-		selectedMod.InstalledVersion = mod.ModVersion
-
 	}
 
-	for idx := range _InstalledMods {
-		installedMod := &_InstalledMods[idx]
+	installedMods := FindModsOnDisk()
+
+	for idx := range installedMods {
+		installedMod := &installedMods[idx]
+
+		if installedMod.ModReference == "SML" {
+			continue
+		}
 
 		foundSelectedMod := false
 
@@ -235,24 +151,14 @@ func ProcessModState() {
 		}
 	}
 
-	SMLMod := GetInstalledMod("SML")
-
-	if SMLMod != nil {
-		_ModState.SMLInstalled = true
-		_ModState.InstalledSMLVersion = SMLMod.ModVersion
-	} else {
-		_ModState.SMLInstalled = false
-		_ModState.InstalledSMLVersion = "0.0.0"
-	}
-
 	InstallAllMods()
-	InstallSML()
+	UpdateSMLConfig()
 }
 
-func InstallAllMods() {
+func InstallAllMods() error {
 
 	if sf.IsRunning() {
-		return
+		return nil
 	}
 
 	for idx := range _ModState.SelectedMods {
@@ -262,6 +168,8 @@ func InstallAllMods() {
 			continue
 		}
 
+		utils.DebugLogger.Printf("Installing Mod: %s", selectedMod.Mod.ModReference)
+
 		var modVersion ModVersion
 
 		for _, mv := range selectedMod.Mod.Versions {
@@ -269,16 +177,16 @@ func InstallAllMods() {
 
 			if versiondiff == 0 {
 				modVersion = mv
+				break
 			}
 		}
 
 		if len(modVersion.Targets) == 0 {
+			utils.DebugLogger.Printf("Skipping mod install %s with reason: no mod version targets\n", selectedMod.Mod.ModReference)
 			continue
 		}
 
-		err := DownloadMod(selectedMod.Mod.ModReference, modVersion)
-
-		if err != nil {
+		if err := selectedMod.DownloadVersion(modVersion); err != nil {
 			utils.WarnLogger.Printf("Failed to download mod (%s)\r\n", selectedMod.Mod.ModReference)
 			continue
 		}
@@ -286,50 +194,30 @@ func InstallAllMods() {
 		utils.InfoLogger.Printf("Downloaded mod (%s)\r\n", selectedMod.Mod.ModReference)
 
 		ModFileName := selectedMod.Mod.ModReference + "." + modVersion.Version + ".zip"
-		DownloadedModFilePath := filepath.Join(_ModCachePath, ModFileName)
+		DownloadedModFilePath := filepath.Join(ModCachePatch, ModFileName)
 
-		modFile, err := os.Open(DownloadedModFilePath)
-
-		if err != nil {
-			continue
-		}
 		modPath := filepath.Join(config.GetConfig().ModsDir, selectedMod.Mod.ModReference)
 
-		ExtractArchive(modFile, modPath)
-	}
+		if err := ExtractArchive(DownloadedModFilePath, modPath); err != nil {
+			return fmt.Errorf("error extracting mod zip file with error: %s", err.Error())
+		}
 
-	FindInstalledMods()
-}
-
-func DownloadMod(modReference string, modVersion ModVersion) error {
-
-	ModFileName := modReference + "." + modVersion.Version + ".zip"
-	DownloadedModFilePath := filepath.Join(_ModCachePath, ModFileName)
-
-	if utils.CheckFileExists(DownloadedModFilePath) {
-		return nil
-	}
-
-	var versionTarget ModVersionTarget
-
-	for _, vt := range modVersion.Targets {
-		if vt.TargetName == vars.ModPlatform {
-			versionTarget = vt
+		if err := selectedMod.CheckInstalledOnDisk(); err != nil {
+			return err
 		}
 	}
 
-	if versionTarget.Link == "" {
-		return errors.New("mod version has no link")
-	}
-
-	url := "https://ficsit-api.mircearoata.duckdns.org" + versionTarget.Link
-
-	err := api.DownloadNonSSMFile(url, DownloadedModFilePath)
-
-	return err
+	return nil
 }
 
-func ExtractArchive(file *os.File, modDirectory string) error {
+func ExtractArchive(modFilePath string, modDirectory string) error {
+
+	file, err := os.Open(modFilePath)
+
+	if err != nil {
+		return err
+	}
+
 	utils.InfoLogger.Printf("Extracting Mod (%s) ...\r\n", file.Name())
 
 	archive, err := zip.OpenReader(file.Name())
@@ -391,90 +279,40 @@ func ExtractArchive(file *os.File, modDirectory string) error {
 	return nil
 }
 
-func InstallSML() {
+func UpdateSMLConfig() error {
 
-	var MaxSMLVersion = "v0.0.0"
+	if err := _SMLConfig.Init(); err != nil {
+		return err
+	}
 
-	for idx := range _ModState.SelectedMods {
-		selectedMod := &_ModState.SelectedMods[idx]
+	if err := _SMLConfig.Update(_ModState.SelectedMods); err != nil {
+		return err
+	}
 
-		desiredVer := "v" + selectedMod.DesiredVersion
-		for _, mv := range selectedMod.Mod.Versions {
-
-			mvVersion := "v" + mv.Version
-
-			verdiff := semver.Compare(mvVersion, desiredVer)
-
-			if verdiff == 0 {
-				smlver := "v" + strings.Replace(mv.SMLVersion, "^", "", -1)
-
-				if semver.Compare(smlver, MaxSMLVersion) > 0 {
-					MaxSMLVersion = smlver
-				}
-			}
-
+	if _SMLConfig.DesiredVersion == "0.0.0" {
+		if err := _SMLConfig.Uninstall(); err != nil {
+			return err
 		}
-	}
-
-	if MaxSMLVersion == "v0.0.0" {
-		UninstallMod("SML")
-		return
-	}
-
-	utils.DebugLogger.Printf("Found Max SML Version: %s\r\n", MaxSMLVersion)
-
-	installedSMLVersion := "v" + _ModState.InstalledSMLVersion
-
-	verDiff := semver.Compare(installedSMLVersion, MaxSMLVersion)
-
-	if verDiff == 0 {
-		return
-	}
-
-	MaxSMLVersion = strings.Replace(MaxSMLVersion, "v", "", -1)
-
-	err := DownloadSML(MaxSMLVersion)
-
-	if err != nil {
-		utils.ErrorLogger.Printf("Couldn't Download SML error: %s\r\n", err.Error())
-		_ModState.InstalledSMLVersion = "0.0.0"
-		return
-	}
-
-	ModFileName := "SML." + MaxSMLVersion + ".zip"
-	DownloadedModFilePath := filepath.Join(_ModCachePath, ModFileName)
-
-	modFile, err := os.Open(DownloadedModFilePath)
-
-	if err != nil {
-		return
-	}
-	modPath := filepath.Join(config.GetConfig().ModsDir, "SML")
-
-	err = ExtractArchive(modFile, modPath)
-	if err != nil {
-		utils.ErrorLogger.Printf("Couldn't Extract SML error: %s\r\n", err.Error())
-		_ModState.InstalledSMLVersion = "0.0.0"
-		return
-	}
-
-	_ModState.InstalledSMLVersion = MaxSMLVersion
-}
-
-func DownloadSML(smlVersion string) error {
-
-	ModFileName := "SML." + smlVersion + ".zip"
-	DownloadedModFilePath := filepath.Join(_ModCachePath, ModFileName)
-
-	if utils.CheckFileExists(DownloadedModFilePath) {
 		return nil
 	}
 
-	url := "https://github.com/satisfactorymodding/SatisfactoryModLoader/releases/download/v" + smlVersion + "/SML.zip"
+	if _SMLConfig.Installed {
+		return nil
+	}
 
-	err := api.DownloadNonSSMFile(url, DownloadedModFilePath)
+	utils.DebugLogger.Printf("Found Max SML Version: %s\r\n", _SMLConfig.DesiredVersion)
 
-	return err
+	if err := _SMLConfig.Install(); err != nil {
+		utils.ErrorLogger.Printf("Couldn't Install SML with error: %s\r\n", err.Error())
+		_ModState.InstalledSMLVersion = "0.0.0"
+		_ModState.SMLInstalled = false
+		return nil
+	}
+
+	_ModState.InstalledSMLVersion = _SMLConfig.InstalledVersion
+	_ModState.SMLInstalled = _SMLConfig.Installed
+
+	return nil
 }
 
 func SendModState() error {
@@ -487,7 +325,17 @@ func SendModState() error {
 
 func UninstallMod(modReference string) error {
 
-	installedMod := GetInstalledMod(modReference)
+	allInstalledMods := FindModsOnDisk()
+
+	var installedMod *InstalledMod
+
+	for idx := range allInstalledMods {
+		i := &allInstalledMods[idx]
+
+		if i.ModReference == modReference {
+			installedMod = i
+		}
+	}
 
 	if installedMod == nil {
 		return nil
