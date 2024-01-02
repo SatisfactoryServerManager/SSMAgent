@@ -259,7 +259,7 @@ func GetSFPID() int32 {
 		name, _ := process.Name()
 		cmd, _ := process.CmdlineSlice()
 
-		if !strings.Contains(strings.ToLower(name), "ue4server-") {
+		if !strings.Contains(strings.ToLower(name), "unrealserver-") {
 			continue
 		}
 
