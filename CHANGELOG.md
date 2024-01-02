@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.39](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.38...v1.0.39) (2024-01-02)
+
+
+### Bug Fixes
+
+* SF Handler exe search ([527c6c6](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/527c6c68b70dad65cf9119e5837959b0f055321b))
+
 ### [1.0.38](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.37...v1.0.38) (2023-12-12)
 
 
