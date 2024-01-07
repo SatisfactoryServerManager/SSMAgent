@@ -13,4 +13,5 @@ var (
 	DownloadURL  = "https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip"
 	SteamExeName = "steamcmd.exe"
 	Extension    = "zip"
+	SMLFileName  = "SML-WindowsServer.zip"
 )

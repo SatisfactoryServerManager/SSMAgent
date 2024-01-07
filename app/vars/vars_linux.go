@@ -13,4 +13,5 @@ var (
 	DownloadURL  = "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz"
 	SteamExeName = "steamcmd.sh"
 	Extension    = "tar.gz"
+	SMLFileName  = "SML-LinuxServer.zip"
 )

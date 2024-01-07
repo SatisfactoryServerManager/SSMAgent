@@ -297,7 +297,7 @@ func (obj *SMLConfig) Install() error {
 		return nil
 	}
 
-	url := "https://github.com/satisfactorymodding/SatisfactoryModLoader/releases/download/v" + obj.DesiredVersion + "/SML.zip"
+	url := "https://github.com/satisfactorymodding/SatisfactoryModLoader/releases/download/v" + obj.DesiredVersion + "/" + vars.SMLFileName
 
 	if err := api.DownloadNonSSMFile(url, DownloadedModFilePath); err != nil {
 		return err
