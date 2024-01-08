@@ -156,7 +156,7 @@ func (obj *SelectedMod) DownloadVersion(version ModVersion) error {
 		return fmt.Errorf("mod version has no link")
 	}
 
-	url := fmt.Sprintf("https://api.ficsit.dev%s", versionTarget.Link)
+	url := fmt.Sprintf("https://api.ficsit.app%s", versionTarget.Link)
 
 	err := api.DownloadNonSSMFile(url, DownloadedModFilePath)
 
