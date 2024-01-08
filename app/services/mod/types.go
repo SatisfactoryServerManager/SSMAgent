@@ -28,6 +28,7 @@ type SelectedMod struct {
 	InstalledVersion string `json:"installedVersion"`
 	Installed        bool   `json:"installed"`
 	NeedsUpdate      bool   `json:"needsUpdate"`
+	Config           string `json:"config"`
 }
 
 type Mod struct {
@@ -81,6 +82,10 @@ func (obj *SelectedMod) Init() error {
 		return err
 	}
 
+	if err := obj.GetModConfig(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -131,6 +136,41 @@ func (obj *SelectedMod) CheckMeetsDesiredVersion() error {
 
 	if versionDiff != 0 {
 		obj.Installed = false
+	}
+
+	return nil
+}
+
+func (obj *SelectedMod) GetModConfig() error {
+	if !obj.Installed {
+		return nil
+	}
+
+	utils.CreateFolder(config.GetConfig().ModConfigsDir)
+
+	configfile := filepath.Join(config.GetConfig().ModConfigsDir, obj.Mod.ModReference+".cfg")
+
+	if utils.CheckFileExists(configfile) {
+
+		data, err := os.ReadFile(configfile)
+		if err != nil {
+			return err
+		}
+
+		obj.Config = string(data)
+	} else {
+		d1 := []byte("{}")
+		if err := os.WriteFile(configfile, d1, 0777); err != nil {
+			return err
+		}
+
+	}
+
+	if obj.Mod.ModReference == "SSM" {
+		d1 := []byte("{\"apiKey\":\"" + config.GetConfig().APIKey + "\", \"url\":\"" + config.GetConfig().URL + "\"}")
+		if err := os.WriteFile(configfile, d1, 0777); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -275,7 +315,7 @@ func (obj *SMLConfig) Uninstall() error {
 		return nil
 	}
 
-	utils.InfoLogger.Println("Uninstalling Mod (SML) ...\r\n")
+	utils.InfoLogger.Println("Uninstalling Mod (SML) ...")
 
 	err := os.RemoveAll(obj.ModPath)
 
@@ -283,7 +323,7 @@ func (obj *SMLConfig) Uninstall() error {
 		return err
 	}
 
-	utils.InfoLogger.Println("Uninstalled mod (SML)\r\n")
+	utils.InfoLogger.Println("Uninstalled mod (SML)")
 
 	obj.InstalledVersion = "0.0.0"
 	obj.Installed = false

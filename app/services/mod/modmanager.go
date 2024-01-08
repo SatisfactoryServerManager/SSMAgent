@@ -326,6 +326,24 @@ func UpdateSMLConfig() error {
 	return nil
 }
 
+func UpdateModConfigFile(modReference string, modConfig string) error {
+
+	if sf.IsRunning() {
+		return nil
+	}
+
+	utils.CreateFolder(config.GetConfig().ModConfigsDir)
+
+	configfile := filepath.Join(config.GetConfig().ModConfigsDir, modReference+".cfg")
+
+	d1 := []byte(modConfig)
+	if err := os.WriteFile(configfile, d1, 0777); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func SendModState() error {
 
 	var resData interface{}

@@ -40,18 +40,19 @@ type SFConfig struct {
 }
 
 type Config struct {
-	HomeDir     string   `json:"homedir"`
-	DataDir     string   `json:"datadir"`
-	SFDir       string   `json:"sfdir"`
-	LogDir      string   `json:"logdir"`
-	BackupDir   string   `json:"backupdir"`
-	SFConfigDir string   `json:"sfconfigdir"`
-	ModsDir     string   `json:"sfmodsdir"`
-	APIKey      string   `json:"apikey"`
-	URL         string   `json:"ssmurl"`
-	SF          SFConfig `json:"sf"`
-	Version     string   `json:"version"`
-	Backup      Backup   `json:"backup"`
+	HomeDir       string   `json:"homedir"`
+	DataDir       string   `json:"datadir"`
+	SFDir         string   `json:"sfdir"`
+	LogDir        string   `json:"logdir"`
+	BackupDir     string   `json:"backupdir"`
+	SFConfigDir   string   `json:"sfconfigdir"`
+	ModsDir       string   `json:"sfmodsdir"`
+	ModConfigsDir string   `json:"sfmodconfigsdir"`
+	APIKey        string   `json:"apikey"`
+	URL           string   `json:"ssmurl"`
+	SF            SFConfig `json:"sf"`
+	Version       string   `json:"version"`
+	Backup        Backup   `json:"backup"`
 }
 
 func LoadConfigFile() {
@@ -98,7 +99,7 @@ func LoadConfigFile() {
 
 func SetDefaultValues() {
 
-	_config.Version = "v1.0.42"
+	_config.Version = "v1.0.43"
 
 	if _config.HomeDir == "" {
 		_config.HomeDir = SSMHomeDir
@@ -122,6 +123,7 @@ func SetDefaultValues() {
 	_config.BackupDir = filepath.Join(_config.DataDir, "backups")
 
 	_config.ModsDir = filepath.Join(_config.SFDir, "FactoryGame", "Mods")
+	_config.ModConfigsDir = filepath.Join(_config.SFDir, "FactoryGame", "Configs")
 
 	utils.CreateFolder(_config.BackupDir)
 	utils.CreateFolder(_config.ModsDir)

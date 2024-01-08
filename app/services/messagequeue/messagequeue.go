@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/services/mod"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/savemanager"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/sf"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
@@ -106,6 +107,9 @@ func ProcessAllMessageQueueItems() {
 func ProcessMessageQueueItem(messageItem *MessageQueueItem) error {
 
 	utils.DebugLogger.Printf("Processing Message action %s\r\n", messageItem.Action)
+
+	// TODO Add update mod config action
+
 	switch messageItem.Action {
 	case "startsfserver":
 		return sf.StartSFServer()
@@ -124,6 +128,11 @@ func ProcessMessageQueueItem(messageItem *MessageQueueItem) error {
 		return savemanager.DownloadSaveFile(string(objmap["saveFile"]))
 	case "updateconfig":
 		return nil
+	case "updateModConfig":
+		var objmap map[string]json.RawMessage
+		b, _ := json.Marshal(messageItem.Data)
+		json.Unmarshal(b, &objmap)
+		return mod.UpdateModConfigFile(string(objmap["modReference"]), string(objmap["modConfig"]))
 	default:
 		return errors.New("unknown message queue action")
 	}
