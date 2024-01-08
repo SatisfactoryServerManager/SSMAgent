@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.42](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.41...v1.0.42) (2024-01-08)
+
+
+### Bug Fixes
+
+* Fixes to sml downloading ([e760eaf](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/e760eaf859b544a31afb916cce3d6c52b727c1ed))
+
 ### [1.0.41](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.40...v1.0.41) (2024-01-08)
 
 
