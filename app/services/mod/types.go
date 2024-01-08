@@ -285,6 +285,9 @@ func (obj *SMLConfig) Uninstall() error {
 
 	utils.InfoLogger.Println("Uninstalled mod (SML)\r\n")
 
+	obj.InstalledVersion = "0.0.0"
+	obj.Installed = false
+
 	return nil
 }
 
@@ -293,14 +296,18 @@ func (obj *SMLConfig) Install() error {
 	ModFileName := "SML." + obj.DesiredVersion + ".zip"
 	DownloadedModFilePath := filepath.Join(ModCachePatch, ModFileName)
 
-	if utils.CheckFileExists(DownloadedModFilePath) {
+	if obj.Installed {
 		return nil
 	}
 
-	url := "https://github.com/satisfactorymodding/SatisfactoryModLoader/releases/download/v" + obj.DesiredVersion + "/" + vars.SMLFileName
+	if !utils.CheckFileExists(DownloadedModFilePath) {
 
-	if err := api.DownloadNonSSMFile(url, DownloadedModFilePath); err != nil {
-		return err
+		url := "https://github.com/satisfactorymodding/SatisfactoryModLoader/releases/download/v" + obj.DesiredVersion + "/" + vars.SMLFileName
+
+		if err := api.DownloadNonSSMFile(url, DownloadedModFilePath); err != nil {
+			return err
+		}
+
 	}
 
 	if err := ExtractArchive(DownloadedModFilePath, obj.ModPath); err != nil {

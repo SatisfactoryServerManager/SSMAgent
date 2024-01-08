@@ -151,8 +151,13 @@ func ProcessModState() {
 		}
 	}
 
-	InstallAllMods()
-	UpdateSMLConfig()
+	if err := InstallAllMods(); err != nil {
+		utils.ErrorLogger.Printf("error failed to install mods with error: %s\n", err.Error())
+	}
+
+	if err := UpdateSMLConfig(); err != nil {
+		utils.ErrorLogger.Printf("error failed to install sml with error: %s\n", err.Error())
+	}
 }
 
 func InstallAllMods() error {
@@ -293,10 +298,16 @@ func UpdateSMLConfig() error {
 		if err := _SMLConfig.Uninstall(); err != nil {
 			return err
 		}
+
+		_ModState.InstalledSMLVersion = _SMLConfig.InstalledVersion
+		_ModState.SMLInstalled = _SMLConfig.Installed
+
 		return nil
 	}
 
 	if _SMLConfig.Installed {
+		_ModState.InstalledSMLVersion = _SMLConfig.InstalledVersion
+		_ModState.SMLInstalled = _SMLConfig.Installed
 		return nil
 	}
 
