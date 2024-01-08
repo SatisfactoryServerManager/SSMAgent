@@ -163,10 +163,14 @@ if [ "${SSMAPIKEY}" == "" ]; then
 fi
 
 INSTALL_DIR="/opt/SSMAgent/${AGENTNAME}"
+DATA_DIR="/SSM/data/${AGENTNAME}"
+SSM_SERVICENAME="SSMAgent@${AGENTNAME}.service"
+SSM_SERVICEFILE="/etc/systemd/system/SSMAgent@${AGENTNAME}.service"
 
 echo -e "${BLUE}Installation Summary: ${NC}"
 echo "Agent Name: ${AGENTNAME}"
 echo "Installation Directory: ${INSTALL_DIR}"
+echo "Data Directory: ${DATA_DIR}"
 echo "SF Server Query Port: ${SERVERQUERYPORT}"
 echo "SF Beacon Port: ${BEACONPORT}"
 echo "SF Port: ${PORT}"
@@ -183,9 +187,6 @@ case $response in
     exit 1
 ;;
 esac
-
-SSM_SERVICENAME="SSMAgent@${AGENTNAME}.service"
-SSM_SERVICEFILE="/etc/systemd/system/SSMAgent@${AGENTNAME}.service"
 
 SSM_SERVICE=$(
         systemctl list-units --full -all | grep -Fq "${SSM_SERVICENAME}"
@@ -216,9 +217,8 @@ stop_spinner $?
 start_spinner "${YELLOW}Installing Prereqs${NC}"
 apt-get -qq install apt-utils curl wget jq binutils software-properties-common libcap2-bin unzip zip htop dnsmasq -y >/dev/null 2>&1
 apt-get -qq update -y >/dev/null 2>&1
-add-apt-repository multiverse
-dpkg --add-architecture i386
-
+add-apt-repository multiverse -y >/dev/null 2>&1
+dpkg --add-architecture i386 >/dev/null 2>&1
 apt-get -qq install lib32gcc-s1 -y 
 apt-get -qq update -y
 stop_spinner $?
@@ -229,6 +229,9 @@ start_spinner "${YELLOW}Downloading SSM Binaries${NC}"
 curl --silent "https://api.github.com/repos/satisfactoryservermanager/ssmagent/releases/latest" >${TEMP_DIR}/SSM_releases.json
 SSM_VER=$(cat ${TEMP_DIR}/SSM_releases.json | jq -r ".tag_name")
 SSM_URL=$(cat ${TEMP_DIR}/SSM_releases.json | jq -r ".assets[].browser_download_url" | grep -i "Linux" | sort | head -1)
+
+mkdir -p ${INSTALL_DIR} >/dev/null 2>&1
+mkdir -p ${DATA_DIR} >/dev/null 2>&1
 
 rm -r ${INSTALL_DIR}/* >/dev/null 2>&1
 
@@ -252,14 +255,16 @@ if id "ssm" &>/dev/null; then
     groupmod -g 9999 ssm
 
     chown -R ssm:ssm /home/ssm
-    chown -R ssm:ssm /opt/SSM
+    chown -R ssm:ssm /opt/SSMAgent
+    chown -R ssm:ssm /SSM
 else
     useradd -m ssm -u 9999 -s /bin/bash >/dev/null 2>&1
 fi
 sleep 1
 stop_spinner $?
 
-chmod -R 755 /opt/SSM
+chmod -R 755 /opt/SSMAgent
+chmod -R 755 /SSM
 
 
 
@@ -292,7 +297,7 @@ Group=ssm
 
 Type=simple
 WorkingDirectory=${INSTALL_DIR}
-ExecStart=${INSTALL_DIR}/SSMAgent -name=${AGENTNAME} -p=${PORTOFFSET} -url=${SSMURL} -apikey=${SSMAPIKEY} -datadir="/SSM/data/${AGENTNAME}"
+ExecStart=${INSTALL_DIR}/SSMAgent -name=${AGENTNAME} -p=${PORTOFFSET} -url=${SSMURL} -apikey=${SSMAPIKEY} -datadir="${DATA_DIR}"
 TimeoutStopSec=20
 KillMode=process
 Restart=on-failure
@@ -300,6 +305,7 @@ Restart=on-failure
 [Install]
 WantedBy=multi-user.target
 EOL
+
 sleep 1
 stop_spinner $?
 
