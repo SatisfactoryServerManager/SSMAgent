@@ -108,8 +108,6 @@ func ProcessMessageQueueItem(messageItem *MessageQueueItem) error {
 
 	utils.DebugLogger.Printf("Processing Message action %s\r\n", messageItem.Action)
 
-	// TODO Add update mod config action
-
 	switch messageItem.Action {
 	case "startsfserver":
 		return sf.StartSFServer()

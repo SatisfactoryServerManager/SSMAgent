@@ -159,15 +159,16 @@ func (obj *SelectedMod) GetModConfig() error {
 
 		obj.Config = string(data)
 	} else {
-		d1 := []byte("{}")
-		if err := os.WriteFile(configfile, d1, 0777); err != nil {
-			return err
+
+		if obj.Mod.ModReference == "SSM" {
+			d1 := []byte("{\"apiKey\":\"" + config.GetConfig().APIKey + "\", \"url\":\"" + config.GetConfig().URL + "\"}")
+			if err := os.WriteFile(configfile, d1, 0777); err != nil {
+				return err
+			}
+			return nil
 		}
 
-	}
-
-	if obj.Mod.ModReference == "SSM" {
-		d1 := []byte("{\"apiKey\":\"" + config.GetConfig().APIKey + "\", \"url\":\"" + config.GetConfig().URL + "\"}")
+		d1 := []byte("{}")
 		if err := os.WriteFile(configfile, d1, 0777); err != nil {
 			return err
 		}
