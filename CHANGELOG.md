@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.44](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.43...v1.0.44) (2024-01-10)
+
+
+### Bug Fixes
+
+* Fixes to automatic SSM mod config population ([433e551](hhttps://github.com/SatisfactoryServerManager/SSMCloud/commits/433e5513c1e017540eed4a38f45d9d26083c1af5))
+
 ### [1.0.43](https://github.com/SatisfactoryServerManager/SSMCloud/compare/v1.0.42...v1.0.43) (2024-01-08)
 
 
