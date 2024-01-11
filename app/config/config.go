@@ -32,6 +32,7 @@ type Backup struct {
 type SFConfig struct {
 	PortOffset      int    `json:"portOffset"`
 	UpdateSFOnStart bool   `json:"updateSFOnStart"`
+	AutoRestart     bool   `json:"autoRestart"`
 	SFBranch        string `json:"sfbranch"`
 	InstalledVer    int    `json:"installedVer"`
 	AvilableVer     int    `json:"avaliableVer"`

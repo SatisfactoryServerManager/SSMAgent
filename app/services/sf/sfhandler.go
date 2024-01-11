@@ -19,11 +19,12 @@ import (
 )
 
 var (
-	SF_PID     int32   = -1
-	SF_SUB_PID int32   = -1
-	_quit              = make(chan int)
-	cpu        float64 = 0.0
-	mem        float32 = 0.0
+	SF_PID          int32   = -1
+	SF_SUB_PID      int32   = -1
+	_quit                   = make(chan int)
+	cpu             float64 = 0.0
+	mem             float32 = 0.0
+	shouldBeRunning         = false
 )
 
 func InitSFHandler() {
@@ -48,6 +49,7 @@ func InitSFHandler() {
 			select {
 			case <-ticker.C:
 				SF_PID = GetSFPID()
+				AutoRestart()
 				SendStates()
 			case <-_quit:
 				ticker.Stop()
@@ -130,6 +132,33 @@ func UpdateSFServer() error {
 	return nil
 }
 
+func AutoRestart() error {
+
+	if !shouldBeRunning {
+		return nil
+	}
+
+	if IsRunning() {
+		return nil
+	}
+
+	if !config.GetConfig().SF.AutoRestart {
+		return nil
+	}
+
+	utils.InfoLogger.Println("Server may have crashed.. Auto restarting..")
+
+	if err := KillSFServer(); err != nil {
+		return err
+	}
+
+	if err := StartSFServer(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func StartSFServer() error {
 
 	SF_PID = GetSFPID()
@@ -154,8 +183,10 @@ func StartSFServer() error {
 	SF_PID = GetSFPID()
 
 	utils.InfoLogger.Println("Started SF Server")
-
 	utils.InfoLogger.Printf("Started process with pid: %d\r\n", SF_PID)
+
+	shouldBeRunning = true
+
 	return nil
 }
 
@@ -176,6 +207,7 @@ func ShutdownSFServer() error {
 	err = newProcess.Terminate()
 	SF_PID = GetSFPID()
 	utils.InfoLogger.Println("SF Server is now shutdown")
+	shouldBeRunning = false
 	return err
 }
 
@@ -196,6 +228,9 @@ func KillSFServer() error {
 	err = newProcess.Kill()
 	SF_PID = GetSFPID()
 	utils.InfoLogger.Println("SF Server is now killed")
+
+	shouldBeRunning = false
+
 	return err
 }
 

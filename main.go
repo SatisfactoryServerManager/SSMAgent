@@ -185,6 +185,7 @@ func GetConfigFromAPI() {
 	config.GetConfig().Backup.Interval = resData.Backup.Interval
 	config.GetConfig().Backup.Keep = resData.Backup.Keep
 	config.GetConfig().SF.UpdateSFOnStart = resData.UpdateOnStart
+	config.GetConfig().SF.AutoRestart = resData.AutoRestart
 
 	config.SaveConfig()
 
