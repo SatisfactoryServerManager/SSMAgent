@@ -150,11 +150,12 @@ func StartSFServer() error {
 
 	cmd.Process.Release()
 
+	time.Sleep(5 * time.Second)
+	SF_PID = GetSFPID()
+
 	utils.InfoLogger.Println("Started SF Server")
 
-	utils.InfoLogger.Printf("Started process with pid: %d\r\n", cmd.Process.Pid)
-	SF_PID = int32(cmd.Process.Pid)
-
+	utils.InfoLogger.Printf("Started process with pid: %d\r\n", SF_PID)
 	return nil
 }
 
@@ -239,6 +240,7 @@ func GetStartArgs() []string {
 	exeArgs = append(exeArgs, "-unattended")
 	exeArgs = append(exeArgs, "-MaxWorkerThreads="+strconv.Itoa(workerthreads))
 	exeArgs = append(exeArgs, "-ssmagentname="+agentName)
+	exeArgs = append(exeArgs, "-multihome=0.0.0.0")
 
 	return exeArgs
 }

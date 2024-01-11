@@ -99,20 +99,16 @@ func LoadConfigFile() {
 
 func SetDefaultValues() {
 
-	_config.Version = "v1.0.45"
+	_config.Version = "v1.0.46"
 
-	if _config.HomeDir == "" {
-		_config.HomeDir = SSMHomeDir
-	}
-
-	if _config.LogDir == "" {
-		_config.LogDir, _ = filepath.Abs(path.Join(SSMHomeDir, "logs"))
-	}
+	_config.HomeDir = SSMHomeDir
+	_config.LogDir, _ = filepath.Abs(path.Join(SSMHomeDir, "logs"))
 
 	if _config.URL == "" {
-		_config.URL = flag.Lookup("url").Value.(flag.Getter).Get().(string)
 		_config.SF.UpdateSFOnStart = true
 	}
+
+	_config.URL = flag.Lookup("url").Value.(flag.Getter).Get().(string)
 
 	_config.APIKey = flag.Lookup("apikey").Value.(flag.Getter).Get().(string)
 
