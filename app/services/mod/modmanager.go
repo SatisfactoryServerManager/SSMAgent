@@ -294,6 +294,10 @@ func UpdateSMLConfig() error {
 		return err
 	}
 
+	if sf.IsRunning() {
+		return nil
+	}
+
 	if _SMLConfig.DesiredVersion == "0.0.0" {
 		if err := _SMLConfig.Uninstall(); err != nil {
 			return err
