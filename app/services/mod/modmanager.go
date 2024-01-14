@@ -330,7 +330,7 @@ func UpdateSMLConfig() error {
 	return nil
 }
 
-func UpdateModConfigFile(modReference string, modConfig string) error {
+func UpdateModConfigFile(modReference string, modConfig json.RawMessage) error {
 
 	if sf.IsRunning() {
 		return nil
@@ -338,10 +338,16 @@ func UpdateModConfigFile(modReference string, modConfig string) error {
 
 	utils.CreateFolder(config.GetConfig().ModConfigsDir)
 
+	modReference = strings.Replace(modReference, "\"", "", -1)
+
 	configfile := filepath.Join(config.GetConfig().ModConfigsDir, modReference+".cfg")
 
-	d1 := []byte(modConfig)
-	if err := os.WriteFile(configfile, d1, 0777); err != nil {
+	jsonStr, err := modConfig.MarshalJSON()
+	if err != nil {
+		return err
+	}
+
+	if err := os.WriteFile(configfile, jsonStr, 0777); err != nil {
 		return err
 	}
 

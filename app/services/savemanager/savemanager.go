@@ -210,6 +210,7 @@ func GetSaveInfo(filePath string) SaveFileInfo {
 	sessionSettings := strings.Split(sessionString, "=")
 
 	if len(sessionSettings) > 0 {
+
 		sessionNameData := strings.Split(sessionSettings[1], "?")
 		res.SessionName = sessionNameData[0]
 	}

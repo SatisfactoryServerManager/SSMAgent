@@ -30,14 +30,16 @@ type Backup struct {
 }
 
 type SFConfig struct {
-	PortOffset      int    `json:"portOffset"`
-	UpdateSFOnStart bool   `json:"updateSFOnStart"`
-	AutoRestart     bool   `json:"autoRestart"`
-	SFBranch        string `json:"sfbranch"`
-	InstalledVer    int    `json:"installedVer"`
-	AvilableVer     int    `json:"avaliableVer"`
-	WorkerThreads   int    `json:"workerThreads"`
-	MaxPlayers      int    `json:"maxPlayers"`
+	PortOffset           int    `json:"portOffset"`
+	UpdateSFOnStart      bool   `json:"updateSFOnStart"`
+	AutoRestart          bool   `json:"autoRestart"`
+	AutoPause            bool   `json:"autoPause"`
+	AutoSaveOnDisconnect bool   `json:"autoSaveOnDisconnect"`
+	SFBranch             string `json:"sfbranch"`
+	InstalledVer         int    `json:"installedVer"`
+	AvilableVer          int    `json:"avaliableVer"`
+	WorkerThreads        int    `json:"workerThreads"`
+	MaxPlayers           int    `json:"maxPlayers"`
 }
 
 type Config struct {
@@ -180,6 +182,7 @@ func UpdateIniFiles() error {
 
 	EngineFilePath := filepath.Join(GetConfig().SFConfigDir, "Engine.ini")
 	GameFilePath := filepath.Join(GetConfig().SFConfigDir, "Game.ini")
+	ServerSettingsFilePath := filepath.Join(GetConfig().SFConfigDir, "ServerSettings.ini")
 
 	if err := utils.CreateFolder(GetConfig().SFConfigDir); err != nil {
 		return err
@@ -201,6 +204,14 @@ func UpdateIniFiles() error {
 		file.Close()
 	}
 
+	if !utils.CheckFileExists(ServerSettingsFilePath) {
+		file, err := os.Create(ServerSettingsFilePath)
+		if err != nil {
+			return err
+		}
+		file.Close()
+	}
+
 	cfg, err := ini.Load(EngineFilePath)
 	if err != nil {
 		return err
@@ -208,6 +219,8 @@ func UpdateIniFiles() error {
 
 	cfg.Section("/Script/Engine.Player").Key("ConfiguredInternetSpeed").SetValue("104857600")
 	cfg.Section("/Script/Engine.Player").Key("ConfiguredLanSpeed").SetValue("104857600")
+
+	cfg.Section("/Script/Engine.Engine").Key("NetClientTicksPerSecond=").SetValue("60")
 
 	cfg.Section("/Script/OnlineSubsystemUtils.IpNetDriver").Key("NetServerMaxTickRate").SetValue("120")
 	cfg.Section("/Script/OnlineSubsystemUtils.IpNetDriver").Key("MaxNetTickRate").SetValue("400")
@@ -218,6 +231,9 @@ func UpdateIniFiles() error {
 	cfg.Section("/Script/OnlineSubsystemUtils.IpNetDriver").Key("ConnectionTimeout").SetValue("300")
 	cfg.Section("/Script/OnlineSubsystemUtils.IpNetDriver").Key("MaxClientRate").SetValue("104857600")
 	cfg.Section("/Script/OnlineSubsystemUtils.IpNetDriver").Key("MaxInternetClientRate").SetValue("104857600")
+
+	cfg.Section("/Script/SocketSubsystemEpic.EpicNetDriver").Key("NetServerMaxTickRate").SetValue("120")
+	cfg.Section("/Script/SocketSubsystemEpic.EpicNetDriver").Key("LanServerMaxTickRate").SetValue("120")
 
 	if err := cfg.SaveTo(GameFilePath); err != nil {
 		return err
@@ -234,6 +250,27 @@ func UpdateIniFiles() error {
 	cfg.Section("/Script/Engine.GameSession").Key("MaxPlayers").SetValue(strconv.Itoa(GetConfig().SF.MaxPlayers))
 
 	if err := cfg.SaveTo(GameFilePath); err != nil {
+		return err
+	}
+
+	cfg, err = ini.Load(ServerSettingsFilePath)
+	if err != nil {
+		return err
+	}
+
+	if GetConfig().SF.AutoPause {
+		cfg.Section("/Script/FactoryGame.FGServerSubsystem").Key("mAutoPause").SetValue("True")
+	} else {
+		cfg.Section("/Script/FactoryGame.FGServerSubsystem").Key("mAutoPause").SetValue("False")
+	}
+
+	if GetConfig().SF.AutoSaveOnDisconnect {
+		cfg.Section("/Script/FactoryGame.FGServerSubsystem").Key("mAutoSaveOnDisconnect").SetValue("True")
+	} else {
+		cfg.Section("/Script/FactoryGame.FGServerSubsystem").Key("mAutoSaveOnDisconnect").SetValue("False")
+	}
+
+	if err := cfg.SaveTo(ServerSettingsFilePath); err != nil {
 		return err
 	}
 

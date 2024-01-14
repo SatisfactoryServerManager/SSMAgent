@@ -186,6 +186,8 @@ func GetConfigFromAPI() {
 	config.GetConfig().Backup.Keep = resData.Backup.Keep
 	config.GetConfig().SF.UpdateSFOnStart = resData.UpdateOnStart
 	config.GetConfig().SF.AutoRestart = resData.AutoRestart
+	config.GetConfig().SF.AutoPause = resData.AutoPause
+	config.GetConfig().SF.AutoSaveOnDisconnect = resData.AutoSaveOnDisconnect
 
 	config.SaveConfig()
 
@@ -195,6 +197,10 @@ func GetConfigFromAPI() {
 	}
 
 	if !sf.IsInstalled() {
+		return
+	}
+
+	if sf.IsRunning() {
 		return
 	}
 

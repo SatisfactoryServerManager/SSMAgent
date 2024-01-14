@@ -104,6 +104,11 @@ func ProcessAllMessageQueueItems() {
 	}
 }
 
+type UpdateModConfigData struct {
+	ModReference string `json:"modReference"`
+	ModConfig    string `json:"modConfig"`
+}
+
 func ProcessMessageQueueItem(messageItem *MessageQueueItem) error {
 
 	utils.DebugLogger.Printf("Processing Message action %s\r\n", messageItem.Action)
@@ -127,10 +132,10 @@ func ProcessMessageQueueItem(messageItem *MessageQueueItem) error {
 	case "updateconfig":
 		return nil
 	case "updateModConfig":
-		var objmap map[string]json.RawMessage
+		var objmap UpdateModConfigData
 		b, _ := json.Marshal(messageItem.Data)
 		json.Unmarshal(b, &objmap)
-		return mod.UpdateModConfigFile(string(objmap["modReference"]), string(objmap["modConfig"]))
+		return mod.UpdateModConfigFile(objmap.ModReference, json.RawMessage(objmap.ModConfig))
 	default:
 		return errors.New("unknown message queue action")
 	}
