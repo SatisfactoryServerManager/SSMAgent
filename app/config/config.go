@@ -176,15 +176,19 @@ func SaveConfig() {
 	}
 }
 
-func UpdateIniFiles() {
+func UpdateIniFiles() error {
 
 	EngineFilePath := filepath.Join(GetConfig().SFConfigDir, "Engine.ini")
 	GameFilePath := filepath.Join(GetConfig().SFConfigDir, "Game.ini")
 
+	if err := utils.CreateFolder(GetConfig().SFConfigDir); err != nil {
+		return err
+	}
+
 	if !utils.CheckFileExists(EngineFilePath) {
 		file, err := os.Create(EngineFilePath)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		file.Close()
 	}
@@ -192,15 +196,14 @@ func UpdateIniFiles() {
 	if !utils.CheckFileExists(GameFilePath) {
 		file, err := os.Create(GameFilePath)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		file.Close()
 	}
 
 	cfg, err := ini.Load(EngineFilePath)
 	if err != nil {
-		utils.WarnLogger.Printf("Fail to read file: %v\r\n", err)
-		return
+		return err
 	}
 
 	cfg.Section("/Script/Engine.Player").Key("ConfiguredInternetSpeed").SetValue("104857600")
@@ -216,12 +219,13 @@ func UpdateIniFiles() {
 	cfg.Section("/Script/OnlineSubsystemUtils.IpNetDriver").Key("MaxClientRate").SetValue("104857600")
 	cfg.Section("/Script/OnlineSubsystemUtils.IpNetDriver").Key("MaxInternetClientRate").SetValue("104857600")
 
-	cfg.SaveTo(EngineFilePath)
+	if err := cfg.SaveTo(GameFilePath); err != nil {
+		return err
+	}
 
 	cfg, err = ini.Load(GameFilePath)
 	if err != nil {
-		utils.WarnLogger.Printf("Fail to read file: %v\r\n", err)
-		return
+		return err
 	}
 
 	cfg.Section("/Script/Engine.GameNetworkManager").Key("TotalNetBandwidth").SetValue("104857600")
@@ -229,5 +233,9 @@ func UpdateIniFiles() {
 	cfg.Section("/Script/Engine.GameNetworkManager").Key("MinDynamicBandwidth").SetValue("104857600")
 	cfg.Section("/Script/Engine.GameSession").Key("MaxPlayers").SetValue(strconv.Itoa(GetConfig().SF.MaxPlayers))
 
-	cfg.SaveTo(GameFilePath)
+	if err := cfg.SaveTo(GameFilePath); err != nil {
+		return err
+	}
+
+	return nil
 }

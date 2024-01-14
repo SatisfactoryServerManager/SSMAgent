@@ -198,6 +198,8 @@ func GetConfigFromAPI() {
 		return
 	}
 
-	config.UpdateIniFiles()
+	if err := config.UpdateIniFiles(); err != nil {
+		utils.ErrorLogger.Printf("error updating game ini files with error: %s\n", err.Error())
+	}
 
 }
