@@ -1,3 +1,6 @@
+## 1.0.49 (January 15, 2024)
+  - chore: Bump Version
+
 ## 1.0.48 (January 15, 2024)
   - feat: More Server settings and mod configs
   - fix: Better error handling of ini files
