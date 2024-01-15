@@ -156,12 +156,12 @@ DATA_DIR="/SSM/data/${AGENTNAME}"
 SSM_SERVICENAME="SSMAgent@${AGENTNAME}.service"
 SSM_SERVICEFILE="/etc/systemd/system/SSMAgent@${AGENTNAME}.service"
 
-if [ -n $OVERRIDE_INSTALL_DIR ]; then
+if [ -n "$OVERRIDE_INSTALL_DIR" ]; then
     INSTALL_DIR=$OVERRIDE_INSTALL_DIR
 fi
 
-if [ -n $OVERRIDE_DATA_DIR ]; then
-    INSTALL_DIR=$OVERRIDE_DATA_DIR
+if [ -n "$OVERRIDE_DATA_DIR" ]; then
+    DATA_DIR=$OVERRIDE_DATA_DIR
 fi
 
 
