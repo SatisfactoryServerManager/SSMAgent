@@ -1,3 +1,8 @@
+## 1.0.48 (January 15, 2024)
+  - feat: More Server settings and mod configs
+  - fix: Better error handling of ini files
+  - fix: Dont allow changing sml when sf is running
+
 ## 1.0.47 (January 11, 2024)
   - feat: Added auto restart feature
 
