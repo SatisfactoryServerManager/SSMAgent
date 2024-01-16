@@ -1,3 +1,8 @@
+## 1.0.50 (January 16, 2024)
+  - feat: Better game config management
+  - fix install script
+  - feat: Updated install script
+
 ## 1.0.49 (January 15, 2024)
   - chore: Bump Version
 
