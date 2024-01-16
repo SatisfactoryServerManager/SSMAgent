@@ -7,48 +7,56 @@ import (
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 )
 
-var (
-	_currentSeek = 0
-	File         *os.File
-)
-
-func Seek(n int) {
-	_currentSeek += n
+type SaveDecoder struct {
+	File        *os.File
+	CurrentSeek int
 }
 
-func Reset() {
-	if File != nil {
-		File.Close()
-		File = nil
+func NewSaveDecoder(file *os.File) SaveDecoder {
+	newDecoder := SaveDecoder{}
+	newDecoder.CurrentSeek = 0
+	newDecoder.File = file
+
+	return newDecoder
+}
+
+func (decoder *SaveDecoder) Seek(n int) {
+	decoder.CurrentSeek += n
+}
+
+func (decoder *SaveDecoder) Close() error {
+	if err := decoder.File.Close(); err != nil {
+		return err
 	}
-	_currentSeek = 0
+	return nil
 }
 
-func DebugSeek() {
-	utils.DebugLogger.Printf("Current Seek: %d\r\n", _currentSeek)
+func (decoder SaveDecoder) DebugSeek() {
+	utils.DebugLogger.Printf("Current Seek: %d\r\n", decoder.CurrentSeek)
 }
 
-func ReadInt() uint16 {
-	File.Seek(int64(_currentSeek), 0)
+func (decoder *SaveDecoder) ReadInt() uint16 {
+	decoder.File.Seek(int64(decoder.CurrentSeek), 0)
 	var i uint16
-	binary.Read(File, binary.LittleEndian, &i)
-	Seek(4)
+	binary.Read(decoder.File, binary.LittleEndian, &i)
+	decoder.Seek(4)
 	return i
 }
 
-func ReadString() (string, error) {
-	File.Seek(int64(_currentSeek), 0)
-	strlen := ReadInt() - 1
-	File.Seek(int64(_currentSeek), 0)
+func (decoder *SaveDecoder) ReadString() (string, error) {
+	decoder.File.Seek(int64(decoder.CurrentSeek), 0)
+
+	strlen := decoder.ReadInt() - 1
+	decoder.File.Seek(int64(decoder.CurrentSeek), 0)
 
 	buf := make([]byte, strlen)
 
-	_, err := File.Read(buf)
+	_, err := decoder.File.Read(buf)
 	if err != nil {
 		return "", err
 	}
 
-	Seek(int(strlen) + 1)
+	decoder.Seek(int(strlen) + 1)
 	return string(buf), nil
 
 }

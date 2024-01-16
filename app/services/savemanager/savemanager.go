@@ -181,8 +181,6 @@ func GetSaveFiles() {
 
 func GetSaveInfo(filePath string) SaveFileInfo {
 
-	savedecoder.Reset()
-
 	var res = SaveFileInfo{}
 	res.FilePath = filePath
 
@@ -200,22 +198,27 @@ func GetSaveInfo(filePath string) SaveFileInfo {
 
 	res.FileName = filepath.Base(filePath)
 
-	savedecoder.File = file
-	savedecoder.Seek(12)
+	decoder := savedecoder.NewSaveDecoder(file)
 
-	level, _ := savedecoder.ReadString()
+	decoder.Seek(12)
+
+	level, _ := decoder.ReadString()
 	res.Level = level
 
-	sessionString, _ := savedecoder.ReadString()
+	sessionString, _ := decoder.ReadString()
 	sessionSettings := strings.Split(sessionString, "=")
 
-	if len(sessionSettings) > 0 {
+	if len(sessionSettings) > 1 {
 
 		sessionNameData := strings.Split(sessionSettings[1], "?")
 		res.SessionName = sessionNameData[0]
+
+		if len(res.SessionName) > 50 {
+			res.SessionName = "Unknown"
+		}
 	}
 
-	file.Close()
+	decoder.Close()
 	return res
 }
 

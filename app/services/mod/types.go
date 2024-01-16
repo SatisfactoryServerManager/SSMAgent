@@ -160,7 +160,7 @@ func (obj *SelectedMod) GetModConfig() error {
 		obj.Config = string(data)
 	} else {
 
-		if obj.Mod.ModReference == "SSM" {
+		if obj.Mod.ModReference == "SatisfactoryServerManager" {
 			d1 := []byte("{\"apiKey\":\"" + config.GetConfig().APIKey + "\", \"url\":\"" + config.GetConfig().URL + "\"}")
 			if err := os.WriteFile(configfile, d1, 0777); err != nil {
 				return err

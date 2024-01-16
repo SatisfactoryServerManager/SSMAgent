@@ -8,19 +8,21 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"time"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/vars"
-	"gopkg.in/ini.v1"
 )
 
 var (
-	_config        *Config
-	ConfigFileName = "SSM.json"
-	ConfigFile     = ""
-	SSMHomeDir     = ""
+	_config                *Config
+	ConfigFileName         = "SSM.json"
+	ConfigFile             = ""
+	SSMHomeDir             = ""
+	EngineConfig           Engine
+	GameConfig             Game
+	ServerSettingsConfig   ServerSettings
+	GameUserSettingsConfig GameUserSettings
 )
 
 type Backup struct {
@@ -180,97 +182,25 @@ func SaveConfig() {
 
 func UpdateIniFiles() error {
 
-	EngineFilePath := filepath.Join(GetConfig().SFConfigDir, "Engine.ini")
-	GameFilePath := filepath.Join(GetConfig().SFConfigDir, "Game.ini")
-	ServerSettingsFilePath := filepath.Join(GetConfig().SFConfigDir, "ServerSettings.ini")
+	EngineConfig = Engine{}
+	GameConfig = Game{}
+	ServerSettingsConfig = ServerSettings{}
+	GameUserSettingsConfig = GameUserSettings{}
 
-	if err := utils.CreateFolder(GetConfig().SFConfigDir); err != nil {
+	if err := LoadGameConfigFiles(&EngineConfig, &GameConfig, &ServerSettingsConfig); err != nil {
 		return err
 	}
 
-	if !utils.CheckFileExists(EngineFilePath) {
-		file, err := os.Create(EngineFilePath)
-		if err != nil {
-			return err
-		}
-		file.Close()
-	}
+	EngineConfig.SetDefaults()
+	GameConfig.SetDefaults()
+	ServerSettingsConfig.SetDefaults()
+	GameUserSettingsConfig.SetDefaults()
 
-	if !utils.CheckFileExists(GameFilePath) {
-		file, err := os.Create(GameFilePath)
-		if err != nil {
-			return err
-		}
-		file.Close()
-	}
-
-	if !utils.CheckFileExists(ServerSettingsFilePath) {
-		file, err := os.Create(ServerSettingsFilePath)
-		if err != nil {
-			return err
-		}
-		file.Close()
-	}
-
-	cfg, err := ini.Load(EngineFilePath)
-	if err != nil {
+	if err := SaveGameConfigFiles(&EngineConfig, &GameConfig, &ServerSettingsConfig); err != nil {
 		return err
 	}
 
-	cfg.Section("/Script/Engine.Player").Key("ConfiguredInternetSpeed").SetValue("104857600")
-	cfg.Section("/Script/Engine.Player").Key("ConfiguredLanSpeed").SetValue("104857600")
-
-	cfg.Section("/Script/Engine.Engine").Key("NetClientTicksPerSecond=").SetValue("60")
-
-	cfg.Section("/Script/OnlineSubsystemUtils.IpNetDriver").Key("NetServerMaxTickRate").SetValue("120")
-	cfg.Section("/Script/OnlineSubsystemUtils.IpNetDriver").Key("MaxNetTickRate").SetValue("400")
-	cfg.Section("/Script/OnlineSubsystemUtils.IpNetDriver").Key("MaxInternetClientRate").SetValue("104857600")
-	cfg.Section("/Script/OnlineSubsystemUtils.IpNetDriver").Key("MaxClientRate").SetValue("104857600")
-	cfg.Section("/Script/OnlineSubsystemUtils.IpNetDriver").Key("LanServerMaxTickRate").SetValue("400")
-	cfg.Section("/Script/OnlineSubsystemUtils.IpNetDriver").Key("InitialConnectTimeout").SetValue("300")
-	cfg.Section("/Script/OnlineSubsystemUtils.IpNetDriver").Key("ConnectionTimeout").SetValue("300")
-	cfg.Section("/Script/OnlineSubsystemUtils.IpNetDriver").Key("MaxClientRate").SetValue("104857600")
-	cfg.Section("/Script/OnlineSubsystemUtils.IpNetDriver").Key("MaxInternetClientRate").SetValue("104857600")
-
-	cfg.Section("/Script/SocketSubsystemEpic.EpicNetDriver").Key("NetServerMaxTickRate").SetValue("120")
-	cfg.Section("/Script/SocketSubsystemEpic.EpicNetDriver").Key("LanServerMaxTickRate").SetValue("120")
-
-	if err := cfg.SaveTo(GameFilePath); err != nil {
-		return err
-	}
-
-	cfg, err = ini.Load(GameFilePath)
-	if err != nil {
-		return err
-	}
-
-	cfg.Section("/Script/Engine.GameNetworkManager").Key("TotalNetBandwidth").SetValue("104857600")
-	cfg.Section("/Script/Engine.GameNetworkManager").Key("MaxDynamicBandwidth").SetValue("104857600")
-	cfg.Section("/Script/Engine.GameNetworkManager").Key("MinDynamicBandwidth").SetValue("104857600")
-	cfg.Section("/Script/Engine.GameSession").Key("MaxPlayers").SetValue(strconv.Itoa(GetConfig().SF.MaxPlayers))
-
-	if err := cfg.SaveTo(GameFilePath); err != nil {
-		return err
-	}
-
-	cfg, err = ini.Load(ServerSettingsFilePath)
-	if err != nil {
-		return err
-	}
-
-	if GetConfig().SF.AutoPause {
-		cfg.Section("/Script/FactoryGame.FGServerSubsystem").Key("mAutoPause").SetValue("True")
-	} else {
-		cfg.Section("/Script/FactoryGame.FGServerSubsystem").Key("mAutoPause").SetValue("False")
-	}
-
-	if GetConfig().SF.AutoSaveOnDisconnect {
-		cfg.Section("/Script/FactoryGame.FGServerSubsystem").Key("mAutoSaveOnDisconnect").SetValue("True")
-	} else {
-		cfg.Section("/Script/FactoryGame.FGServerSubsystem").Key("mAutoSaveOnDisconnect").SetValue("False")
-	}
-
-	if err := cfg.SaveTo(ServerSettingsFilePath); err != nil {
+	if err := GameUserSettingsConfig.Save(); err != nil {
 		return err
 	}
 
