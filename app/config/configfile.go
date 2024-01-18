@@ -45,6 +45,16 @@ type ServerSettings struct {
 	AutoSaveOnDisconnect string `inisection:"/Script/FactoryGame.FGServerSubsystem" inikey:"mAutoSaveOnDisconnect"`
 }
 
+type Scalability struct {
+	ConfiguredInternetSpeed int64 `inisection:"NetworkQuality@3" inikey:"ConfiguredInternetSpeed"`
+	ConfiguredLanSpeed      int64 `inisection:"NetworkQuality@3" inikey:"ConfiguredLanSpeed"`
+	TotalNetBandwidth       int64 `inisection:"NetworkQuality@3" inikey:"TotalNetBandwidth"`
+	MaxDynamicBandwidth     int64 `inisection:"NetworkQuality@3" inikey:"MaxDynamicBandwidth"`
+	MinDynamicBandwidth     int64 `inisection:"NetworkQuality@3" inikey:"MinDynamicBandwidth"`
+	MaxInternetClientRate   int64 `inisection:"NetworkQuality@3" inikey:"MaxInternetClientRate"`
+	MaxClientRate           int64 `inisection:"NetworkQuality@3" inikey:"MaxClientRate"`
+}
+
 func (obj *Engine) SetDefaults() {
 	setDefaultValue(&obj.ConfiguredInternetSpeed, 104857600)
 	setDefaultValue(&obj.ConfiguredLanSpeed, 104857600)
@@ -83,6 +93,16 @@ func (obj *ServerSettings) SetDefaults() {
 	} else {
 		obj.AutoSaveOnDisconnect = "False"
 	}
+}
+
+func (obj *Scalability) SetDefaults() {
+	obj.ConfiguredInternetSpeed = 104857600
+	obj.ConfiguredLanSpeed = 104857600
+	obj.TotalNetBandwidth = 104857600
+	obj.MaxDynamicBandwidth = 104857600
+	obj.MinDynamicBandwidth = 104857600
+	obj.MaxInternetClientRate = 104857600
+	obj.MaxClientRate = 104857600
 }
 
 func setDefaultValue(item *int64, defaultVal int64) {

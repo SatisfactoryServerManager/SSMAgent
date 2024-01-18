@@ -23,6 +23,7 @@ var (
 	GameConfig             Game
 	ServerSettingsConfig   ServerSettings
 	GameUserSettingsConfig GameUserSettings
+	ScalabilityConfig      Scalability
 )
 
 type Backup struct {
@@ -188,8 +189,9 @@ func UpdateIniFiles() error {
 	GameConfig = Game{}
 	ServerSettingsConfig = ServerSettings{}
 	GameUserSettingsConfig = GameUserSettings{}
+	ScalabilityConfig = Scalability{}
 
-	if err := LoadGameConfigFiles(&EngineConfig, &GameConfig, &ServerSettingsConfig); err != nil {
+	if err := LoadGameConfigFiles(&EngineConfig, &GameConfig, &ServerSettingsConfig, &ScalabilityConfig); err != nil {
 		return err
 	}
 
@@ -197,8 +199,9 @@ func UpdateIniFiles() error {
 	GameConfig.SetDefaults()
 	ServerSettingsConfig.SetDefaults()
 	GameUserSettingsConfig.SetDefaults()
+	ScalabilityConfig.SetDefaults()
 
-	if err := SaveGameConfigFiles(&EngineConfig, &GameConfig, &ServerSettingsConfig); err != nil {
+	if err := SaveGameConfigFiles(&EngineConfig, &GameConfig, &ServerSettingsConfig, &ScalabilityConfig); err != nil {
 		return err
 	}
 
