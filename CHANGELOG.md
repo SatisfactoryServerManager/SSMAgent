@@ -1,3 +1,6 @@
+## 1.0.51 (January 18, 2024)
+  - feat: Seasonal Events and auto save interval options
+
 ## 1.0.50 (January 16, 2024)
   - feat: Better game config management
   - fix install script
