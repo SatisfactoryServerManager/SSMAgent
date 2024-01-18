@@ -50,14 +50,16 @@ type HttpResponseBody_Backup struct {
 }
 
 type HttpResponseBody_Config struct {
-	SFBranch             string                  `json:"sfBranch"`
-	WorkerThreads        int                     `json:"workerThreads"`
-	MaxPlayers           int                     `json:"maxPlayers"`
-	UpdateOnStart        bool                    `json:"checkForUpdatesOnStart"`
-	AutoRestart          bool                    `json:"autoRestartServer"`
-	AutoPause            bool                    `json:"autoPause"`
-	AutoSaveOnDisconnect bool                    `json:"autoSaveOnDisconnect"`
-	Backup               HttpResponseBody_Backup `json:"backup"`
+	SFBranch              string                  `json:"sfBranch"`
+	WorkerThreads         int                     `json:"workerThreads"`
+	MaxPlayers            int                     `json:"maxPlayers"`
+	UpdateOnStart         bool                    `json:"checkForUpdatesOnStart"`
+	AutoRestart           bool                    `json:"autoRestartServer"`
+	AutoPause             bool                    `json:"autoPause"`
+	AutoSaveOnDisconnect  bool                    `json:"autoSaveOnDisconnect"`
+	AutoSaveInterval      float32                 `json:"autoSaveInterval"`
+	DisableSeasonalEvents bool                    `json:"disableSeasonalEvents"`
+	Backup                HttpResponseBody_Backup `json:"backup"`
 }
 
 type APIError struct {

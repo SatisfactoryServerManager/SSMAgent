@@ -32,16 +32,18 @@ type Backup struct {
 }
 
 type SFConfig struct {
-	PortOffset           int    `json:"portOffset"`
-	UpdateSFOnStart      bool   `json:"updateSFOnStart"`
-	AutoRestart          bool   `json:"autoRestart"`
-	AutoPause            bool   `json:"autoPause"`
-	AutoSaveOnDisconnect bool   `json:"autoSaveOnDisconnect"`
-	SFBranch             string `json:"sfbranch"`
-	InstalledVer         int    `json:"installedVer"`
-	AvilableVer          int    `json:"avaliableVer"`
-	WorkerThreads        int    `json:"workerThreads"`
-	MaxPlayers           int    `json:"maxPlayers"`
+	PortOffset            int     `json:"portOffset"`
+	UpdateSFOnStart       bool    `json:"updateSFOnStart"`
+	AutoRestart           bool    `json:"autoRestart"`
+	AutoPause             bool    `json:"autoPause"`
+	AutoSaveOnDisconnect  bool    `json:"autoSaveOnDisconnect"`
+	AutoSaveInterval      float32 `json:"autoSaveInterval"`
+	DisableSeasonalEvents bool    `json:"disableSeasonalEvents"`
+	SFBranch              string  `json:"sfbranch"`
+	InstalledVer          int     `json:"installedVer"`
+	AvilableVer           int     `json:"avaliableVer"`
+	WorkerThreads         int     `json:"workerThreads"`
+	MaxPlayers            int     `json:"maxPlayers"`
 }
 
 type Config struct {
@@ -104,7 +106,7 @@ func LoadConfigFile() {
 
 func SetDefaultValues() {
 
-	_config.Version = "v1.0.49"
+	_config.Version = "v1.0.50"
 
 	_config.HomeDir = SSMHomeDir
 	_config.LogDir, _ = filepath.Abs(path.Join(SSMHomeDir, "logs"))

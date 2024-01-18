@@ -218,14 +218,24 @@ func SaveGameConfigFile(obj GameConfigFile) error {
 
 type GameUserSettings struct {
 	AutosaveInterval      float32 `ini:"FG.AutosaveInterval"`
-	NetworkQuality        int     `ini:"FG.NetworkQuality"`
-	DisableSeasonalEvents int     `ini:"FG.DisableSeasonalEvents"`
+	NetworkQuality        int64   `ini:"FG.NetworkQuality"`
+	DisableSeasonalEvents int64   `ini:"FG.DisableSeasonalEvents"`
 }
 
 func (obj *GameUserSettings) SetDefaults() {
-	obj.AutosaveInterval = 300
-	obj.NetworkQuality = 3
-	obj.DisableSeasonalEvents = 1
+	obj.AutosaveInterval = GetConfig().SF.AutoSaveInterval
+
+	if obj.AutosaveInterval == 0 {
+		obj.AutosaveInterval = 300
+	}
+
+	setDefaultValue(&obj.NetworkQuality, 3)
+
+	if GetConfig().SF.DisableSeasonalEvents {
+		obj.DisableSeasonalEvents = 1
+	} else {
+		obj.DisableSeasonalEvents = 0
+	}
 }
 
 func (obj GameUserSettings) Save() error {
@@ -272,7 +282,7 @@ func (obj GameUserSettings) UpdateInts() error {
 		// Get the field tag value
 		tag := field.Tag.Get("ini")
 
-		if field.Type.Kind() != reflect.Int {
+		if field.Type.Kind() != reflect.Int64 {
 			continue
 		}
 

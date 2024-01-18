@@ -188,6 +188,8 @@ func GetConfigFromAPI() {
 	config.GetConfig().SF.AutoRestart = resData.AutoRestart
 	config.GetConfig().SF.AutoPause = resData.AutoPause
 	config.GetConfig().SF.AutoSaveOnDisconnect = resData.AutoSaveOnDisconnect
+	config.GetConfig().SF.AutoSaveInterval = resData.AutoSaveInterval
+	config.GetConfig().SF.DisableSeasonalEvents = resData.DisableSeasonalEvents
 
 	config.SaveConfig()
 
