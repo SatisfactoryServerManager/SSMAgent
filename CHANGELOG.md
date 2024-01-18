@@ -1,3 +1,6 @@
+## 1.0.52 (January 18, 2024)
+  - feat: Set scalability config file
+
 ## 1.0.51 (January 18, 2024)
   - feat: Seasonal Events and auto save interval options
 
