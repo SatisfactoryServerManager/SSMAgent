@@ -119,7 +119,7 @@ func CreateBackupFile() error {
 
 	utils.InfoLogger.Println("Backup created successfully")
 
-	err = api.SendFile("/api/agent/uploadbackup", zipFilePath)
+	err = api.SendFile("/api/v1/agent/upload/backup", zipFilePath)
 	if err != nil {
 		return err
 	}

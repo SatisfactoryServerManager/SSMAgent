@@ -60,7 +60,7 @@ func GetModState() {
 
 	FindModsOnDisk()
 
-	err := api.SendGetRequest("/api/agent/modstate", &_ModState)
+	err := api.SendGetRequest("/api/v1/agent/modconfig", &_ModState)
 	if err != nil {
 		utils.ErrorLogger.Printf("Failed to get Mod State with error: %s\r\n", err.Error())
 		return
@@ -358,7 +358,7 @@ func SendModState() error {
 
 	var resData interface{}
 
-	err := api.SendPostRequest("/api/agent/modstate", _ModState, resData)
+	err := api.SendPutRequest("/api/v1/agent/modconfig", _ModState, resData)
 	return err
 }
 

@@ -50,7 +50,9 @@ func SendLogFiles() {
 	ssmlogfile := filepath.Join(config.GetConfig().LogDir, "SSMAgent-combined.log")
 
 	if utils.CheckFileExists(ssmlogfile) {
-		api.SendFile("/api/agent/uploadlog", ssmlogfile)
+		if err := api.SendFile("/api/v1/agent/upload/log", ssmlogfile); err != nil {
+			utils.ErrorLogger.Println(err.Error())
+		}
 	}
 
 	gamelogdir := filepath.Join(
@@ -76,7 +78,9 @@ func SendLogFiles() {
 		}
 
 		if stats.ModTime().After(FactoryGameLogTime) {
-			api.SendFile("/api/agent/uploadlog", gamelogfile)
+			if err := api.SendFile("/api/v1/agent/upload/log", gamelogfile); err != nil {
+				utils.ErrorLogger.Println(err.Error())
+			}
 			FactoryGameLogTime = stats.ModTime()
 		}
 	}

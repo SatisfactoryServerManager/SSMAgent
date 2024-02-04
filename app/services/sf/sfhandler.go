@@ -2,6 +2,7 @@ package sf
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -9,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/services/state"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/steamcmd"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/vars"
@@ -90,6 +91,10 @@ func RemoveSFServer() error {
 }
 
 func InstallSFServer(force bool) error {
+
+	if IsRunning() {
+		return nil
+	}
 
 	if IsInstalled() && !force {
 		return nil
@@ -253,7 +258,7 @@ func GetLatestedVersion() {
 		return
 	}
 
-	config.GetConfig().SF.AvilableVer, _ = strconv.Atoi(val)
+	config.GetConfig().SF.AvilableVer, _ = strconv.ParseInt(val, 10, 64)
 	config.SaveConfig()
 }
 
@@ -303,6 +308,10 @@ func GetSFPID() int32 {
 		cpu, _ = process.CPUPercent()
 		mem, _ = process.MemoryPercent()
 
+		threads, _ := process.NumThreads()
+
+		fmt.Printf("#####################\n%f,%d, %f\n#####################", cpu, threads, (cpu / float64(threads)))
+
 		processAgentName := ""
 		for _, c := range cmd {
 
@@ -345,16 +354,13 @@ func IsInstalled() bool {
 }
 
 func SendStates() {
-	bodyData := api.HttpRequestBody_SFState{}
-	bodyData.Installed = IsInstalled()
-	bodyData.Running = IsRunning()
-	bodyData.CPU = cpu
-	bodyData.MEM = mem
 
-	var resData interface{}
+	state.Installed = IsInstalled()
+	state.Running = IsRunning()
+	state.CPU = cpu
+	state.MEM = mem
 
-	err := api.SendPostRequest("/api/agent/state", bodyData, &resData)
-	if err != nil {
+	if err := state.SendAgentState(); err != nil {
 		utils.ErrorLogger.Println(err.Error())
 	}
 }

@@ -15,14 +15,12 @@ import (
 )
 
 type ModState struct {
-	ID                  string        `json:"_id"`
 	InstalledSMLVersion string        `json:"installedSMLVersion"`
 	SMLInstalled        bool          `json:"smlInstalled"`
 	SelectedMods        []SelectedMod `json:"selectedMods"`
 }
 
 type SelectedMod struct {
-	ID               string `json:"_id"`
 	Mod              Mod    `json:"mod"`
 	DesiredVersion   string `json:"desiredVersion"`
 	InstalledVersion string `json:"installedVersion"`
@@ -33,9 +31,9 @@ type SelectedMod struct {
 
 type Mod struct {
 	ID           string       `json:"_id"`
-	ModID        string       `json:"modId"`
-	ModName      string       `json:"modName"`
-	ModReference string       `json:"modReference"`
+	ModID        string       `json:"id"`
+	ModName      string       `json:"name"`
+	ModReference string       `json:"mod_reference"`
 	Hidden       bool         `json:"hidden"`
 	Versions     []ModVersion `json:"versions"`
 }

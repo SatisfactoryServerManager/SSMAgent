@@ -41,8 +41,8 @@ type SFConfig struct {
 	AutoSaveInterval      float32 `json:"autoSaveInterval"`
 	DisableSeasonalEvents bool    `json:"disableSeasonalEvents"`
 	SFBranch              string  `json:"sfbranch"`
-	InstalledVer          int     `json:"installedVer"`
-	AvilableVer           int     `json:"avaliableVer"`
+	InstalledVer          int64   `json:"installedVer"`
+	AvilableVer           int64   `json:"avaliableVer"`
 	WorkerThreads         int     `json:"workerThreads"`
 	MaxPlayers            int     `json:"maxPlayers"`
 }

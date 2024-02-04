@@ -10,10 +10,11 @@ import (
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/backup"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/loghandler"
-	"github.com/SatisfactoryServerManager/SSMAgent/app/services/messagequeue"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/mod"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/savemanager"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/sf"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/services/state"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/services/task"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/steamcmd"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 )
@@ -51,8 +52,8 @@ func main() {
 		"sf": func(ctx context.Context) error {
 			return sf.ShutdownSFHandler()
 		},
-		"mq": func(ctx context.Context) error {
-			return messagequeue.ShutdownMessageQueue()
+		"task": func(ctx context.Context) error {
+			return task.ShutdownMessageQueue()
 		},
 		"loghandler": func(ctx context.Context) error {
 			return loghandler.ShutdownLogHandler()
@@ -100,7 +101,7 @@ func main() {
 	steamcmd.InitSteamCMD()
 	sf.InitSFHandler()
 
-	go messagequeue.InitMessageQueue()
+	go task.InitMessageQueue()
 	go loghandler.InitLogHandler()
 	go savemanager.InitSaveManager()
 	go backup.InitBackupManager()
@@ -114,7 +115,7 @@ func TestSSMCloudAPI() error {
 
 	utils.InfoLogger.Printf("Testing connection to: %s\r\n", config.GetConfig().URL)
 	var test interface{}
-	err := api.SendGetRequest("/api/ping", &test)
+	err := api.SendGetRequest("/api/v1/ping", &test)
 
 	if err != nil {
 		return err
@@ -127,26 +128,25 @@ func TestSSMCloudAPI() error {
 }
 
 func MarkAgentOnline() {
-	bodyData := api.HttpRequestBody_ActiveState{}
-	bodyData.Active = true
-
-	var resData interface{}
-
-	err := api.SendPostRequest("/api/agent/activestate", &bodyData, &resData)
+	state.Online = true
+	err := state.SendAgentState()
 	utils.CheckError(err)
 }
 
 func MarkAgentOffline() {
-	var body api.HttpRequestBody_ActiveState
-	body.Active = false
-
-	var resData interface{}
-
-	err := api.SendPostRequest("/api/agent/activestate", body, &resData)
+	state.Online = false
+	err := state.SendAgentState()
 	utils.CheckError(err)
 }
 
 func SendConfig() {
+
+	state.InstalledSFVersion = config.GetConfig().SF.InstalledVer
+	state.LatestSFVersion = config.GetConfig().SF.AvilableVer
+
+	if err := state.SendAgentState(); err != nil {
+		utils.ErrorLogger.Printf("Error sending state to API with error: %s\r\n", err.Error())
+	}
 
 	ip, err := api.GetPublicIP()
 	if err != nil {
@@ -155,23 +155,20 @@ func SendConfig() {
 	}
 
 	var req = api.HTTPRequestBody_Config{
-		Version:     config.GetConfig().Version,
-		SFInstalled: config.GetConfig().SF.InstalledVer,
-		SFAvailable: config.GetConfig().SF.AvilableVer,
-		IP:          ip,
+		Version: config.GetConfig().Version,
+		IP:      ip,
 	}
 
 	var resData interface{}
-	err = api.SendPostRequest("/api/agent/config", req, &resData)
 
-	if err != nil {
+	if err := api.SendPutRequest("/api/v1/agent/config", req, &resData); err != nil {
 		utils.ErrorLogger.Printf("Error sending config data to API with error: %s\r\n", err.Error())
 	}
 }
 
 func GetConfigFromAPI() {
 	var resData = api.HttpResponseBody_Config{}
-	err := api.SendGetRequest("/api/agent/config", &resData)
+	err := api.SendGetRequest("/api/v1/agent/config", &resData)
 
 	if err != nil {
 		return
@@ -179,17 +176,19 @@ func GetConfigFromAPI() {
 
 	oldBranch := config.GetConfig().SF.SFBranch
 
-	config.GetConfig().SF.MaxPlayers = resData.MaxPlayers
-	config.GetConfig().SF.WorkerThreads = resData.WorkerThreads
-	config.GetConfig().SF.SFBranch = resData.SFBranch
-	config.GetConfig().Backup.Interval = resData.Backup.Interval
-	config.GetConfig().Backup.Keep = resData.Backup.Keep
-	config.GetConfig().SF.UpdateSFOnStart = resData.UpdateOnStart
-	config.GetConfig().SF.AutoRestart = resData.AutoRestart
-	config.GetConfig().SF.AutoPause = resData.AutoPause
-	config.GetConfig().SF.AutoSaveOnDisconnect = resData.AutoSaveOnDisconnect
-	config.GetConfig().SF.AutoSaveInterval = resData.AutoSaveInterval
-	config.GetConfig().SF.DisableSeasonalEvents = resData.DisableSeasonalEvents
+	config.GetConfig().Backup.Interval = resData.Config.BackupInterval
+	config.GetConfig().Backup.Keep = resData.Config.BackupKeepAmount
+
+	config.GetConfig().SF.MaxPlayers = resData.ServerConfig.MaxPlayers
+	config.GetConfig().SF.WorkerThreads = resData.ServerConfig.WorkerThreads
+	config.GetConfig().SF.SFBranch = resData.ServerConfig.SFBranch
+
+	config.GetConfig().SF.UpdateSFOnStart = resData.ServerConfig.UpdateOnStart
+	config.GetConfig().SF.AutoRestart = resData.ServerConfig.AutoRestart
+	config.GetConfig().SF.AutoPause = resData.ServerConfig.AutoPause
+	config.GetConfig().SF.AutoSaveOnDisconnect = resData.ServerConfig.AutoSaveOnDisconnect
+	config.GetConfig().SF.AutoSaveInterval = resData.ServerConfig.AutoSaveInterval
+	config.GetConfig().SF.DisableSeasonalEvents = resData.ServerConfig.DisableSeasonalEvents
 
 	config.SaveConfig()
 

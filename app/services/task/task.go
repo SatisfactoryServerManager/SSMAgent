@@ -1,4 +1,4 @@
-package messagequeue
+package task
 
 import (
 	"encoding/json"
@@ -13,35 +13,34 @@ import (
 )
 
 var (
-	_quit         = make(chan int)
-	_messageQueue []MessageQueueItem
+	_quit       = make(chan int)
+	_agentTasks []TaskItem
 )
 
-type MessageQueueItem struct {
+type TaskItem struct {
 	ID        string      `json:"_id"`
 	Action    string      `json:"action"`
 	Data      interface{} `json:"data"`
 	Completed bool        `json:"completed"`
-	Error     string      `json:"error"`
 	Retries   int         `json:"retries"`
 	Created   time.Time   `json:"created"`
 }
 
 type HttpRequestBody_MessageItem struct {
-	Item MessageQueueItem `json:"item"`
+	Item TaskItem `json:"item"`
 }
 
 func InitMessageQueue() {
 	utils.InfoLogger.Println("Initialising Message Queue...")
 
-	GetMessageQueue()
+	GetAllTasks()
 
 	ticker := time.NewTicker(10 * time.Second)
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
-				GetMessageQueue()
+				GetAllTasks()
 				ProcessAllMessageQueueItems()
 			case <-_quit:
 				ticker.Stop()
@@ -62,9 +61,9 @@ func ShutdownMessageQueue() error {
 	return nil
 }
 
-func GetMessageQueue() {
+func GetAllTasks() {
 
-	err := api.SendGetRequest("/api/agent/messagequeue", &_messageQueue)
+	err := api.SendGetRequest("/api/v1/agent/tasks", &_agentTasks)
 	if err != nil {
 		utils.ErrorLogger.Println(err.Error())
 	}
@@ -72,33 +71,37 @@ func GetMessageQueue() {
 
 func ProcessAllMessageQueueItems() {
 
-	if len(_messageQueue) == 0 {
+	if len(_agentTasks) == 0 {
 		return
 	}
 
-	for idx := range _messageQueue {
-		messageQueueItem := &_messageQueue[idx]
-		err := ProcessMessageQueueItem(messageQueueItem)
+	for idx := range _agentTasks {
+		taskItem := &_agentTasks[idx]
 
-		if err != nil {
-			messageQueueItem.Error = err.Error()
-			messageQueueItem.Retries += 1
+		if taskItem.Completed {
 			continue
 		}
 
-		messageQueueItem.Completed = true
-	}
-
-	for idx := range _messageQueue {
-		messageQueueItem := &_messageQueue[idx]
-
-		itemBody := HttpRequestBody_MessageItem{Item: *messageQueueItem}
-
-		var resData interface{}
-		err := api.SendPostRequest("/api/agent/messagequeue", itemBody, &resData)
+		err := ProcessMessageQueueItem(taskItem)
 
 		if err != nil {
-			utils.ErrorLogger.Printf("Error sending message queue item update %s\r\n", messageQueueItem.ID)
+			taskItem.Retries += 1
+			continue
+		}
+
+		taskItem.Completed = true
+	}
+
+	for idx := range _agentTasks {
+		taskItem := &_agentTasks[idx]
+
+		itemBody := HttpRequestBody_MessageItem{Item: *taskItem}
+
+		var resData interface{}
+		err := api.SendPutRequest("/api/v1/agent/tasks/"+taskItem.ID, itemBody, &resData)
+
+		if err != nil {
+			utils.ErrorLogger.Printf("Error sending task item update %s\r\n", taskItem.ID)
 		}
 
 	}
@@ -109,11 +112,11 @@ type UpdateModConfigData struct {
 	ModConfig    string `json:"modConfig"`
 }
 
-func ProcessMessageQueueItem(messageItem *MessageQueueItem) error {
+func ProcessMessageQueueItem(taskItem *TaskItem) error {
 
-	utils.DebugLogger.Printf("Processing Message action %s\r\n", messageItem.Action)
+	utils.DebugLogger.Printf("Processing Message action %s\r\n", taskItem.Action)
 
-	switch messageItem.Action {
+	switch taskItem.Action {
 	case "startsfserver":
 		return sf.StartSFServer()
 	case "stopsfserver":
@@ -126,17 +129,17 @@ func ProcessMessageQueueItem(messageItem *MessageQueueItem) error {
 		return sf.UpdateSFServer()
 	case "downloadSave":
 		var objmap map[string]json.RawMessage
-		b, _ := json.Marshal(messageItem.Data)
+		b, _ := json.Marshal(taskItem.Data)
 		json.Unmarshal(b, &objmap)
 		return savemanager.DownloadSaveFile(string(objmap["saveFile"]))
 	case "updateconfig":
 		return nil
 	case "updateModConfig":
 		var objmap UpdateModConfigData
-		b, _ := json.Marshal(messageItem.Data)
+		b, _ := json.Marshal(taskItem.Data)
 		json.Unmarshal(b, &objmap)
 		return mod.UpdateModConfigFile(objmap.ModReference, json.RawMessage(objmap.ModConfig))
 	default:
-		return errors.New("unknown message queue action")
+		return errors.New("unknown task action")
 	}
 }

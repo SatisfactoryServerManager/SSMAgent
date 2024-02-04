@@ -49,7 +49,6 @@ func InitSaveManager() {
 
 	GetSaveFiles()
 	UploadSaveFiles()
-	UploadSaveInfo()
 
 	ticker := time.NewTicker(1 * time.Minute)
 	go func() {
@@ -58,7 +57,6 @@ func InitSaveManager() {
 			case <-ticker.C:
 				GetSaveFiles()
 				UploadSaveFiles()
-				UploadSaveInfo()
 			case <-_quit:
 				ticker.Stop()
 				return
@@ -244,20 +242,8 @@ func UploadSaveFiles() {
 }
 
 func UploadSaveFile(filePath string) error {
-	err := api.SendFile("/api/agent/uploadsave", filePath)
+	err := api.SendFile("/api/v1/agent/upload/save", filePath)
 	return err
-}
-
-func UploadSaveInfo() {
-	var data = HttpRequestBody_SaveInfo{}
-	data.SaveDatas = _SaveSessions
-
-	var res interface{}
-	err := api.SendPostRequest("/api/agent/saves/newinfo", data, &res)
-
-	if err != nil {
-		utils.ErrorLogger.Println(err.Error())
-	}
 }
 
 func DownloadSaveFile(fileName string) error {
@@ -272,7 +258,7 @@ func DownloadSaveFile(fileName string) error {
 
 	newFilePath := filepath.Join(saveDir, filepath.Clean(fileName))
 
-	err = api.DownloadFile("/api/agent/saves/download/"+fileName, newFilePath)
+	err = api.DownloadFile("/api/v1/agent/saves/download/"+fileName, newFilePath)
 	if err != nil {
 		return err
 	}
