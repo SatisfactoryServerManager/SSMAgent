@@ -1,3 +1,7 @@
+## 1.0.54 (March 18, 2024)
+  - chore: Bump Version
+  - feat: update install script
+
 ## 1.0.53 (March 18, 2024)
   - fix: Fix mod config data
   - feat: Updates for new api change
