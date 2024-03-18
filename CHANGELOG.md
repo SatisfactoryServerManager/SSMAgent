@@ -1,3 +1,7 @@
+## 1.0.53 (March 18, 2024)
+  - fix: Fix mod config data
+  - feat: Updates for new api change
+
 ## 1.0.52 (January 18, 2024)
   - feat: Set scalability config file
 
