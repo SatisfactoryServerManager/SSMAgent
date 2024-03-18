@@ -3,6 +3,7 @@ package mod
 import (
 	"archive/zip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -330,10 +331,14 @@ func UpdateSMLConfig() error {
 	return nil
 }
 
-func UpdateModConfigFile(modReference string, modConfig json.RawMessage) error {
+func UpdateModConfigFile(modReference string, modConfig string) error {
+
+	if modReference == "" {
+		return errors.New("mod reference is null")
+	}
 
 	if sf.IsRunning() {
-		return nil
+		return errors.New("sf server is running")
 	}
 
 	utils.CreateFolder(config.GetConfig().ModConfigsDir)
@@ -342,12 +347,7 @@ func UpdateModConfigFile(modReference string, modConfig json.RawMessage) error {
 
 	configfile := filepath.Join(config.GetConfig().ModConfigsDir, modReference+".cfg")
 
-	jsonStr, err := modConfig.MarshalJSON()
-	if err != nil {
-		return err
-	}
-
-	if err := os.WriteFile(configfile, jsonStr, 0777); err != nil {
+	if err := os.WriteFile(configfile, []byte(modConfig), 0777); err != nil {
 		return err
 	}
 

@@ -135,10 +135,22 @@ func ProcessMessageQueueItem(taskItem *TaskItem) error {
 	case "updateconfig":
 		return nil
 	case "updateModConfig":
-		var objmap UpdateModConfigData
+		var objmap []map[string]string
 		b, _ := json.Marshal(taskItem.Data)
 		json.Unmarshal(b, &objmap)
-		return mod.UpdateModConfigFile(objmap.ModReference, json.RawMessage(objmap.ModConfig))
+
+		var configData UpdateModConfigData
+
+		for _, d := range objmap {
+			if string(d["Key"]) == "modReference" {
+				configData.ModReference = string(d["Value"])
+			}
+			if string(d["Key"]) == "modConfig" {
+				configData.ModConfig = string(d["Value"])
+			}
+		}
+
+		return mod.UpdateModConfigFile(configData.ModReference, configData.ModConfig)
 	default:
 		return errors.New("unknown task action")
 	}
