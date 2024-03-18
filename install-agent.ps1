@@ -22,11 +22,11 @@ $BEACONPORT = 15000 + $PORTOFFSET;
 $PORT = 7777 + $PORTOFFSET;
 
 if($SSMURL -eq ""){
-    $SSMURL = Read-Host -Prompt 'Enter SSM Cloud URL [https://ssmcloud.hostxtra.co.uk]'
+    $SSMURL = Read-Host -Prompt 'Enter SSM Cloud URL [https://api-ssmcloud-dev.hostxtra.co.uk]'
 
     if ([string]::IsNullOrWhiteSpace($SSMURL))
     {
-        $SSMURL = 'https://ssmcloud.hostxtra.co.uk';
+        $SSMURL = 'https://api-ssmcloud-dev.hostxtra.co.uk';
     }
 }
 
