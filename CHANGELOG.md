@@ -1,3 +1,7 @@
+## 1.0.55 (May 07, 2024)
+  - fix: added task processing debug
+  - fix: Install scripts
+
 ## 1.0.54 (March 18, 2024)
   - chore: Bump Version
   - feat: update install script
