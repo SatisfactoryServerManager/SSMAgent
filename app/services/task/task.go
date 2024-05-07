@@ -86,6 +86,7 @@ func ProcessAllMessageQueueItems() {
 
 		if err != nil {
 			taskItem.Retries += 1
+			utils.ErrorLogger.Printf("Error processing task item %s with error: %s\r\n", taskItem.ID, err.Error())
 			continue
 		}
 
@@ -101,7 +102,7 @@ func ProcessAllMessageQueueItems() {
 		err := api.SendPutRequest("/api/v1/agent/tasks/"+taskItem.ID, itemBody, &resData)
 
 		if err != nil {
-			utils.ErrorLogger.Printf("Error sending task item update %s\r\n", taskItem.ID)
+			utils.ErrorLogger.Printf("Error sending task item update %s with error: %s\r\n", taskItem.ID, err.Error())
 		}
 
 	}
