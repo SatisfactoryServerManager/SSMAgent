@@ -1,3 +1,6 @@
+## 1.0.56 (May 08, 2024)
+  - fix: Fixed downloading save task
+
 ## 1.0.55 (May 07, 2024)
   - fix: added task processing debug
   - fix: Install scripts
