@@ -287,6 +287,15 @@ func DownloadFile(endpoint string, filePath string) error {
 	if err != nil {
 		return err
 	}
+
+	if r.StatusCode != http.StatusOK {
+
+		responseObject := HttpResponseBody{}
+		json.NewDecoder(r.Body).Decode(&responseObject)
+
+		return fmt.Errorf("request failed with response code: %d with error: %s", r.StatusCode, responseObject.Error)
+	}
+
 	defer r.Body.Close()
 
 	// Create the file

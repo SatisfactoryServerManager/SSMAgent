@@ -129,10 +129,18 @@ func ProcessMessageQueueItem(taskItem *TaskItem) error {
 	case "updatesfserver":
 		return sf.UpdateSFServer()
 	case "downloadSave":
-		var objmap map[string]json.RawMessage
+		var objmap []map[string]string
 		b, _ := json.Marshal(taskItem.Data)
 		json.Unmarshal(b, &objmap)
-		return savemanager.DownloadSaveFile(string(objmap["saveFile"]))
+
+		fileName := ""
+		for _, d := range objmap {
+			if string(d["Key"]) == "saveFile" {
+				fileName = string(d["Value"])
+			}
+		}
+
+		return savemanager.DownloadSaveFile(fileName)
 	case "updateconfig":
 		return nil
 	case "updateModConfig":
