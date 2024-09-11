@@ -1,3 +1,6 @@
+## 1.0.63 (September 11, 2024)
+  - ci: Fixed download artifact
+
 ## 1.0.62 (September 11, 2024)
   - ci: Fixed uploading artifact
 
