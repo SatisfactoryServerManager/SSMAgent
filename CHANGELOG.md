@@ -1,3 +1,6 @@
+## 1.0.58 (September 11, 2024)
+  - ci: Fixed CI
+
 ## 1.0.57 (September 11, 2024)
   - fix: Fixes to server filename change
 
