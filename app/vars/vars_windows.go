@@ -3,7 +3,7 @@ package vars
 var (
 	// SF
 	ExeName        = "FactoryServer.exe"
-	SubExeName     = "UE4Server-Win64-Shipping.exe"
+	SubExeName     = "FactoryServer-Win64-Shipping-Cmd.exe"
 	PlatformFolder = "WindowsServer"
 
 	//Mods

@@ -2,7 +2,6 @@ package sf
 
 import (
 	"flag"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -301,16 +300,12 @@ func GetSFPID() int32 {
 		name, _ := process.Name()
 		cmd, _ := process.CmdlineSlice()
 
-		if !strings.Contains(strings.ToLower(name), "unrealserver-") {
+		if !strings.Contains(strings.ToLower(name), "factoryserver-") {
 			continue
 		}
 
 		cpu, _ = process.CPUPercent()
 		mem, _ = process.MemoryPercent()
-
-		threads, _ := process.NumThreads()
-
-		fmt.Printf("#####################\n%f,%d, %f\n#####################", cpu, threads, (cpu / float64(threads)))
 
 		processAgentName := ""
 		for _, c := range cmd {

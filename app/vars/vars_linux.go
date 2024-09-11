@@ -3,7 +3,7 @@ package vars
 var (
 	// SF
 	ExeName        = "FactoryServer.sh"
-	SubExeName     = "UE4Server-Linux-Shipping"
+	SubExeName     = "FactoryServer-Linux-Shipping-Cmd"
 	PlatformFolder = "LinuxServer"
 
 	//Mods
