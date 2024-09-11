@@ -61,10 +61,14 @@ if [ -f VERSION ]; then
     echo "" >>tmpfile
     cat CHANGELOG.md >>tmpfile
     mv tmpfile CHANGELOG.md
+
+    sed -i "s/Version = \"v[0-9]*\.[0-9]*\.[0-9]*\"/Version = \"v$INPUT_STRING\"/g" app/config/config.go
+
     echo -e "$ADJUSTMENTS_MSG"
     read
     echo -e "$PUSHING_MSG"
-    git add CHANGELOG.md VERSION
+
+    git add CHANGELOG.md VERSION app/config/config.go
     git commit -m "Bump version to ${INPUT_STRING}."
     git push
     git tag -a -m "Tag version ${INPUT_STRING}." "v$INPUT_STRING"

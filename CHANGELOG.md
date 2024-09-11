@@ -1,3 +1,9 @@
+## 1.0.61 (September 11, 2024)
+
+
+## 1.0.60 (September 11, 2024)
+
+
 ## 1.0.59 (September 11, 2024)
   - ci: Fixed CI
 
