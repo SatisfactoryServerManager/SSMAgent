@@ -22,7 +22,7 @@ jobs:
                   dest: SSMAgent-Linux-amd64.zip
             - uses: actions/upload-artifact@v4
               with:
-                  name: ssm-build
+                  name: ssm-build-linux
                   path: ${{ github.workspace }}/SSMAgent-Linux-amd64.zip
             - name: Get version
               id: versionnum
@@ -59,7 +59,7 @@ jobs:
                   dest: SSMAgent-Windows-x64.zip
             - uses: actions/upload-artifact@v4
               with:
-                  name: ssm-build
+                  name: ssm-build-win64
                   path: ${{ github.workspace }}/SSMAgent-Windows-x64.zip
     release:
         needs:
@@ -68,10 +68,14 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v3
-            - name: Download a artifact
+            - name: Download a linux artifact
               uses: actions/download-artifact@v3
               with:
-                  name: ssm-build
+                  name: ssm-build-linux
+            - name: Download a win64 artifact
+              uses: actions/download-artifact@v3
+              with:
+                  name: ssm-build-win64
             - run: ls -l
             - name: Get version
               id: versionnum
