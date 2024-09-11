@@ -1,3 +1,6 @@
+## 1.0.57 (September 11, 2024)
+  - fix: Fixes to server filename change
+
 ## 1.0.56 (May 08, 2024)
   - fix: Fixed downloading save task
 
