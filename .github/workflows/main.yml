@@ -20,7 +20,7 @@ jobs:
                   files: release/linux/SSMAgent release/linux/build.log
                   recursive: false
                   dest: SSMAgent-Linux-amd64.zip
-            - uses: actions/upload-artifact@v2
+            - uses: actions/upload-artifact@v4
               with:
                   name: ssm-build
                   path: ${{ github.workspace }}/SSMAgent-Linux-amd64.zip
@@ -57,7 +57,7 @@ jobs:
                   files: release/windows/SSMAgent.exe release/windows/build.log
                   recursive: false
                   dest: SSMAgent-Windows-x64.zip
-            - uses: actions/upload-artifact@v2
+            - uses: actions/upload-artifact@v4
               with:
                   name: ssm-build
                   path: ${{ github.workspace }}/SSMAgent-Windows-x64.zip
