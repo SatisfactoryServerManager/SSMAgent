@@ -45,6 +45,7 @@ type SFConfig struct {
 	AvilableVer           int64   `json:"avaliableVer"`
 	WorkerThreads         int     `json:"workerThreads"`
 	MaxPlayers            int     `json:"maxPlayers"`
+	APIToken              string  `json:"apiToken"`
 }
 
 type Config struct {

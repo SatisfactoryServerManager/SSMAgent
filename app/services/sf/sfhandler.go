@@ -1,6 +1,7 @@
 package sf
 
 import (
+	"errors"
 	"flag"
 	"os"
 	"os/exec"
@@ -103,6 +104,11 @@ func InstallSFServer(force bool) error {
 			utils.InfoLogger.Printf("Error removing existing SF Server install %s\r\n", err.Error())
 			return err
 		}
+
+		state.Installed = false
+		if err := state.SendAgentState(); err != nil {
+			return err
+		}
 	}
 
 	utils.InfoLogger.Println("Installing SF Server..")
@@ -172,6 +178,10 @@ func StartSFServer() error {
 		return nil
 	}
 
+	if !IsInstalled() {
+		return errors.New("sf server is not installed")
+	}
+
 	utils.InfoLogger.Println("Starting SF Server..")
 	sfExe := filepath.Join(config.GetConfig().SFDir, vars.ExeName)
 
@@ -191,6 +201,8 @@ func StartSFServer() error {
 
 	shouldBeRunning = true
 
+	SendStates()
+
 	return nil
 }
 
@@ -199,6 +211,10 @@ func ShutdownSFServer() error {
 	if !IsRunning() {
 		utils.InfoLogger.Println("Shutdown skipped - Server not running")
 		return nil
+	}
+
+	if !IsInstalled() {
+		return errors.New("sf server is not installed")
 	}
 
 	utils.InfoLogger.Println("Shutting down SF Server...")
@@ -220,6 +236,10 @@ func KillSFServer() error {
 	if !IsRunning() {
 		utils.InfoLogger.Println("Kill skipped - Server not running")
 		return nil
+	}
+
+	if !IsInstalled() {
+		return errors.New("sf server is not installed")
 	}
 
 	utils.InfoLogger.Println("Killing SF Server...")
@@ -264,8 +284,6 @@ func GetLatestedVersion() {
 func GetStartArgs() []string {
 
 	port := 7777 + config.GetConfig().SF.PortOffset
-	sqport := 15777 + config.GetConfig().SF.PortOffset
-	bport := 15000 + config.GetConfig().SF.PortOffset
 
 	agentName := flag.Lookup("name").Value.(flag.Getter).Get().(string)
 
@@ -274,8 +292,6 @@ func GetStartArgs() []string {
 	exeArgs := make([]string, 0)
 	exeArgs = append(exeArgs, "?listen")
 	exeArgs = append(exeArgs, "-Port="+strconv.Itoa(port))
-	exeArgs = append(exeArgs, "-ServerQuertPort="+strconv.Itoa(sqport))
-	exeArgs = append(exeArgs, "-BeaconPort="+strconv.Itoa(bport))
 	exeArgs = append(exeArgs, "-unattended")
 	exeArgs = append(exeArgs, "-MaxWorkerThreads="+strconv.Itoa(workerthreads))
 	exeArgs = append(exeArgs, "-ssmagentname="+agentName)

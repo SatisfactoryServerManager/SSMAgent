@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"time"
 
@@ -20,6 +21,8 @@ import (
 )
 
 var _quit = make(chan int)
+
+var connectionTestRetryCount = 0
 
 func isFlagPassed(name string) bool {
 	found := false
@@ -121,10 +124,21 @@ func TestSSMCloudAPI() error {
 		return err
 	}
 
+	if err := state.SendAgentState(); err != nil {
+		utils.ErrorLogger.Printf("Retrying connection test due to failed to send agent status with error: %s\n", err.Error())
+		time.Sleep(time.Second)
+		connectionTestRetryCount++
+
+		if connectionTestRetryCount >= 300 {
+			return fmt.Errorf("ssm agent connection test timed out")
+		}
+
+		TestSSMCloudAPI()
+	}
+
 	utils.InfoLogger.Println("Connection test succeeded!")
 
 	return nil
-
 }
 
 func MarkAgentOnline() {
