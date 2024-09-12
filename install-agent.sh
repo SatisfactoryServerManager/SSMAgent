@@ -202,17 +202,14 @@ if [ $DOCKEREXISTS == 1 ]; then
     docker rm -f ${AGENTNAME}
 fi
 
-SERVERQUERYPORT=$((15777 + $PORTOFFSET))
-BEACONPORT=$((15000 + $PORTOFFSET))
 PORT=$((7777 + $PORTOFFSET))
 
 docker run -d \
     -e SSM_NAME=${AGENTNAME} \
     -e SSM_URL="${SSMURL}" \
     -e SSM_APIKEY="${SSMAPIKEY}" \
-    -p "${SERVERQUERYPORT}:15777/udp" \
-    -p "${BEACONPORT}:15000/udp" \
     -p "${PORT}:7777/udp" \
+    -p "${PORT}:7777/tcp" \
     -v "/SSMAgent/${AGENTNAME}/SSM:/home/ssm/SSM/Agents/${AGENTNAME}" \
     -v "/SSMAgent/${AGENTNAME}/.config:/home/ssm/.config/Epic/FactoryGame" \
     -v "/SSMAgent/${AGENTNAME}/Data:/SSM/data" \

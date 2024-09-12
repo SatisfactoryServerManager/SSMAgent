@@ -148,8 +148,6 @@ if [ "$AGENTNAME" == "" ];then
 fi
 
 
-SERVERQUERYPORT=$((15777 + $PORTOFFSET))
-BEACONPORT=$((15000 + $PORTOFFSET))
 PORT=$((7777 + $PORTOFFSET))
 INSTALL_DIR="/opt/SSMAgent/${AGENTNAME}"
 DATA_DIR="/SSM/data/${AGENTNAME}"
@@ -162,12 +160,6 @@ fi
 
 if [ -n "$OVERRIDE_DATA_DIR" ]; then
     DATA_DIR=$OVERRIDE_DATA_DIR
-fi
-
-
-if [ "$SERVERQUERYPORT" -lt "15777" ]; then
-    echo -e "${RED}Error: Port Offset cannot be < 0!${NC}"
-    exit 1;
 fi
 
 
@@ -197,8 +189,6 @@ echo -e "${BLUE}Installation Summary: ${NC}"
 echo "Agent Name: ${AGENTNAME}"
 echo "Installation Directory: ${INSTALL_DIR}"
 echo "Data Directory: ${DATA_DIR}"
-echo "SF Server Query Port: ${SERVERQUERYPORT}"
-echo "SF Beacon Port: ${BEACONPORT}"
 echo "SF Port: ${PORT}"
 echo "SSM Cloud URL: ${SSMURL}"
 echo "SSM Cloud API Key: ${SSMAPIKEY}"

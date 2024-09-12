@@ -18,8 +18,6 @@ echo "#-----------------------------#"
 echo "# Satisfactory Server Manager #"
 echo "#-----------------------------#"
 
-$SERVERQUERYPORT=15777 + $PORTOFFSET;
-$BEACONPORT = 15000 + $PORTOFFSET;
 $PORT = 7777 + $PORTOFFSET;
 
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -61,8 +59,6 @@ $INSTALL_DIR="C:\Program Files\SSMAgent\$AGENTNAME"
 write-host -ForegroundColor Cyan "Installation Summary:"
 echo "Agent Name: $AGENTNAME"
 echo "Installation Directory: $INSTALL_DIR"
-echo "SF Server Query Port: $SERVERQUERYPORT"
-echo "SF Beacon Port: $BEACONPORT"
 echo "SF Port: $PORT"
 echo "SSM Cloud URL: $SSMURL"
 echo "SSM Cloud API Key: $SSMAPIKEY"

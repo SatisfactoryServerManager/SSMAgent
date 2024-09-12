@@ -163,9 +163,8 @@ docker run -d `
 -e SSM_NAME="$($AGENTNAME)" `
 -e SSM_URL="$($SSMURL)" `
 -e SSM_APIKEY="$($SSMAPIKEY)" `
--p "$($SERVERQUERYPORT):15777/udp" `
--p "$($BEACONPORT):15000/udp" `
 -p "$($PORT):7777/udp" `
+-p "$($PORT):7777/tcp" `
 -v "C:\SSMAgent\$($AGENTNAME)\SSM:/home/ssm/SSM/Agents/$($AGENTNAME)" `
 -v "C:\SSMAgent\$($AGENTNAME)\.config:/home/ssm/.config/Epic/FactoryGame" `
 -v "C:\SSMAgent\$($AGENTNAME)\Data:/SSM/data" `
