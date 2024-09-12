@@ -1,3 +1,7 @@
+## 1.0.64 (September 12, 2024)
+  - feat: New install process
+  - fix:fixes to install script
+
 ## 1.0.63 (September 11, 2024)
   - ci: Fixed download artifact
 
