@@ -1,3 +1,6 @@
+## 1.0.65 (September 13, 2024)
+  - fix: Fixed docker cleanup script
+
 ## 1.0.64 (September 12, 2024)
   - feat: New install process
   - fix:fixes to install script
