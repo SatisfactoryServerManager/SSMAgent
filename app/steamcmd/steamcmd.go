@@ -2,6 +2,7 @@ package steamcmd
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -128,6 +129,25 @@ func BuildScriptFile(commands []string) (string, error) {
 }
 
 func Run(commands []string) (string, error) {
+
+	reader, writer := io.Pipe()
+
+	cmdCtx, cmdDone := context.WithCancel(context.Background())
+
+	output := ""
+
+	scannerStopped := make(chan struct{})
+	go func() {
+		defer close(scannerStopped)
+
+		scanner := bufio.NewScanner(reader)
+		for scanner.Scan() {
+			m := scanner.Text()
+			output += m + "\n"
+			utils.SteamLogger.Println(m)
+		}
+	}()
+
 	steamExe := filepath.Join(SteamDir, vars.SteamExeName)
 
 	tempFilePath, err := BuildScriptFile(commands)
@@ -142,34 +162,16 @@ func Run(commands []string) (string, error) {
 
 	cmd := exec.Command(steamExe, exeArgs...)
 
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		utils.ErrorLogger.Printf("error steamcmd stdpipe with error: %s ", err.Error())
-		return "", err
-	}
+	cmd.Stdout = writer
+	_ = cmd.Start()
+	go func() {
+		_ = cmd.Wait()
+		cmdDone()
+		writer.Close()
+	}()
+	<-cmdCtx.Done()
 
-	err = cmd.Start()
-	utils.DebugLogger.Println("The steamcmd command is running")
-
-	if err != nil {
-		if err.Error() != "exit status 7" {
-			utils.ErrorLogger.Printf("error steamcmd start with error: %s", err.Error())
-			return "", err
-		}
-
-	}
-
-	// print the output of the subprocess
-
-	var output string
-
-	scanner := bufio.NewScanner(stdout)
-	for scanner.Scan() {
-		m := scanner.Text()
-		output += m + "\n"
-		utils.SteamLogger.Println(m)
-	}
-	cmd.Wait()
+	<-scannerStopped
 
 	return output, nil
 }
