@@ -1,12 +1,15 @@
 package backup
 
 import (
-	"archive/zip"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
+
+	"archive/tar"
+	"compress/gzip"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
@@ -55,6 +58,11 @@ func AutoBackup() {
 	}
 }
 
+type zipFile struct {
+	FilePath string
+	DestPath string
+}
+
 func CreateBackupFile() error {
 	t := time.Now()
 
@@ -62,28 +70,31 @@ func CreateBackupFile() error {
 		t.Year(), t.Month(), t.Day(),
 		t.Hour(), t.Minute())
 
-	zipFileName := "Backup_" + formatted + ".zip"
+	zipFileName := "Backup_" + formatted + ".tar.gz"
 	zipFilePath := filepath.Join(config.GetConfig().BackupDir, zipFileName)
 
 	utils.InfoLogger.Printf("Creating backup %s\r\n", zipFileName)
 
-	archive, err := os.Create(zipFilePath)
+	out, err := os.Create(zipFilePath)
 	if err != nil {
-		return err
+		log.Fatalln("Error writing archive:", err)
 	}
-	defer archive.Close()
-	zipWriter := zip.NewWriter(archive)
+	defer out.Close()
+
+	filesToZip := make([]zipFile, 0)
+
+	// Old System
 
 	logFile := filepath.Join(config.GetConfig().LogDir, "SSMAgent-combined.log")
+	filesToZip = append(filesToZip, zipFile{
+		FilePath: logFile,
+		DestPath: "Logs/SSMAgent-combined.log",
+	})
 
-	err = AddFileToZipZile(zipWriter, logFile, "Logs/SSMAgent-combined.log")
-	if err != nil {
-		return err
-	}
-	err = AddFileToZipZile(zipWriter, config.ConfigFile, "Configs/SSM.json")
-	if err != nil {
-		return err
-	}
+	filesToZip = append(filesToZip, zipFile{
+		FilePath: config.ConfigFile,
+		DestPath: "Configs/SSM.json",
+	})
 
 	gamelogdir := filepath.Join(
 		config.GetConfig().SFDir,
@@ -99,23 +110,25 @@ func CreateBackupFile() error {
 		"FactoryGame.log",
 	)
 
-	err = AddFileToZipZile(zipWriter, gamelogfile, "Logs/FactoryGame.log")
-	if err != nil {
-		return err
-	}
+	filesToZip = append(filesToZip, zipFile{
+		FilePath: gamelogfile,
+		DestPath: "Logs/FactoryGame.log",
+	})
 
 	savemanager.GetSaveFiles()
 
-	for _, saveSession := range savemanager.GetSaveSessions() {
-		for _, saveFile := range saveSession.SaveFiles {
-			err = AddFileToZipZile(zipWriter, saveFile.FilePath, "Saves/"+saveSession.SessionName+"/"+saveFile.FileName)
-			if err != nil {
-				return err
-			}
-		}
+	for _, saveFile := range savemanager.GetCachedSaveFiles() {
+
+		filesToZip = append(filesToZip, zipFile{
+			FilePath: saveFile.FilePath,
+			DestPath: "Saves/" + saveFile.FileName,
+		})
 	}
 
-	zipWriter.Close()
+	err = createArchive(filesToZip, out)
+	if err != nil {
+		utils.ErrorLogger.Println("Error creating archive:", err)
+	}
 
 	utils.InfoLogger.Println("Backup created successfully")
 
@@ -126,24 +139,62 @@ func CreateBackupFile() error {
 	return nil
 }
 
-func AddFileToZipZile(zipWriter *zip.Writer, filePath string, destPath string) error {
+func createArchive(files []zipFile, buf io.Writer) error {
+	// Create new Writers for gzip and tar
+	// These writers are chained. Writing to the tar writer will
+	// write to the gzip writer which in turn will write to
+	// the "buf" writer
+	gw := gzip.NewWriter(buf)
+	defer gw.Close()
+	tw := tar.NewWriter(gw)
+	defer tw.Close()
 
-	if !utils.CheckFileExists(filePath) {
-		return nil
+	// Iterate over files and add them to the tar archive
+	for _, file := range files {
+		err := addToArchive(tw, file)
+		if err != nil {
+			return err
+		}
 	}
 
-	utils.DebugLogger.Printf("Adding File: %s\r\n", filePath)
-	f1, err := os.Open(filePath)
+	return nil
+}
+
+func addToArchive(tw *tar.Writer, file zipFile) error {
+	// Open the file which will be written into the archive
+	f, err := os.Open(file.FilePath)
 	if err != nil {
 		return err
 	}
-	defer f1.Close()
+	defer f.Close()
 
-	w1, err := zipWriter.Create(destPath)
+	// Get FileInfo about our file providing file size, mode, etc.
+	info, err := f.Stat()
 	if err != nil {
 		return err
 	}
-	if _, err := io.Copy(w1, f1); err != nil {
+
+	// Create a tar Header from the FileInfo data
+	header, err := tar.FileInfoHeader(info, info.Name())
+	if err != nil {
+		return err
+	}
+
+	// Use full path as name (FileInfoHeader only takes the basename)
+	// If we don't do this the directory strucuture would
+	// not be preserved
+	// https://golang.org/src/archive/tar/common.go?#L626
+	header.Name = file.DestPath
+
+	// Write file header to the tar archive
+	err = tw.WriteHeader(header)
+	if err != nil {
+		return err
+	}
+
+	// Copy file content to tar archive
+	_, err = io.Copy(tw, f)
+	if err != nil {
 		return err
 	}
 
