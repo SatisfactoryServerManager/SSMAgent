@@ -1,3 +1,6 @@
+## 1.0.66 (September 24, 2024)
+  - feat:Switch to targz backup files
+
 ## 1.0.65 (September 13, 2024)
   - fix: Fixed docker cleanup script
 
