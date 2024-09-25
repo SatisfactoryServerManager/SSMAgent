@@ -20,12 +20,13 @@ import (
 )
 
 var (
-	SF_PID          int32   = -1
-	SF_SUB_PID      int32   = -1
-	_quit                   = make(chan int)
-	cpu             float64 = 0.0
-	mem             float32 = 0.0
-	shouldBeRunning         = false
+	SF_PID                  int32   = -1
+	SF_SUB_PID              int32   = -1
+	_quit                           = make(chan int)
+	cpu                     float64 = 0.0
+	mem                     float32 = 0.0
+	shouldBeRunning                 = false
+	attemptingToAutoRestart         = false
 )
 
 func InitSFHandler() {
@@ -136,6 +137,7 @@ func UpdateSFServer() error {
 	installedVer := config.GetConfig().SF.InstalledVer
 	avaliableVer := config.GetConfig().SF.AvilableVer
 	if installedVer < avaliableVer {
+		utils.InfoLogger.Printf("Found newer version of SF Server - Installed %d, Available: %d", installedVer, avaliableVer)
 		return InstallSFServer(true)
 	}
 
@@ -144,11 +146,14 @@ func UpdateSFServer() error {
 
 func AutoRestart() error {
 
-	if !shouldBeRunning {
+	if IsRunning() {
+		if attemptingToAutoRestart {
+			attemptingToAutoRestart = false
+		}
 		return nil
 	}
 
-	if IsRunning() {
+	if !shouldBeRunning || attemptingToAutoRestart {
 		return nil
 	}
 
@@ -157,14 +162,19 @@ func AutoRestart() error {
 	}
 
 	utils.InfoLogger.Println("Server may have crashed.. Auto restarting..")
+	attemptingToAutoRestart = true
 
 	if err := KillSFServer(); err != nil {
+		attemptingToAutoRestart = false
 		return err
 	}
 
 	if err := StartSFServer(); err != nil {
+		attemptingToAutoRestart = false
 		return err
 	}
+
+	attemptingToAutoRestart = false
 
 	return nil
 }

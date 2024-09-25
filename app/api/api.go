@@ -53,7 +53,7 @@ type HttpResponseBody_Config_ServerConfig struct {
 	SFBranch              string  `json:"branch"`
 	WorkerThreads         int     `json:"workerThreads"`
 	MaxPlayers            int     `json:"maxPlayers"`
-	UpdateOnStart         bool    `json:"checkForUpdatesOnStart"`
+	UpdateOnStart         bool    `json:"updateOnStart"`
 	AutoRestart           bool    `json:"autoRestart"`
 	AutoPause             bool    `json:"autoPause"`
 	AutoSaveOnDisconnect  bool    `json:"autoSaveOnDisconnect"`
