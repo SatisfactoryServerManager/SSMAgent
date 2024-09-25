@@ -1,3 +1,8 @@
+## 1.0.67 (September 25, 2024)
+  - fix: Fixed update on start setting
+  - fix: Fixes to auto restart
+  - feat: Better steamcmd logging
+
 ## 1.0.66 (September 24, 2024)
   - feat:Switch to targz backup files
 
