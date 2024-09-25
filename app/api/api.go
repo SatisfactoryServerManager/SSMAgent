@@ -54,7 +54,7 @@ type HttpResponseBody_Config_ServerConfig struct {
 	WorkerThreads         int     `json:"workerThreads"`
 	MaxPlayers            int     `json:"maxPlayers"`
 	UpdateOnStart         bool    `json:"checkForUpdatesOnStart"`
-	AutoRestart           bool    `json:"autoRestartServer"`
+	AutoRestart           bool    `json:"autoRestart"`
 	AutoPause             bool    `json:"autoPause"`
 	AutoSaveOnDisconnect  bool    `json:"autoSaveOnDisconnect"`
 	AutoSaveInterval      float32 `json:"autoSaveInterval"`
