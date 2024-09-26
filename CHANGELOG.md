@@ -1,3 +1,6 @@
+## 1.0.68 (September 26, 2024)
+  - feat: New save sync system
+
 ## 1.0.67 (September 25, 2024)
   - fix: Fixed update on start setting
   - fix: Fixes to auto restart
