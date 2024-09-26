@@ -1,6 +1,7 @@
 package savemanager
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -19,10 +20,6 @@ type SaveFile struct {
 	Size         int64     `json:"size"`
 }
 
-type HttpRequestBody_SaveInfo struct {
-	SaveFiles []SaveFile `json:"saveFiles"`
-}
-
 var (
 	_SaveFiles []SaveFile
 	_quit      = make(chan int)
@@ -32,7 +29,9 @@ func InitSaveManager() {
 	utils.InfoLogger.Println("Initialising Save Manager...")
 
 	GetSaveFiles()
-	UploadSaveFiles()
+	if err := SyncSaveFiles(); err != nil {
+		utils.ErrorLogger.Printf("error syncing saves with error: %s\n", err.Error())
+	}
 
 	ticker := time.NewTicker(1 * time.Minute)
 	go func() {
@@ -40,7 +39,9 @@ func InitSaveManager() {
 			select {
 			case <-ticker.C:
 				GetSaveFiles()
-				UploadSaveFiles()
+				if err := SyncSaveFiles(); err != nil {
+					utils.ErrorLogger.Printf("error syncing saves with error: %s\n", err.Error())
+				}
 			case <-_quit:
 				ticker.Stop()
 				return
@@ -98,7 +99,7 @@ func GetSaveFiles() {
 
 		saveFile := SaveFile{
 			FilePath: filePath,
-			ModTime:  fileInfo.ModTime(),
+			ModTime:  fileInfo.ModTime().UTC(),
 			Size:     fileInfo.Size(),
 			FileName: filepath.Base(filePath),
 		}
@@ -107,25 +108,6 @@ func GetSaveFiles() {
 	}
 
 	_SaveFiles = saveFiles
-}
-
-func UploadSaveFiles() {
-
-	for idx := range _SaveFiles {
-		saveFile := &_SaveFiles[idx]
-
-		if saveFile.ModTime.After(saveFile.UploadedTime) {
-			err := UploadSaveFile(saveFile.FilePath)
-
-			if err != nil {
-				utils.ErrorLogger.Printf("Error uploading save file: %s with error: %s\r\n", saveFile.FileName, err.Error())
-				continue
-			}
-
-			saveFile.UploadedTime = time.Now()
-		}
-
-	}
 }
 
 func UploadSaveFile(filePath string) error {
@@ -151,6 +133,121 @@ func DownloadSaveFile(fileName string) error {
 	}
 
 	utils.DebugLogger.Printf("Downloaded Save File to: %s\r\n", newFilePath)
+
+	return nil
+}
+
+func SyncSaveFiles() error {
+
+	resBody := api.HttpResponseBody_SaveSync{}
+	if err := api.SendGetRequest("/api/v1/agent/save/sync", &resBody); err != nil {
+		return err
+	}
+
+	// Check if the server needs to upload any outdated saves
+	for apiidx := range resBody.Saves {
+		apiSave := &resBody.Saves[apiidx]
+
+		for localidx := range _SaveFiles {
+			localSave := &_SaveFiles[localidx]
+
+			if localSave.FileName == apiSave.FileName {
+				if apiSave.ModTime.Unix() < localSave.ModTime.Unix() {
+					fmt.Printf("localsave modTime: %d apiSave modTime: %d\n", localSave.ModTime.Unix(), apiSave.ModTime.Unix())
+					apiSave.ModTime = localSave.ModTime
+					apiSave.FilePath = localSave.FilePath
+					apiSave.MarkForUpload = true
+				}
+			}
+		}
+	}
+
+	// Check if server needs to upload new saves
+	for localidx := range _SaveFiles {
+		localSave := &_SaveFiles[localidx]
+
+		foundSave := false
+		for apiidx := range resBody.Saves {
+			apiSave := &resBody.Saves[apiidx]
+			if localSave.FileName == apiSave.FileName {
+				foundSave = true
+				break
+			}
+		}
+
+		if !foundSave {
+			fmt.Printf("save not found in api: %s\n", localSave.FileName)
+			resBody.Saves = append(resBody.Saves, api.HttpResponseBody_SaveSync_Save{
+				FileName:      localSave.FileName,
+				FilePath:      localSave.FilePath,
+				ModTime:       localSave.ModTime,
+				Size:          localSave.Size,
+				MarkForUpload: true,
+			})
+		}
+	}
+
+	// Check if server needs to download save files
+	for apiidx := range resBody.Saves {
+		apiSave := &resBody.Saves[apiidx]
+
+		foundSave := false
+		for localidx := range _SaveFiles {
+			localSave := &_SaveFiles[localidx]
+
+			if localSave.FileName == apiSave.FileName {
+				foundSave = true
+				break
+			}
+		}
+
+		if !foundSave {
+			apiSave.MarkForDownload = true
+		}
+	}
+
+	// Check if the server needs to download any outdated saves
+	for apiidx := range resBody.Saves {
+		apiSave := &resBody.Saves[apiidx]
+
+		for localidx := range _SaveFiles {
+			localSave := &_SaveFiles[localidx]
+
+			if localSave.FileName == apiSave.FileName {
+				if apiSave.ModTime.Unix() > localSave.ModTime.Unix() {
+					apiSave.ModTime = localSave.ModTime
+					apiSave.MarkForDownload = true
+				}
+			}
+		}
+	}
+
+	shouldSendPostSync := false
+	for apiidx := range resBody.Saves {
+		apiSave := &resBody.Saves[apiidx]
+
+		if apiSave.MarkForUpload {
+			if err := UploadSaveFile(apiSave.FilePath); err != nil {
+				return err
+			}
+			shouldSendPostSync = true
+		} else if apiSave.MarkForDownload {
+			if err := DownloadSaveFile(apiSave.FileName); err != nil {
+				return err
+			}
+			shouldSendPostSync = true
+		}
+
+	}
+
+	if shouldSendPostSync {
+		type emptyReturnData struct{}
+		emptyRes := emptyReturnData{}
+
+		if err := api.SendPostRequest("/api/v1/agent/save/sync", resBody, &emptyRes); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

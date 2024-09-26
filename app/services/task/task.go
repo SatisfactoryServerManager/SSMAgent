@@ -7,7 +7,6 @@ import (
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/mod"
-	"github.com/SatisfactoryServerManager/SSMAgent/app/services/savemanager"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/sf"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 )
@@ -144,18 +143,19 @@ func ProcessMessageQueueItem(taskItem *TaskItem) error {
 	case "updatesfserver":
 		return sf.UpdateSFServer()
 	case "downloadSave":
-		var objmap []map[string]string
-		b, _ := json.Marshal(taskItem.Data)
-		json.Unmarshal(b, &objmap)
+		return nil
+		// var objmap []map[string]string
+		// b, _ := json.Marshal(taskItem.Data)
+		// json.Unmarshal(b, &objmap)
 
-		fileName := ""
-		for _, d := range objmap {
-			if string(d["Key"]) == "saveFile" {
-				fileName = string(d["Value"])
-			}
-		}
+		// fileName := ""
+		// for _, d := range objmap {
+		// 	if string(d["Key"]) == "saveFile" {
+		// 		fileName = string(d["Value"])
+		// 	}
+		// }
 
-		return savemanager.DownloadSaveFile(fileName)
+		// return savemanager.DownloadSaveFile(fileName)
 	case "updateconfig":
 		return nil
 	case "updateModConfig":

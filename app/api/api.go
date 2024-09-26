@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
@@ -59,6 +60,20 @@ type HttpResponseBody_Config_ServerConfig struct {
 	AutoSaveOnDisconnect  bool    `json:"autoSaveOnDisconnect"`
 	AutoSaveInterval      float32 `json:"autoSaveInterval"`
 	DisableSeasonalEvents bool    `json:"disableSeasonalEvents"`
+}
+
+type HttpResponseBody_SaveSync struct {
+	Saves []HttpResponseBody_SaveSync_Save `json:"saves"`
+}
+
+type HttpResponseBody_SaveSync_Save struct {
+	UUID            string    `json:"uuid"`
+	FileName        string    `json:"fileName"`
+	FilePath        string    `json:"-"`
+	Size            int64     `json:"size"`
+	ModTime         time.Time `json:"modTime"`
+	MarkForUpload   bool      `json:"-"`
+	MarkForDownload bool      `json:"-"`
 }
 
 type APIError struct {
