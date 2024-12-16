@@ -22,7 +22,6 @@ var (
 	_ModState     ModState
 	ModCachePatch string
 	_quit         = make(chan int)
-	_SMLConfig    SMLConfig
 )
 
 func InitModManager() {
@@ -131,10 +130,6 @@ func ProcessModState() {
 	for idx := range installedMods {
 		installedMod := &installedMods[idx]
 
-		if installedMod.ModReference == "SML" {
-			continue
-		}
-
 		foundSelectedMod := false
 
 		for _, sm := range _ModState.SelectedMods {
@@ -154,10 +149,6 @@ func ProcessModState() {
 
 	if err := InstallAllMods(); err != nil {
 		utils.ErrorLogger.Printf("error failed to install mods with error: %s\n", err.Error())
-	}
-
-	if err := UpdateSMLConfig(); err != nil {
-		utils.ErrorLogger.Printf("error failed to install sml with error: %s\n", err.Error())
 	}
 }
 
@@ -281,52 +272,6 @@ func ExtractArchive(modFilePath string, modDirectory string) error {
 	}
 
 	utils.InfoLogger.Printf("Extracted Mod (%s)\r\n", file.Name())
-
-	return nil
-}
-
-func UpdateSMLConfig() error {
-
-	if err := _SMLConfig.Init(); err != nil {
-		return err
-	}
-
-	if err := _SMLConfig.Update(_ModState.SelectedMods); err != nil {
-		return err
-	}
-
-	if sf.IsRunning() {
-		return nil
-	}
-
-	if _SMLConfig.DesiredVersion == "0.0.0" {
-		if err := _SMLConfig.Uninstall(); err != nil {
-			return err
-		}
-
-		_ModState.InstalledSMLVersion = _SMLConfig.InstalledVersion
-		_ModState.SMLInstalled = _SMLConfig.Installed
-
-		return nil
-	}
-
-	if _SMLConfig.Installed {
-		_ModState.InstalledSMLVersion = _SMLConfig.InstalledVersion
-		_ModState.SMLInstalled = _SMLConfig.Installed
-		return nil
-	}
-
-	utils.DebugLogger.Printf("Found Max SML Version: %s\r\n", _SMLConfig.DesiredVersion)
-
-	if err := _SMLConfig.Install(); err != nil {
-		utils.ErrorLogger.Printf("Couldn't Install SML with error: %s\r\n", err.Error())
-		_ModState.InstalledSMLVersion = "0.0.0"
-		_ModState.SMLInstalled = false
-		return nil
-	}
-
-	_ModState.InstalledSMLVersion = _SMLConfig.InstalledVersion
-	_ModState.SMLInstalled = _SMLConfig.Installed
 
 	return nil
 }
