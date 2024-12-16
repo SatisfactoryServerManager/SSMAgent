@@ -1,3 +1,6 @@
+## 1.0.69 (December 16, 2024)
+  - fix: Fixed mod installation
+
 ## 1.0.68 (September 26, 2024)
   - feat: New save sync system
 
