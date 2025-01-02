@@ -174,12 +174,17 @@ if($NoDockerInstall){
 
 $DOCKER_IMG="mrhid6/ssmagent:latest"
 
+write-host "* Pulling Docker Image.."
 docker pull -q $DOCKER_IMG
+write-host "* Docker image pulled"
 
 if($DOCKEREXISTS -eq $True){
-    write-host "Removing existing docker container"
+    write-host "* Removing existing docker container"
     docker rm -f $AGENTNAME
+    write-host "* Removed existing docker container"
 }
+
+write-host "* Starting docker container"
 
 docker run -d `
 -e SSM_NAME="$($AGENTNAME)" `
@@ -194,3 +199,5 @@ docker run -d `
 --name "$($AGENTNAME)" `
 --restart always `
 $DOCKER_IMG
+
+write-host "* Docker container successfully started."
