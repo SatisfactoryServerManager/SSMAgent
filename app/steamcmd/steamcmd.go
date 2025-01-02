@@ -1,15 +1,17 @@
 package steamcmd
 
 import (
+	"archive/zip"
 	"bufio"
 	"context"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
@@ -36,20 +38,12 @@ func InitSteamCMD() {
 		return
 	}
 
-	utils.InfoLogger.Println("Running Steam CMD Validation..")
-	commands := make([]string, 0)
-	_, err = Run(commands)
-	if err != nil {
-		utils.ErrorLogger.Printf("Error running steam validation %s\r\n", err.Error())
-		return
-	}
-
-	utils.InfoLogger.Println("Steam CMD is Valid")
+	utils.InfoLogger.Println("Depot Downloaded is Valid")
 }
 
 func DownloadSteamCMD() error {
 
-	steamExe := filepath.Join(SteamDir, vars.SteamExeName)
+	steamExe := filepath.Join(SteamDir, vars.DepotDownloaderExeName)
 
 	_, err := os.Stat(steamExe)
 	if !os.IsNotExist(err) {
@@ -61,9 +55,9 @@ func DownloadSteamCMD() error {
 		return err
 	}
 
-	utils.InfoLogger.Printf("Downloading Steam CMD to: %s\r\n", file.Name())
+	utils.InfoLogger.Printf("Downloading Depot Downloader to: %s\r\n", file.Name())
 
-	resp, err := http.Get(vars.DownloadURL)
+	resp, err := http.Get(vars.DepotDownloaderDownloadURL)
 	if err != nil {
 		return err
 	}
@@ -90,22 +84,17 @@ func DownloadSteamCMD() error {
 }
 
 func IsInstalled() bool {
-	steamExe := filepath.Join(SteamDir, vars.SteamExeName)
+	steamExe := filepath.Join(SteamDir, vars.DepotDownloaderExeName)
 	_, err := os.Stat(steamExe)
 	return !os.IsNotExist(err)
 }
 
-func BuildScriptFile(commands []string) (string, error) {
+func BuildScriptFile() (string, error) {
 
-	allCommands := make([]string, 0)
+	steamExe := filepath.Join(SteamDir, vars.DepotDownloaderExeName)
+	exeArgs := fmt.Sprintf(`-app "%d" -depot "%d" -beta "%s" -dir "%s"`, vars.SteamAppId, vars.DepotId, config.GetConfig().SF.SFBranch, config.GetConfig().SFDir)
 
-	allCommands = append(allCommands, "@ShutdownOnFailedCommand 1")
-	allCommands = append(allCommands, "@NoPromptForPassword 1")
-	allCommands = append(allCommands, "login anonymous")
-	allCommands = append(allCommands, commands...)
-	allCommands = append(allCommands, "quit")
-
-	tempfile, err := os.CreateTemp(os.TempDir(), "ssm_temp_*.txt")
+	tempfile, err := os.CreateTemp(os.TempDir(), "ssm_temp_*.ps1")
 	if err != nil {
 		return "", err
 	}
@@ -118,17 +107,16 @@ func BuildScriptFile(commands []string) (string, error) {
 
 	datawriter := bufio.NewWriter(file)
 
-	for _, data := range allCommands {
-		_, _ = datawriter.WriteString(data + "\n")
-	}
+	datawriter.WriteString("& " + steamExe + " " + exeArgs)
 
 	datawriter.Flush()
 	file.Close()
+	tempfile.Close()
 
 	return tempfile.Name(), nil
 }
 
-func Run(commands []string) (string, error) {
+func InstallSFServer() (string, error) {
 
 	reader, writer := io.Pipe()
 
@@ -148,22 +136,19 @@ func Run(commands []string) (string, error) {
 		}
 	}()
 
-	steamExe := filepath.Join(SteamDir, vars.SteamExeName)
+	filename, _ := BuildScriptFile()
+	fmt.Printf("%v\n", filename)
 
-	tempFilePath, err := BuildScriptFile(commands)
+	cmd := exec.Command("pwsh", filename)
+	cmd.Dir = SteamDir
 
-	if err != nil {
-		return "", err
-	}
-
-	exeArgs := make([]string, 0)
-	exeArgs = append(exeArgs, steamExe)
-	exeArgs = append(exeArgs, "+runscript "+tempFilePath)
-
-	cmd := exec.Command(steamExe, exeArgs...)
+	fmt.Printf("%v\n", cmd.String())
 
 	cmd.Stdout = writer
+	cmd.Stderr = writer
+
 	_ = cmd.Start()
+
 	go func() {
 		_ = cmd.Wait()
 		cmdDone()
@@ -176,58 +161,57 @@ func Run(commands []string) (string, error) {
 	return output, nil
 }
 
-func AppInfo() (string, error) {
-	out, err := Run([]string{"app_info_update 1", "app_info_print 1690800"})
-	if err != nil {
-		return "", err
-	}
-	return appInfoFormat(out)
+type DepotData struct {
+	Data struct {
+		AppId struct {
+			Depots struct {
+				Branches struct {
+					Public struct {
+						Buildid string `json:"buildid"`
+					} `json:"public"`
+					Experimental struct {
+						Buildid string `json:"buildid"`
+					} `json:"experimental"`
+				} `json:"branches"`
+			} `json:"depots"`
+		} `json:"1690800"`
+	} `json:"data"`
 }
 
-func appInfoFormat(appInfo string) (string, error) {
-	// Remove everything before the first opening curly
-	firstIndex := strings.LastIndex(reverse(appInfo), "{")
-	if firstIndex > 0 {
-		appInfo = reverse(trimLength(reverse(appInfo), firstIndex+1))
+func GetLatestVersion() (int64, error) {
+	client := http.DefaultClient
+	requestUrl := "https://api.steamcmd.net/v1/info/" + strconv.Itoa(vars.SteamAppId)
+
+	req, err := http.NewRequest(http.MethodGet, requestUrl, nil)
+	if err != nil {
+		return 0, err
 	}
 
-	// Remove everything after the last closing curly brace
-	lastIndex := strings.LastIndex(appInfo, "}")
-	if lastIndex > 0 {
-		appInfo = trimLength(appInfo, lastIndex+1)
+	res, err := client.Do(req)
+	if err != nil {
+		return 0, err
 	}
 
-	// Get the app info part of the incoming data
-	result := appInfo
-
-	// Remove tabs
-	result = strings.Replace(result, "\t", "", -1)
-	result = strings.Replace(result, "\r", "", -1)
-
-	// // Add missing semicolons
-	result = strings.Replace(result, "\"\n{", "\":\n{", -1)
-	result = strings.Replace(result, "\"\"", "\":\"", -1)
-
-	// // Add missing commas
-	result = strings.Replace(result, "}\n\"", "},\n\"", -1)
-	result = strings.Replace(result, "\"\n\"", "\",\n\"", -1)
-
-	// // Remove newlines last
-	result = strings.Replace(result, "\n", "", -1)
-	result = strings.Replace(result, "\r", "", -1)
-
-	// Validate that we have a proper JSON string
-	if !isJSON(result) {
-		return "", errors.New("not valid json")
+	resBody, err := io.ReadAll(res.Body)
+	if err != nil {
+		utils.SteamLogger.Printf("error couldn't get latest sf version: %s", err.Error())
+		os.Exit(1)
 	}
 
-	// Convert to pretty printed JSON
-	in := []byte(result)
-	var raw map[string]interface{}
-	json.Unmarshal(in, &raw)
+	var data = DepotData{}
 
-	// Return the parsed result
-	return string(result), nil
+	err = json.Unmarshal([]byte(resBody), &data)
+	if err != nil {
+		return 0, err
+	}
+
+	if config.GetConfig().SF.SFBranch == "public" {
+		version, err := strconv.ParseInt(data.Data.AppId.Depots.Branches.Public.Buildid, 10, 64)
+		return version, err
+	} else {
+		version, err := strconv.ParseInt(data.Data.AppId.Depots.Branches.Experimental.Buildid, 10, 64)
+		return version, err
+	}
 }
 
 func isJSON(s string) bool {
@@ -249,4 +233,70 @@ func reverse(s string) string {
 		r[i], r[j] = r[j], r[i]
 	}
 	return string(r)
+}
+
+func ExtractArchive(file *os.File) error {
+	utils.InfoLogger.Println("Extracting Depot Downloader...")
+	defer os.Remove(file.Name())
+
+	archive, err := zip.OpenReader(file.Name())
+	if err != nil {
+		return err
+	}
+	defer archive.Close()
+
+	for _, f := range archive.File {
+		filePath := filepath.Join(SteamDir, f.Name)
+		utils.DebugLogger.Println("unzipping file ", filePath)
+
+		if !strings.HasPrefix(filePath, filepath.Clean(SteamDir)+string(os.PathSeparator)) {
+			utils.DebugLogger.Println("invalid file path")
+			return nil
+		}
+		if f.FileInfo().IsDir() {
+			utils.DebugLogger.Println("creating directory...")
+			os.MkdirAll(filePath, os.ModePerm)
+			continue
+		}
+
+		if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+			return err
+		}
+
+		dstFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+		if err != nil {
+			return err
+		}
+
+		fileInArchive, err := f.Open()
+		if err != nil {
+			return err
+		}
+
+		if _, err := io.Copy(dstFile, fileInArchive); err != nil {
+			return err
+		}
+
+		dstFile.Close()
+		fileInArchive.Close()
+	}
+
+	err = file.Close()
+	if err != nil {
+		return err
+	}
+
+	err = archive.Close()
+	if err != nil {
+		return err
+	}
+
+	err = os.Remove(file.Name())
+	if err != nil {
+		return err
+	}
+
+	utils.InfoLogger.Println("Extracted Steam CMD")
+
+	return nil
 }

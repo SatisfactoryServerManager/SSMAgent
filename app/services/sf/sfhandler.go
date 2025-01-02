@@ -15,7 +15,6 @@ import (
 	"github.com/SatisfactoryServerManager/SSMAgent/app/steamcmd"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/vars"
-	"github.com/buger/jsonparser"
 	"github.com/shirou/gopsutil/process"
 )
 
@@ -113,11 +112,8 @@ func InstallSFServer(force bool) error {
 	}
 
 	utils.InfoLogger.Println("Installing SF Server..")
-	commands := make([]string, 0)
-	commands = append(commands, "force_install_dir "+config.GetConfig().SFDir)
-	commands = append(commands, "app_update 1690800 -beta public")
 
-	_, err := steamcmd.Run(commands)
+	_, err := steamcmd.InstallSFServer()
 	if err != nil {
 		utils.ErrorLogger.Printf("Error installing SF Server %s\r\n", err.Error())
 		return err
@@ -125,8 +121,8 @@ func InstallSFServer(force bool) error {
 
 	utils.InfoLogger.Println("Installed SF Server!")
 
-	config.GetConfig().SF.InstalledVer = config.GetConfig().SF.AvilableVer
-	config.SaveConfig()
+	//config.GetConfig().SF.InstalledVer = config.GetConfig().SF.AvilableVer
+	//config.SaveConfig()
 
 	SendStates()
 
@@ -270,24 +266,16 @@ func KillSFServer() error {
 
 func GetLatestedVersion() {
 
-	out, err := steamcmd.AppInfo()
+	version, err := steamcmd.GetLatestVersion()
+
 	if err != nil {
 		utils.ErrorLogger.Printf("Couldn't get latest version from steam app info with error: %s", err.Error())
 		return
 	}
 
-	in := []byte(out)
+	utils.InfoLogger.Printf("Found Latest SF Version: %d", version)
 
-	branch := config.GetConfig().SF.SFBranch
-	val, err := jsonparser.GetString(in, "depots", "branches", branch, "buildid")
-
-	if err != nil {
-		utils.ErrorLogger.Printf("Couldn't get latest version from steam json! %s\r\n", err.Error())
-		utils.DebugLogger.Println(out)
-		return
-	}
-
-	config.GetConfig().SF.AvilableVer, _ = strconv.ParseInt(val, 10, 64)
+	config.GetConfig().SF.AvilableVer = version
 	config.SaveConfig()
 }
 

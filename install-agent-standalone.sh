@@ -275,6 +275,17 @@ if [ $UPDATE_SSM -eq 0 ]; then
 fi
 stop_spinner $?
 
+start_spinner "${YELLOW}Installing PowerShell${NC}"
+apt-get -qq update
+apt-get -qq install -y wget apt-transport-https software-properties-common
+source /etc/os-release
+wget -q https://packages.microsoft.com/config/ubuntu/$VERSION_ID/packages-microsoft-prod.deb
+dpkg -i packages-microsoft-prod.deb
+rm packages-microsoft-prod.deb
+apt-get -qq update
+apt-get -qq install -y powershell
+stop_spinner $?
+
 start_spinner "${YELLOW}Creating Directories${NC}"
 mkdir -p ${INSTALL_DIR} >/dev/null 2>&1
 mkdir -p ${DATA_DIR} >/dev/null 2>&1

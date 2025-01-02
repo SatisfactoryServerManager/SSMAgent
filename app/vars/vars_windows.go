@@ -10,8 +10,8 @@ var (
 	ModPlatform = "WindowsServer"
 
 	//Steam
-	DownloadURL  = "https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip"
-	SteamExeName = "steamcmd.exe"
-	Extension    = "zip"
-	SMLFileName  = "SML-WindowsServer.zip"
+	DepotDownloaderDownloadURL = "https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_2.7.4/DepotDownloader-windows-x64.zip"
+	DepotDownloaderExeName     = "DepotDownloader.exe"
+	Extension                  = "zip"
+	DepotId                    = 1690801
 )

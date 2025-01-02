@@ -10,8 +10,8 @@ var (
 	ModPlatform = "LinuxServer"
 
 	// Steam
-	DownloadURL  = "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz"
-	SteamExeName = "steamcmd.sh"
-	Extension    = "tar.gz"
-	SMLFileName  = "SML-LinuxServer.zip"
+	DepotDownloaderDownloadURL = "https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_2.7.4/DepotDownloader-linux-x64.zip"
+	DepotDownloaderExeName     = "DepotDownloader"
+	Extension                  = "zip"
+	DepotId = 1690802
 )

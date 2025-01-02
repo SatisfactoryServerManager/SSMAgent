@@ -1,3 +1,6 @@
+## 1.0.70 (January 02, 2025)
+
+
 ## 1.0.69 (December 16, 2024)
   - fix: Fixed mod installation
 
