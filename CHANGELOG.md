@@ -1,3 +1,6 @@
+## 1.0.71 (January 02, 2025)
+  - fix: Fixed entry script
+
 ## 1.0.70 (January 02, 2025)
 
 
