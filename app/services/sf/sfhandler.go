@@ -121,8 +121,8 @@ func InstallSFServer(force bool) error {
 
 	utils.InfoLogger.Println("Installed SF Server!")
 
-	//config.GetConfig().SF.InstalledVer = config.GetConfig().SF.AvilableVer
-	//config.SaveConfig()
+	config.GetConfig().SF.InstalledVer = config.GetConfig().SF.AvilableVer
+	config.SaveConfig()
 
 	SendStates()
 

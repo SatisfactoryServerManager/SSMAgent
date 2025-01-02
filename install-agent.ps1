@@ -59,6 +59,21 @@ if($SSMAPIKEY -eq ""){
     }
 }
 
+write-host -ForegroundColor Cyan "Installation Summary:"
+echo "Agent Name: $AGENTNAME"
+echo "SF Port: $PORT"
+echo "SSM Cloud URL: $SSMURL"
+echo "SSM Cloud API Key: $SSMAPIKEY"
+echo "Skip Docker Install: $NoDockerInstall"
+echo ""
+
+$response = Read-Host -Prompt 'Is the information correct? [y/N]'
+
+if($response.ToLower() -ne "y"){
+    Write-Warning "If you need to change any information you will need to re-run the installation script"
+    exit 1;
+}
+
 if($NoDockerInstall){
     write-host -ForegroundColor Yellow "Docker install skipped"
 }else{

@@ -5,12 +5,12 @@ EXE="/opt/SSMAgent/SSMAgent"
 #Define cleanup procedure
 cleanup() {
     echo "Container stopped, performing cleanup..."
-    pid=$(ps -ef | awk '$8=="${EXE}" {print $2}')
+    pid=$(ps -ef | awk '{print $2" "$8}' | grep "$EXE" | awk '{print $1}')
     kill -INT $pid
 
     while true; do
         echo "Waiting for process to finish"
-        pid=$(ps -ef | awk '$8=="${EXE}" {print $2}')
+        pid=$(ps -ef | awk '{print $2" "$8}' | grep "$EXE" | awk '{print $1}')
         if [ "$pid" == "" ]; then
             break
         fi
