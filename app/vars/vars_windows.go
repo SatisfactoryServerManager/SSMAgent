@@ -10,7 +10,7 @@ var (
 	ModPlatform = "WindowsServer"
 
 	//Steam
-	DepotDownloaderDownloadURL = "https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_2.7.4/DepotDownloader-windows-x64.zip"
+	DepotDownloaderDownloadURL = "https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_3.4.0/DepotDownloader-windows-x64.zip"
 	DepotDownloaderExeName     = "DepotDownloader.exe"
 	Extension                  = "zip"
 	DepotId                    = 1690801
