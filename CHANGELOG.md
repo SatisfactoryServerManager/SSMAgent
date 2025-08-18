@@ -1,3 +1,6 @@
+## 1.0.73 (August 18, 2025)
+  - ci: Fixed Go version
+
 ## 1.0.72 (August 18, 2025)
   - fix: Fixed depot downloader errors
   - feat: more debug on docker install script
