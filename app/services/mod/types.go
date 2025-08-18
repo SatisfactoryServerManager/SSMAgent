@@ -60,6 +60,19 @@ type UPluginFile struct {
 	SemVersion string `json:"SemVersion"`
 }
 
+type BasicMod struct {
+	ModReference string `json:"modReference"`
+}
+type BasicSelectedMod struct {
+	Mod              BasicMod `json:"mod"`
+	InstalledVersion string   `json:"installedVersion"`
+	Installed        bool     `json:"installed"`
+	Config           string   `json:"config"`
+}
+type BasicModState struct {
+	SelectedMods []BasicSelectedMod `json:"selectedMods"`
+}
+
 func (obj *SelectedMod) Init() error {
 
 	if err := obj.CheckInstalledOnDisk(); err != nil {

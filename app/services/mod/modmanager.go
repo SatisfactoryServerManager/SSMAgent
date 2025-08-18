@@ -301,9 +301,26 @@ func UpdateModConfigFile(modReference string, modConfig string) error {
 
 func SendModState() error {
 
+	newModState := BasicModState{
+		SelectedMods: make([]BasicSelectedMod, 0),
+	}
+
+	for _, sm := range _ModState.SelectedMods {
+		newMod := BasicMod{
+			ModReference: sm.Mod.ModReference,
+		}
+		newSelectedMod := BasicSelectedMod{
+			Mod:              newMod,
+			Installed:        sm.Installed,
+			InstalledVersion: sm.InstalledVersion,
+			Config:           sm.Config,
+		}
+		newModState.SelectedMods = append(newModState.SelectedMods, newSelectedMod)
+	}
+
 	var resData interface{}
 
-	err := api.SendPutRequest("/api/v1/agent/modconfig", _ModState, resData)
+	err := api.SendPutRequest("/api/v1/agent/modconfig", newModState, resData)
 	return err
 }
 
