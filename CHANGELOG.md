@@ -1,3 +1,6 @@
+## 1.0.74 (August 18, 2025)
+  - feat: Slim down mod state put request
+
 ## 1.0.73 (August 18, 2025)
   - ci: Fixed Go version
 
