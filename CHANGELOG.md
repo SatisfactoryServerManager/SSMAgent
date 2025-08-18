@@ -1,3 +1,7 @@
+## 1.0.72 (August 18, 2025)
+  - fix: Fixed depot downloader errors
+  - feat: more debug on docker install script
+
 ## 1.0.71 (January 02, 2025)
   - fix: Fixed entry script
 
