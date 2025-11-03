@@ -108,7 +108,7 @@ func LoadConfigFile() {
 
 func SetDefaultValues() {
 
-	_config.Version = "v1.0.74"
+	_config.Version = "v1.0.75"
 
 	_config.HomeDir = SSMHomeDir
 	_config.LogDir, _ = filepath.Abs(path.Join(SSMHomeDir, "logs"))

@@ -1,3 +1,6 @@
+## 1.0.75 (November 03, 2025)
+  - fix: Fixed modReference
+
 ## 1.0.74 (August 18, 2025)
   - feat: Slim down mod state put request
 
