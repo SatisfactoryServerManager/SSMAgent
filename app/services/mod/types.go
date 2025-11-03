@@ -61,7 +61,7 @@ type UPluginFile struct {
 }
 
 type BasicMod struct {
-	ModReference string `json:"modReference"`
+	ModReference string `json:"mod_reference"`
 }
 type BasicSelectedMod struct {
 	Mod              BasicMod `json:"mod"`
