@@ -2,6 +2,7 @@ package loghandler
 
 import (
 	"path/filepath"
+	"strings"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
@@ -10,16 +11,39 @@ import (
 )
 
 var (
-	_quit = make(chan int)
 	tails []*tail.Tail
 )
 
+func getSourceFromPath(filePath string) string {
+	if strings.Contains(filePath, "SSMAgent") {
+		return "Agent"
+	}
+	return "FactoryGame"
+}
+
+// sendInitialContent sends the entire file content on startup
+func sendInitialContent(filePath string, source string) error {
+	// First send the full file content
+	if err := api.SendFile("/api/v1/agent/upload/log", filePath); err != nil {
+		return err
+	}
+	return nil
+}
+
 func watchFile(filePath string) (*tail.Tail, error) {
+	source := getSourceFromPath(filePath)
+
+	// Send initial content
+	if err := sendInitialContent(filePath, source); err != nil {
+		utils.ErrorLogger.Printf("Error sending initial content for %s: %v\n", filePath, err)
+	}
+
 	t, err := tail.TailFile(filePath, tail.Config{
 		Follow:    true,
 		ReOpen:    true,
 		MustExist: false,
 		Poll:      true,
+		Location:  &tail.SeekInfo{Offset: 0, Whence: 2},
 	})
 	if err != nil {
 		return nil, err
@@ -31,9 +55,9 @@ func watchFile(filePath string) (*tail.Tail, error) {
 				utils.ErrorLogger.Printf("Error reading line from %s: %v\n", filePath, line.Err)
 				continue
 			}
-			// Send the log update to the API
-			if err := api.SendFile("/api/v1/agent/upload/log", filePath); err != nil {
-				utils.ErrorLogger.Printf("Error sending log file %s: %v\n", filePath, err)
+			// Send just the new line to the API
+			if err := api.SendLogLine(source, line.Text); err != nil {
+				utils.ErrorLogger.Printf("Error sending log line from %s: %v\n", filePath, err)
 			}
 		}
 	}()
@@ -75,12 +99,14 @@ func ShutdownLogHandler() error {
 
 	// Stop all tails
 	for _, t := range tails {
-		t.Stop()
+		utils.DebugLogger.Printf("Stopping tail for %s\n", t.Filename)
+		t.Kill(nil)
 		t.Cleanup()
+
+		utils.DebugLogger.Printf("Stopped tail for %s\n", t.Filename)
+
 	}
 	tails = nil
-
-	_quit <- 0
 
 	utils.InfoLogger.Println("Shutdown Log Handler")
 	return nil

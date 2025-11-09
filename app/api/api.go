@@ -84,6 +84,10 @@ func (e *APIError) Error() string {
 	return fmt.Sprintf("API returned code: %d", e.ResponseCode)
 }
 
+var (
+	debugPostPutData = false
+)
+
 func SendGetRequest(endpoint string, returnModel interface{}) error {
 
 	if _client == nil {
@@ -136,7 +140,11 @@ func SendPostRequest(endpoint string, bodyModel interface{}, returnModel interfa
 
 	url := config.GetConfig().URL + endpoint
 
-	utils.DebugLogger.Printf("#### POST #### url: %s, data: %s\r\n", url, bytes.NewBuffer(bodyJSON))
+	if debugPostPutData {
+		utils.DebugLogger.Printf("#### POST #### url: %s, data: %s\r\n", url, bytes.NewBuffer(bodyJSON))
+	} else {
+		utils.DebugLogger.Printf("#### POST #### url: %s\r\n", url)
+	}
 
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(bodyJSON))
 	req.Header.Set("x-ssm-key", config.GetConfig().APIKey)
@@ -187,7 +195,11 @@ func SendPutRequest(endpoint string, bodyModel interface{}, returnModel interfac
 
 	url := config.GetConfig().URL + endpoint
 
-	utils.DebugLogger.Printf("#### PUT #### url: %s, data: %s\r\n", url, bytes.NewBuffer(bodyJSON))
+	if debugPostPutData {
+		utils.DebugLogger.Printf("#### PUT #### url: %s, data: %s\r\n", url, bytes.NewBuffer(bodyJSON))
+	} else {
+		utils.DebugLogger.Printf("#### PUT #### url: %s\r\n", url)
+	}
 
 	req, _ := http.NewRequest("PUT", url, bytes.NewBuffer(bodyJSON))
 	req.Header.Set("x-ssm-key", config.GetConfig().APIKey)

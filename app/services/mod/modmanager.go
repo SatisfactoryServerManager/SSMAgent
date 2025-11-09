@@ -39,7 +39,9 @@ func InitModManager() {
 		for {
 			select {
 			case <-ticker.C:
-				GetModState()
+				if err := GetModState(); err != nil {
+					utils.ErrorLogger.Printf("Error getting mod state: %v\n", err)
+				}
 			case <-_quit:
 				ticker.Stop()
 				return
@@ -56,18 +58,32 @@ func ShutdownModManager() error {
 	return nil
 }
 
-func GetModState() {
+func GetModState() error {
+
+	if !sf.IsInstalled() {
+		return nil
+	}
+
+	if sf.IsRunning() {
+		return nil
+	}
 
 	FindModsOnDisk()
 
 	err := api.SendGetRequest("/api/v1/agent/modconfig", &_ModState)
 	if err != nil {
-		utils.ErrorLogger.Printf("Failed to get Mod State with error: %s\r\n", err.Error())
-		return
+		return fmt.Errorf("failed to get mod state with error: %s", err.Error())
 	}
 
-	ProcessModState()
-	SendModState()
+	if err := ProcessModState(); err != nil {
+		return fmt.Errorf("failed to process mod state with error: %s", err.Error())
+	}
+
+	if err := SendModState(); err != nil {
+		return fmt.Errorf("failed to send mod state with error: %s", err.Error())
+	}
+
+	return nil
 }
 
 func FindModsOnDisk() []InstalledMod {
@@ -95,8 +111,6 @@ func FindModsOnDisk() []InstalledMod {
 			continue
 		}
 
-		utils.DebugLogger.Printf("Found Mod (%s) at %s\r\n", modName, modPath)
-
 		var newInstalledMod = InstalledMod{
 			ModReference:   modName,
 			ModPath:        modPath,
@@ -107,12 +121,14 @@ func FindModsOnDisk() []InstalledMod {
 		_ = json.Unmarshal([]byte(file), &newInstalledMod)
 
 		installedMods = append(installedMods, newInstalledMod)
+
+		utils.DebugLogger.Printf("Found Mod (%s - %s) at %s\r\n", modName, newInstalledMod.ModVersion, modPath)
 	}
 
 	return installedMods
 }
 
-func ProcessModState() {
+func ProcessModState() error {
 
 	utils.CreateFolder(config.GetConfig().ModsDir)
 
@@ -148,8 +164,10 @@ func ProcessModState() {
 	}
 
 	if err := InstallAllMods(); err != nil {
-		utils.ErrorLogger.Printf("error failed to install mods with error: %s\n", err.Error())
+		return fmt.Errorf("error failed to install mods with error: %s", err.Error())
 	}
+
+	return nil
 }
 
 func InstallAllMods() error {
@@ -165,18 +183,18 @@ func InstallAllMods() error {
 			continue
 		}
 
-		utils.DebugLogger.Printf("Installing Mod: %s", selectedMod.Mod.ModReference)
-
 		var modVersion ModVersion
 
 		for _, mv := range selectedMod.Mod.Versions {
-			versiondiff := semver.Compare(selectedMod.DesiredVersion, mv.Version)
+			versiondiff := semver.Compare("v"+selectedMod.DesiredVersion, "v"+mv.Version)
 
 			if versiondiff == 0 {
 				modVersion = mv
 				break
 			}
 		}
+
+		utils.DebugLogger.Printf("Installing Mod: %s - %s", selectedMod.Mod.ModReference, modVersion.Version)
 
 		if len(modVersion.Targets) == 0 {
 			utils.DebugLogger.Printf("Skipping mod install %s with reason: no mod version targets\n", selectedMod.Mod.ModReference)
@@ -318,7 +336,7 @@ func SendModState() error {
 		newModState.SelectedMods = append(newModState.SelectedMods, newSelectedMod)
 	}
 
-	var resData interface{}
+	resData := &api.HttpResponseBody{}
 
 	err := api.SendPutRequest("/api/v1/agent/modconfig", newModState, resData)
 	return err
