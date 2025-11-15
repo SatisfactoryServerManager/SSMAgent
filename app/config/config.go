@@ -59,6 +59,7 @@ type Config struct {
 	ModConfigsDir string   `json:"sfmodconfigsdir"`
 	APIKey        string   `json:"apikey"`
 	URL           string   `json:"ssmurl"`
+	GRPCAddress   string   `json:"grpcaddress"`
 	SF            SFConfig `json:"sf"`
 	Version       string   `json:"version"`
 	Backup        Backup   `json:"backup"`
@@ -118,6 +119,7 @@ func SetDefaultValues() {
 	}
 
 	_config.URL = flag.Lookup("url").Value.(flag.Getter).Get().(string)
+	_config.GRPCAddress = flag.Lookup("grpcaddr").Value.(flag.Getter).Get().(string)
 
 	_config.APIKey = flag.Lookup("apikey").Value.(flag.Getter).Get().(string)
 

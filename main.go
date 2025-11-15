@@ -37,6 +37,7 @@ func isFlagPassed(name string) bool {
 func main() {
 	flag.String("name", "", "The name of the ssm agent")
 	flag.String("url", "https://api-ssmcloud.hostxtra.co.uk", "The url for SSM Cloud")
+	flag.String("grpcaddr", "grpc://api-ssmcloud.hostxtra.co.uk:50051", "The grpc address for SSM Cloud")
 	flag.String("apikey", "", "The agents api key used to connect to SSM Cloud")
 	flag.String("datadir", "/SSM/data", "The directory where SF and Steam will be stored")
 	flag.Int("p", 0, "The port offset from 7777 defaults to 0")
@@ -70,6 +71,9 @@ func main() {
 		"modmanager": func(ctx context.Context) error {
 			return mod.ShutdownModManager()
 		},
+		"grpc": func(ctx context.Context) error {
+			return api.ShutdownGRPCClient()
+		},
 		"main": func(ctx context.Context) error {
 			_quit <- 0
 			MarkAgentOffline()
@@ -79,8 +83,12 @@ func main() {
 
 	config.GetConfig()
 
-	err := TestSSMCloudAPI()
-	utils.CheckError(err)
+	err := api.InitGRPCClient()
+	if err != nil {
+		panic(err)
+	}
+
+	utils.CheckError(TestSSMCloudAPI())
 
 	MarkAgentOnline()
 
@@ -162,47 +170,33 @@ func SendConfig() {
 		utils.ErrorLogger.Printf("Error sending state to API with error: %s\r\n", err.Error())
 	}
 
-	ip, err := api.GetPublicIP()
-	if err != nil {
-		utils.ErrorLogger.Printf("Failed to get public IP with error: %s\r\n", err.Error())
-		ip = ""
-	}
-
-	var req = api.HTTPRequestBody_Config{
-		Version: config.GetConfig().Version,
-		IP:      ip,
-	}
-
-	var resData interface{}
-
-	if err := api.SendPutRequest("/api/v1/agent/config", req, &resData); err != nil {
+	if err := api.GetAgentServiceClient().UpdateConfigVersionIp(); err != nil {
 		utils.ErrorLogger.Printf("Error sending config data to API with error: %s\r\n", err.Error())
 	}
 }
 
-func GetConfigFromAPI() {
-	var resData = api.HttpResponseBody_Config{}
-	err := api.SendGetRequest("/api/v1/agent/config", &resData)
+func GetConfigFromAPI() error {
 
+	resConfig, err := api.GetAgentServiceClient().GetConfig()
 	if err != nil {
-		return
+		return err
 	}
 
 	oldBranch := config.GetConfig().SF.SFBranch
 
-	config.GetConfig().Backup.Interval = resData.Config.BackupInterval
-	config.GetConfig().Backup.Keep = resData.Config.BackupKeepAmount
+	config.GetConfig().Backup.Interval = int(resConfig.Config.BackupInterval)
+	config.GetConfig().Backup.Keep = int(resConfig.Config.BackupKeepAmount)
 
-	config.GetConfig().SF.MaxPlayers = resData.ServerConfig.MaxPlayers
-	config.GetConfig().SF.WorkerThreads = resData.ServerConfig.WorkerThreads
-	config.GetConfig().SF.SFBranch = resData.ServerConfig.SFBranch
+	config.GetConfig().SF.MaxPlayers = int(resConfig.ServerConfig.MaxPlayers)
+	config.GetConfig().SF.WorkerThreads = int(resConfig.ServerConfig.WorkerThreads)
+	config.GetConfig().SF.SFBranch = resConfig.ServerConfig.Branch
 
-	config.GetConfig().SF.UpdateSFOnStart = resData.ServerConfig.UpdateOnStart
-	config.GetConfig().SF.AutoRestart = resData.ServerConfig.AutoRestart
-	config.GetConfig().SF.AutoPause = resData.ServerConfig.AutoPause
-	config.GetConfig().SF.AutoSaveOnDisconnect = resData.ServerConfig.AutoSaveOnDisconnect
-	config.GetConfig().SF.AutoSaveInterval = resData.ServerConfig.AutoSaveInterval
-	config.GetConfig().SF.DisableSeasonalEvents = resData.ServerConfig.DisableSeasonalEvents
+	config.GetConfig().SF.UpdateSFOnStart = resConfig.ServerConfig.UpdateSFOnStart
+	config.GetConfig().SF.AutoRestart = resConfig.ServerConfig.AutoRestart
+	config.GetConfig().SF.AutoPause = resConfig.ServerConfig.AutoPause
+	config.GetConfig().SF.AutoSaveOnDisconnect = resConfig.ServerConfig.AutoSaveOnDisconnect
+	config.GetConfig().SF.AutoSaveInterval = float32(resConfig.ServerConfig.AutoSaveInterval)
+	config.GetConfig().SF.DisableSeasonalEvents = resConfig.ServerConfig.DisableSeasonalEvents
 
 	config.SaveConfig()
 
@@ -212,15 +206,16 @@ func GetConfigFromAPI() {
 	}
 
 	if !sf.IsInstalled() {
-		return
+		return nil
 	}
 
 	if sf.IsRunning() {
-		return
+		return nil
 	}
 
 	if err := config.UpdateIniFiles(); err != nil {
 		utils.ErrorLogger.Printf("error updating game ini files with error: %s\n", err.Error())
 	}
 
+	return nil
 }

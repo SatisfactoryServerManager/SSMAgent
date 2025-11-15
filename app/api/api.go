@@ -35,33 +35,6 @@ type HttpRequestBody_Status struct {
 	LatestSFVersion    int64   `json:"latestSFVersion"`
 }
 
-type HTTPRequestBody_Config struct {
-	Version string `json:"version"`
-	IP      string `json:"ip"`
-}
-
-type HttpResponseBody_Config struct {
-	Config       HttpResponseBody_Config_Config       `json:"config"`
-	ServerConfig HttpResponseBody_Config_ServerConfig `json:"serverConfig"`
-}
-
-type HttpResponseBody_Config_Config struct {
-	BackupKeepAmount int `json:"backupKeepAmount"`
-	BackupInterval   int `json:"backupInterval"`
-}
-
-type HttpResponseBody_Config_ServerConfig struct {
-	SFBranch              string  `json:"branch"`
-	WorkerThreads         int     `json:"workerThreads"`
-	MaxPlayers            int     `json:"maxPlayers"`
-	UpdateOnStart         bool    `json:"updateOnStart"`
-	AutoRestart           bool    `json:"autoRestart"`
-	AutoPause             bool    `json:"autoPause"`
-	AutoSaveOnDisconnect  bool    `json:"autoSaveOnDisconnect"`
-	AutoSaveInterval      float32 `json:"autoSaveInterval"`
-	DisableSeasonalEvents bool    `json:"disableSeasonalEvents"`
-}
-
 type HttpResponseBody_SaveSync struct {
 	Saves []HttpResponseBody_SaveSync_Save `json:"saves"`
 }
