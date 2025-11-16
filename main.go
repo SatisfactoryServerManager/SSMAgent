@@ -53,6 +53,7 @@ func main() {
 	}
 
 	wait := gracefulShutdown(context.Background(), 30*time.Second, map[string]operation{
+
 		"sf": func(ctx context.Context) error {
 			return sf.ShutdownSFHandler()
 		},
@@ -71,12 +72,15 @@ func main() {
 		"modmanager": func(ctx context.Context) error {
 			return mod.ShutdownModManager()
 		},
+		"state": func(ctx context.Context) error {
+			MarkAgentOffline()
+			return state.ShutdownStateStream()
+		},
 		"grpc": func(ctx context.Context) error {
 			return api.ShutdownGRPCClient()
 		},
 		"main": func(ctx context.Context) error {
 			_quit <- 0
-			MarkAgentOffline()
 			return nil
 		},
 	})
@@ -89,6 +93,7 @@ func main() {
 	}
 
 	utils.CheckError(TestSSMCloudAPI())
+	utils.CheckError(state.InitStateStream())
 
 	MarkAgentOnline()
 
@@ -129,10 +134,6 @@ func TestSSMCloudAPI() error {
 	err := api.SendGetRequest("/api/v1/ping", &test)
 
 	if err != nil {
-		return err
-	}
-
-	if err := state.SendAgentState(); err != nil {
 		utils.ErrorLogger.Printf("Retrying connection test due to failed to send agent status with error: %s\n", err.Error())
 		time.Sleep(time.Second)
 		connectionTestRetryCount++
@@ -151,24 +152,16 @@ func TestSSMCloudAPI() error {
 
 func MarkAgentOnline() {
 	state.Online = true
-	err := state.SendAgentState()
-	utils.CheckError(err)
 }
 
 func MarkAgentOffline() {
 	state.Online = false
-	err := state.SendAgentState()
-	utils.CheckError(err)
 }
 
 func SendConfig() {
 
 	state.InstalledSFVersion = config.GetConfig().SF.InstalledVer
 	state.LatestSFVersion = config.GetConfig().SF.AvilableVer
-
-	if err := state.SendAgentState(); err != nil {
-		utils.ErrorLogger.Printf("Error sending state to API with error: %s\r\n", err.Error())
-	}
 
 	if err := api.GetAgentServiceClient().UpdateConfigVersionIp(); err != nil {
 		utils.ErrorLogger.Printf("Error sending config data to API with error: %s\r\n", err.Error())

@@ -3,17 +3,21 @@ package task
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/mod"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/sf"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
+	v2 "github.com/SatisfactoryServerManager/ssmcloud-resources/models/v2"
+	"github.com/SatisfactoryServerManager/ssmcloud-resources/proto"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var (
 	_quit             = make(chan int)
-	_agentTasks       []TaskItem
+	_agentTasks       []v2.AgentTask
 	_completedTaskIds = make([]string, 0)
 )
 
@@ -26,30 +30,62 @@ type TaskItem struct {
 	Created   time.Time   `json:"created"`
 }
 
-type HttpRequestBody_MessageItem struct {
-	Item TaskItem `json:"item"`
-}
-
 func InitMessageQueue() {
 	utils.InfoLogger.Println("Initialising Message Queue...")
-
-	GetAllTasks()
-
-	ticker := time.NewTicker(10 * time.Second)
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				GetAllTasks()
-				ProcessAllMessageQueueItems()
-			case <-_quit:
-				ticker.Stop()
-				return
-			}
-		}
-	}()
+	go PollTasks()
 
 	utils.InfoLogger.Println("Initialised Message Queue")
+}
+
+func PollTasks() {
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			resp, err := api.GetAgentServiceClient().GetAgentTasks()
+			if err != nil {
+				fmt.Println("Failed to fetch tasks:", err)
+				continue
+			}
+
+			_agentTasks = make([]v2.AgentTask, 0)
+			for _, t := range resp.Tasks {
+				// parse ObjectID
+				objID, err := primitive.ObjectIDFromHex(t.Id)
+				if err != nil {
+					fmt.Println("Invalid task ID:", t.Id)
+					continue
+				}
+
+				// parse Data JSON into a map or concrete struct
+				var data interface{}
+				if t.Data != "" {
+					err := json.Unmarshal([]byte(t.Data), &data)
+					if err != nil {
+						fmt.Println("Failed to unmarshal data:", err)
+					}
+				}
+
+				task := v2.AgentTask{
+					ID:        objID,
+					Action:    t.Action,
+					Data:      data,
+					Completed: t.Completed,
+					Retries:   int(t.Retries),
+				}
+				_agentTasks = append(_agentTasks, task)
+
+				fmt.Printf("Task received: %+v\n", task)
+			}
+
+			ProcessAllMessageQueueItems()
+		case <-_quit:
+			ticker.Stop()
+			return
+		}
+	}
 }
 
 func ShutdownMessageQueue() error {
@@ -61,14 +97,6 @@ func ShutdownMessageQueue() error {
 	return nil
 }
 
-func GetAllTasks() {
-
-	err := api.SendGetRequest("/api/v1/agent/tasks", &_agentTasks)
-	if err != nil {
-		utils.ErrorLogger.Println(err.Error())
-	}
-}
-
 func ProcessAllMessageQueueItems() {
 
 	if len(_agentTasks) == 0 {
@@ -78,36 +106,34 @@ func ProcessAllMessageQueueItems() {
 	for idx := range _agentTasks {
 		taskItem := &_agentTasks[idx]
 
-		if taskItem.Completed {
-			continue
-		}
-
 		err := ProcessMessageQueueItem(taskItem)
 
 		if err != nil {
-			taskItem.Retries += 1
+			api.GetAgentServiceClient().MarkAgentTaskFailed(&proto.AgentTaskFailedRequest{Id: taskItem.ID.Hex()})
+
 			utils.ErrorLogger.Printf("Error processing task item %s (%s) with error: %s\r\n", taskItem.Action, taskItem.ID, err.Error())
 			continue
 		}
+		api.GetAgentServiceClient().MarkAgentTaskCompleted(&proto.AgentTaskCompletedRequest{Id: taskItem.ID.Hex()})
 
-		taskItem.Completed = true
-
-		_completedTaskIds = append(_completedTaskIds, taskItem.ID)
+		_completedTaskIds = append(_completedTaskIds, taskItem.ID.Hex())
 	}
 
-	for idx := range _agentTasks {
-		taskItem := &_agentTasks[idx]
+	//TODO: Send updates back to API
 
-		itemBody := HttpRequestBody_MessageItem{Item: *taskItem}
+	// for idx := range _agentTasks {
+	// 	taskItem := &_agentTasks[idx]
 
-		var resData interface{}
-		err := api.SendPutRequest("/api/v1/agent/tasks/"+taskItem.ID, itemBody, &resData)
+	// 	itemBody := HttpRequestBody_MessageItem{Item: *taskItem}
 
-		if err != nil {
-			utils.ErrorLogger.Printf("Error sending task item update %s with error: %s\r\n", taskItem.ID, err.Error())
-		}
+	// 	var resData interface{}
+	// 	err := api.SendPutRequest("/api/v1/agent/tasks/"+taskItem.ID, itemBody, &resData)
 
-	}
+	// 	if err != nil {
+	// 		utils.ErrorLogger.Printf("Error sending task item update %s with error: %s\r\n", taskItem.ID, err.Error())
+	// 	}
+
+	// }
 }
 
 type UpdateModConfigData struct {
@@ -115,11 +141,11 @@ type UpdateModConfigData struct {
 	ModConfig    string `json:"modConfig"`
 }
 
-func ProcessMessageQueueItem(taskItem *TaskItem) error {
+func ProcessMessageQueueItem(taskItem *v2.AgentTask) error {
 
 	AlreadyCompleted := false
 	for _, completedTaskId := range _completedTaskIds {
-		if taskItem.ID == completedTaskId {
+		if taskItem.ID.Hex() == completedTaskId {
 			AlreadyCompleted = true
 			break
 		}
@@ -142,22 +168,6 @@ func ProcessMessageQueueItem(taskItem *TaskItem) error {
 		return sf.InstallSFServer(true)
 	case "updatesfserver":
 		return sf.UpdateSFServer()
-	case "downloadSave":
-		return nil
-		// var objmap []map[string]string
-		// b, _ := json.Marshal(taskItem.Data)
-		// json.Unmarshal(b, &objmap)
-
-		// fileName := ""
-		// for _, d := range objmap {
-		// 	if string(d["Key"]) == "saveFile" {
-		// 		fileName = string(d["Value"])
-		// 	}
-		// }
-
-		// return savemanager.DownloadSaveFile(fileName)
-	case "updateconfig":
-		return nil
 	case "updateModConfig":
 		var objmap []map[string]string
 		b, _ := json.Marshal(taskItem.Data)

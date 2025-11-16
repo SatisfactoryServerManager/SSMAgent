@@ -5,11 +5,12 @@ import (
 	"time"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 	pb "github.com/SatisfactoryServerManager/ssmcloud-resources/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/connectivity"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/metadata"
 )
@@ -43,20 +44,20 @@ func NewGRPCClient(addr string) (*grpc.ClientConn, error) {
 
 	return grpc.NewClient(
 		addr,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 		grpc.WithConnectParams(cfg),
 		grpc.WithKeepaliveParams(ka),
 	)
 }
 
 func EnsureConnected(conn *grpc.ClientConn) {
-	if conn.GetState() == connectivity.TransientFailure ||
-		conn.GetState() == connectivity.Shutdown {
+	if conn.GetState() == connectivity.TransientFailure || conn.GetState() == connectivity.Shutdown {
+		utils.DebugLogger.Println("gRPC connection is in state", conn.GetState(), "reconnecting...")
 		conn.Connect()
 	}
 }
 
-func contextWithAPIKey(ctx context.Context) context.Context {
+func ContextWithAPIKey(ctx context.Context) context.Context {
 	apiKey := config.GetConfig().APIKey
 	return metadata.AppendToOutgoingContext(ctx, "x-api-key", apiKey)
 }
@@ -92,15 +93,18 @@ func GetAgentServiceClient() *GRPCClient {
 	return AgentGRPCClient
 }
 
+func (c *GRPCClient) GetClient() pb.AgentServiceClient {
+	EnsureConnected(c.conn)
+	return c.client
+}
+
 func (c *GRPCClient) GetConfig() (*pb.AgentConfigResponse, error) {
 
 	EnsureConnected(c.conn)
-	ctx := contextWithAPIKey(context.Background())
+	ctx := ContextWithAPIKey(context.Background())
 	resp, err := c.client.GetAgentConfig(
 		ctx,
-		&pb.AgentGenericRequest{
-			ApiKey: config.GetConfig().APIKey,
-		},
+		&pb.Empty{},
 	)
 	return resp, err
 }
@@ -108,7 +112,7 @@ func (c *GRPCClient) GetConfig() (*pb.AgentConfigResponse, error) {
 func (c *GRPCClient) UpdateConfigVersionIp() error {
 
 	EnsureConnected(c.conn)
-	ctx := contextWithAPIKey(context.Background())
+	ctx := ContextWithAPIKey(context.Background())
 
 	ip, err := GetPublicIP()
 	if err != nil {
@@ -118,10 +122,50 @@ func (c *GRPCClient) UpdateConfigVersionIp() error {
 	_, err = c.client.UpdateAgentConfigVersionIp(
 		ctx,
 		&pb.AgentConfigRequest{
-			ApiKey:  config.GetConfig().APIKey,
 			Version: config.GetConfig().Version,
 			Ip:      ip,
 		},
+	)
+	return err
+}
+
+func (c *GRPCClient) GetAgentTasks() (*pb.AgentTaskList, error) {
+	EnsureConnected(c.conn)
+	ctx := ContextWithAPIKey(context.Background())
+	return c.client.GetAgentTasks(
+		ctx,
+		&pb.Empty{},
+	)
+}
+
+func (c *GRPCClient) MarkAgentTaskCompleted(req *pb.AgentTaskCompletedRequest) error {
+	EnsureConnected(c.conn)
+	ctx := ContextWithAPIKey(context.Background())
+	_, err := c.client.MarkAgentTaskCompleted(
+		ctx,
+		req,
+	)
+	return err
+}
+
+func (c *GRPCClient) MarkAgentTaskFailed(req *pb.AgentTaskFailedRequest) error {
+	EnsureConnected(c.conn)
+	ctx := ContextWithAPIKey(context.Background())
+	_, err := c.client.MarkAgentTaskFailed(
+		ctx,
+		req,
+	)
+	return err
+}
+
+func (c *GRPCClient) UpdateAgentState(req *pb.AgentStateRequest) error {
+
+	EnsureConnected(c.conn)
+	ctx := ContextWithAPIKey(context.Background())
+
+	_, err := c.client.UpdateAgentState(
+		ctx,
+		req,
 	)
 	return err
 }

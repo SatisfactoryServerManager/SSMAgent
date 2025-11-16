@@ -106,9 +106,6 @@ func InstallSFServer(force bool) error {
 		}
 
 		state.Installed = false
-		if err := state.SendAgentState(); err != nil {
-			return err
-		}
 	}
 
 	utils.InfoLogger.Println("Installing SF Server..")
@@ -366,10 +363,6 @@ func SendStates() {
 
 	state.Installed = IsInstalled()
 	state.Running = IsRunning()
-	state.CPU = cpu
+	state.CPU = float32(cpu)
 	state.MEM = mem
-
-	if err := state.SendAgentState(); err != nil {
-		utils.ErrorLogger.Println(err.Error())
-	}
 }
