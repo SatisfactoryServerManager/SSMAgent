@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/types"
 )
 
 var (
@@ -41,7 +41,7 @@ func API_SendRequest(dataString string, token string, returnModel interface{}) e
 	}
 
 	if r.StatusCode != http.StatusOK && r.StatusCode != http.StatusNoContent {
-		return &api.APIError{ResponseCode: r.StatusCode}
+		return &types.APIError{ResponseCode: r.StatusCode}
 	}
 
 	if r.StatusCode == http.StatusNoContent {
@@ -50,7 +50,7 @@ func API_SendRequest(dataString string, token string, returnModel interface{}) e
 
 	defer r.Body.Close()
 
-	responseObject := api.HttpResponseBody{}
+	responseObject := types.HttpResponseBody{}
 
 	if err := json.NewDecoder(r.Body).Decode(&responseObject); err != nil {
 		return err

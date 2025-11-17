@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/types"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 )
 
@@ -139,7 +140,7 @@ func DownloadSaveFile(fileName string) error {
 
 func SyncSaveFiles() error {
 
-	resBody := api.HttpResponseBody_SaveSync{}
+	resBody := types.HttpResponseBody_SaveSync{}
 	if err := api.SendGetRequest("/api/v1/agent/save/sync", &resBody); err != nil {
 		return err
 	}
@@ -177,7 +178,7 @@ func SyncSaveFiles() error {
 
 		if !foundSave {
 			fmt.Printf("save not found in api: %s\n", localSave.FileName)
-			resBody.Saves = append(resBody.Saves, api.HttpResponseBody_SaveSync_Save{
+			resBody.Saves = append(resBody.Saves, types.HttpResponseBody_SaveSync_Save{
 				FileName:      localSave.FileName,
 				FilePath:      localSave.FilePath,
 				ModTime:       localSave.ModTime,

@@ -14,6 +14,7 @@ import (
 	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/sf"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/types"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 	"golang.org/x/mod/semver"
 )
@@ -336,7 +337,7 @@ func SendModState() error {
 		newModState.SelectedMods = append(newModState.SelectedMods, newSelectedMod)
 	}
 
-	resData := &api.HttpResponseBody{}
+	resData := &types.HttpResponseBody{}
 
 	err := api.SendPutRequest("/api/v1/agent/modconfig", newModState, resData)
 	return err

@@ -2,6 +2,8 @@ package api
 
 import (
 	"time"
+
+	"github.com/SatisfactoryServerManager/SSMAgent/app/types"
 )
 
 type LogUpdate struct {
@@ -18,6 +20,6 @@ func SendLogLine(source string, line string) error {
 		Timestamp: time.Now().Unix(),
 	}
 
-	var response HttpResponseBody
+	var response types.HttpResponseBody
 	return SendPostRequest("/api/v1/agent/log/line", logUpdate, &response)
 }

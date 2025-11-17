@@ -1,11 +1,5 @@
-github.com/SatisfactoryServerManager/ssmcloud-resources v0.0.40 h1:i9fzLpC3EdMf9aR5yjT4rY2CRibQt5Aj0IIB81FpPKc=
-github.com/SatisfactoryServerManager/ssmcloud-resources v0.0.40/go.mod h1:pgqN2oT8EWd54lrC+9X0yVdAeyDM0XDFYkiSlxOzaX4=
-github.com/SatisfactoryServerManager/ssmcloud-resources v0.0.41 h1:1f6dyHN5Gm6x+vD86lGIPYxm36xD1OoFOsTfu8Fo2hQ=
-github.com/SatisfactoryServerManager/ssmcloud-resources v0.0.41/go.mod h1:pgqN2oT8EWd54lrC+9X0yVdAeyDM0XDFYkiSlxOzaX4=
-github.com/SatisfactoryServerManager/ssmcloud-resources v0.0.42 h1:n2d5QAyYS4P/CEJih4QlCmYlkJPuEmPtgsNMJdp+itY=
-github.com/SatisfactoryServerManager/ssmcloud-resources v0.0.42/go.mod h1:pgqN2oT8EWd54lrC+9X0yVdAeyDM0XDFYkiSlxOzaX4=
-github.com/SatisfactoryServerManager/ssmcloud-resources v0.0.43 h1:I8nTxbAuI255qnNFhTXUuSDk4ZvoULAxnBtyOaZs9hM=
-github.com/SatisfactoryServerManager/ssmcloud-resources v0.0.43/go.mod h1:pgqN2oT8EWd54lrC+9X0yVdAeyDM0XDFYkiSlxOzaX4=
+github.com/SatisfactoryServerManager/ssmcloud-resources v0.0.46 h1:OM8kD7PYzZ6HamZOMSmL7n/OTRo5TkKYtGreApSvsmE=
+github.com/SatisfactoryServerManager/ssmcloud-resources v0.0.46/go.mod h1:pgqN2oT8EWd54lrC+9X0yVdAeyDM0XDFYkiSlxOzaX4=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/fsnotify/fsnotify v1.9.0 h1:2Ml+OJNzbYCTzsxtv8vKSFD9PbJjmhYF14k/jKC7S9k=

@@ -3,7 +3,7 @@ module github.com/SatisfactoryServerManager/SSMAgent
 go 1.25.0
 
 require (
-	github.com/SatisfactoryServerManager/ssmcloud-resources v0.0.43
+	github.com/SatisfactoryServerManager/ssmcloud-resources v0.0.46
 	github.com/hpcloud/tail v1.0.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	go.mongodb.org/mongo-driver v1.17.6

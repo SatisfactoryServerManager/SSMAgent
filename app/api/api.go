@@ -9,53 +9,15 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/types"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 )
 
 var (
 	_client *http.Client
 )
-
-type HttpResponseBody struct {
-	Success bool        `json:"success"`
-	Error   string      `json:"error"`
-	Data    interface{} `json:"data"`
-}
-
-type HttpRequestBody_Status struct {
-	Online             bool    `json:"online"`
-	Installed          bool    `json:"installed"`
-	Running            bool    `json:"running"`
-	CPU                float64 `json:"cpu"`
-	MEM                float32 `json:"mem"`
-	InstalledSFVersion int64   `json:"installedSFVersion"`
-	LatestSFVersion    int64   `json:"latestSFVersion"`
-}
-
-type HttpResponseBody_SaveSync struct {
-	Saves []HttpResponseBody_SaveSync_Save `json:"saves"`
-}
-
-type HttpResponseBody_SaveSync_Save struct {
-	UUID            string    `json:"uuid"`
-	FileName        string    `json:"fileName"`
-	FilePath        string    `json:"-"`
-	Size            int64     `json:"size"`
-	ModTime         time.Time `json:"modTime"`
-	MarkForUpload   bool      `json:"-"`
-	MarkForDownload bool      `json:"-"`
-}
-
-type APIError struct {
-	ResponseCode int
-}
-
-func (e *APIError) Error() string {
-	return fmt.Sprintf("API returned code: %d", e.ResponseCode)
-}
 
 var (
 	debugPostPutData = false
@@ -81,11 +43,11 @@ func SendGetRequest(endpoint string, returnModel interface{}) error {
 	}
 
 	if r.StatusCode != http.StatusOK {
-		return &APIError{ResponseCode: r.StatusCode}
+		return &types.APIError{ResponseCode: r.StatusCode}
 	}
 	defer r.Body.Close()
 
-	responseObject := HttpResponseBody{}
+	responseObject := types.HttpResponseBody{}
 
 	json.NewDecoder(r.Body).Decode(&responseObject)
 
@@ -130,12 +92,12 @@ func SendPostRequest(endpoint string, bodyModel interface{}, returnModel interfa
 	}
 
 	if r.StatusCode != http.StatusOK {
-		return &APIError{ResponseCode: r.StatusCode}
+		return &types.APIError{ResponseCode: r.StatusCode}
 	}
 
 	defer r.Body.Close()
 
-	responseObject := HttpResponseBody{}
+	responseObject := types.HttpResponseBody{}
 
 	json.NewDecoder(r.Body).Decode(&responseObject)
 
@@ -185,12 +147,12 @@ func SendPutRequest(endpoint string, bodyModel interface{}, returnModel interfac
 	}
 
 	if r.StatusCode != http.StatusOK {
-		return &APIError{ResponseCode: r.StatusCode}
+		return &types.APIError{ResponseCode: r.StatusCode}
 	}
 
 	defer r.Body.Close()
 
-	responseObject := HttpResponseBody{}
+	responseObject := types.HttpResponseBody{}
 
 	json.NewDecoder(r.Body).Decode(&responseObject)
 
@@ -254,13 +216,13 @@ func SendFile(endpoint string, filepath string) error {
 
 	if rsp.StatusCode != http.StatusOK {
 
-		responseObject := HttpResponseBody{}
+		responseObject := types.HttpResponseBody{}
 		json.NewDecoder(rsp.Body).Decode(&responseObject)
 
 		return fmt.Errorf("request failed with response code: %d with error: %s", rsp.StatusCode, responseObject.Error)
 	}
 
-	responseObject := HttpResponseBody{}
+	responseObject := types.HttpResponseBody{}
 
 	json.NewDecoder(rsp.Body).Decode(&responseObject)
 
@@ -290,7 +252,7 @@ func DownloadFile(endpoint string, filePath string) error {
 
 	if r.StatusCode != http.StatusOK {
 
-		responseObject := HttpResponseBody{}
+		responseObject := types.HttpResponseBody{}
 		json.NewDecoder(r.Body).Decode(&responseObject)
 
 		return fmt.Errorf("request failed with response code: %d with error: %s", r.StatusCode, responseObject.Error)
