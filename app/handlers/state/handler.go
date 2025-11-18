@@ -64,7 +64,7 @@ func (h *Handler) reconnectLoop() {
 		utils.DebugLogger.Println("State stream opened")
 
 		if err := h.sendStateLoop(); err != nil {
-			utils.DebugLogger.Println("Stream ended:", err)
+			utils.DebugLogger.Println("State stream ended:", err)
 		}
 
 		h.closeStream()
@@ -124,7 +124,12 @@ func (h *Handler) sendState() error {
 		LatestSFVersion:    state.LatestSFVersion,
 	}
 
-	fmt.Printf("sending state: %v\n", payload)
+	if h.stream == nil {
+		_, err := h.client.UpdateAgentState(contextWithAPIKey(context.Background()), payload)
+        return err;
+	}
+
+	//utils.DebugLogger.Printf("sending state: %v\n", payload)
 	return h.stream.Send(payload)
 }
 

@@ -15,7 +15,6 @@ import (
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/savemanager"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/sf"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/state"
-	"github.com/SatisfactoryServerManager/SSMAgent/app/steamcmd"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 )
 
@@ -90,27 +89,13 @@ func main() {
 	utils.CheckError(TestSSMCloudAPI())
 
 	state.MarkAgentOnline()
-	GetConfigFromAPI()
 
-	ticker := time.NewTicker(20 * time.Second)
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				GetConfigFromAPI()
-			case <-_quit:
-				ticker.Stop()
-				return
-			}
-		}
-	}()
+	// steamcmd.InitSteamCMD()
+	// sf.InitSFHandler()
 
-	steamcmd.InitSteamCMD()
-	sf.InitSFHandler()
-
-	go savemanager.InitSaveManager()
-	go backup.InitBackupManager()
-	go mod.InitModManager()
+	// go savemanager.InitSaveManager()
+	// go backup.InitBackupManager()
+	// go mod.InitModManager()
 
 	<-wait
 
@@ -135,51 +120,6 @@ func TestSSMCloudAPI() error {
 	}
 
 	utils.InfoLogger.Println("Connection test succeeded!")
-
-	return nil
-}
-
-func GetConfigFromAPI() error {
-
-	// resConfig, err := api.GetAgentServiceClient().GetConfig()
-	// if err != nil {
-	// 	return err
-	// }
-
-	// oldBranch := config.GetConfig().SF.SFBranch
-
-	// config.GetConfig().Backup.Interval = int(resConfig.Config.BackupInterval)
-	// config.GetConfig().Backup.Keep = int(resConfig.Config.BackupKeepAmount)
-
-	// config.GetConfig().SF.MaxPlayers = int(resConfig.ServerConfig.MaxPlayers)
-	// config.GetConfig().SF.WorkerThreads = int(resConfig.ServerConfig.WorkerThreads)
-	// config.GetConfig().SF.SFBranch = resConfig.ServerConfig.Branch
-
-	// config.GetConfig().SF.UpdateSFOnStart = resConfig.ServerConfig.UpdateSFOnStart
-	// config.GetConfig().SF.AutoRestart = resConfig.ServerConfig.AutoRestart
-	// config.GetConfig().SF.AutoPause = resConfig.ServerConfig.AutoPause
-	// config.GetConfig().SF.AutoSaveOnDisconnect = resConfig.ServerConfig.AutoSaveOnDisconnect
-	// config.GetConfig().SF.AutoSaveInterval = float32(resConfig.ServerConfig.AutoSaveInterval)
-	// config.GetConfig().SF.DisableSeasonalEvents = resConfig.ServerConfig.DisableSeasonalEvents
-
-	// config.SaveConfig()
-
-	// if oldBranch != config.GetConfig().SF.SFBranch {
-	// 	sf.GetLatestedVersion()
-	// 	SendConfig()
-	// }
-
-	if !sf.IsInstalled() {
-		return nil
-	}
-
-	if sf.IsRunning() {
-		return nil
-	}
-
-	if err := config.UpdateIniFiles(); err != nil {
-		utils.ErrorLogger.Printf("error updating game ini files with error: %s\n", err.Error())
-	}
 
 	return nil
 }

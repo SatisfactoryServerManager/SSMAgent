@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
 	"log"
@@ -79,4 +80,9 @@ func SetupLoggers(logDir string) {
 	SteamLogger = log.New(steamwrt, "[ STEAM ] ", log.Ldate|log.Ltime)
 
 	InfoLogger.Printf("Log File Location: %s", logFile)
+}
+
+func CopyStruct(a interface{}, b interface{}) {
+	bytes, _ := json.Marshal(a)
+	json.Unmarshal(bytes, b)
 }

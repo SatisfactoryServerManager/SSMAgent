@@ -11,11 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/sf"
-	"github.com/SatisfactoryServerManager/SSMAgent/app/types"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
+	v2 "github.com/SatisfactoryServerManager/ssmcloud-resources/models/v2"
 	"golang.org/x/mod/semver"
 )
 
@@ -69,19 +68,8 @@ func GetModState() error {
 		return nil
 	}
 
-	FindModsOnDisk()
-
-	err := api.SendGetRequest("/api/v1/agent/modconfig", &_ModState)
-	if err != nil {
-		return fmt.Errorf("failed to get mod state with error: %s", err.Error())
-	}
-
-	if err := ProcessModState(); err != nil {
+	if err := ProcessModConfig(); err != nil {
 		return fmt.Errorf("failed to process mod state with error: %s", err.Error())
-	}
-
-	if err := SendModState(); err != nil {
-		return fmt.Errorf("failed to send mod state with error: %s", err.Error())
 	}
 
 	return nil
@@ -129,12 +117,12 @@ func FindModsOnDisk() []InstalledMod {
 	return installedMods
 }
 
-func ProcessModState() error {
+func ProcessModConfig(modConfig *v2.AgentModConfig) error {
 
 	utils.CreateFolder(config.GetConfig().ModsDir)
 
-	for idx := range _ModState.SelectedMods {
-		selectedMod := &_ModState.SelectedMods[idx]
+	for idx := range modConfig.SelectedMods {
+		selectedMod := &modConfig.SelectedMods[idx]
 
 		if err := selectedMod.Init(); err != nil {
 			utils.ErrorLogger.Printf("error initialising selected mod with error %s\n", err.Error())
@@ -316,31 +304,6 @@ func UpdateModConfigFile(modReference string, modConfig string) error {
 	}
 
 	return nil
-}
-
-func SendModState() error {
-
-	newModState := BasicModState{
-		SelectedMods: make([]BasicSelectedMod, 0),
-	}
-
-	for _, sm := range _ModState.SelectedMods {
-		newMod := BasicMod{
-			ModReference: sm.Mod.ModReference,
-		}
-		newSelectedMod := BasicSelectedMod{
-			Mod:              newMod,
-			Installed:        sm.Installed,
-			InstalledVersion: sm.InstalledVersion,
-			Config:           sm.Config,
-		}
-		newModState.SelectedMods = append(newModState.SelectedMods, newSelectedMod)
-	}
-
-	resData := &types.HttpResponseBody{}
-
-	err := api.SendPutRequest("/api/v1/agent/modconfig", newModState, resData)
-	return err
 }
 
 func UninstallMod(modReference string) error {

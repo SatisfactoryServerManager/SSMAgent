@@ -18,6 +18,7 @@ import (
 type logLine struct {
 	source string
 	line   string
+	inital bool
 }
 
 type Handler struct {
@@ -90,8 +91,9 @@ func (h *Handler) senderLoop() {
 				}
 
 				req := &pb.AgentLogLineRequest{
-					Line: entry.line,
-					Type: entry.source,
+					Line:   entry.line,
+					Type:   entry.source,
+					Inital: entry.inital,
 				}
 
 				if err := h.stream.Send(req); err != nil {
@@ -118,9 +120,15 @@ func (h *Handler) sendInitialContent(filePath, source string) error {
 	}
 
 	lines := strings.Split(string(content), "\n")
+	idx := 0
 	for _, line := range lines {
+		isInital := false
+		if idx == 0 {
+			isInital = true
+		}
 		if strings.TrimSpace(line) != "" {
-			h.logChan <- logLine{source: source, line: line}
+			h.logChan <- logLine{source: source, line: line, inital: isInital}
+			idx++
 		}
 	}
 	return nil

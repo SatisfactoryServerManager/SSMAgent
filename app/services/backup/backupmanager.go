@@ -105,15 +105,23 @@ func CreateBackupFile() error {
 
 	utils.CreateFolder(gamelogdir)
 
-	gamelogfile := filepath.Join(
-		gamelogdir,
-		"FactoryGame.log",
-	)
+	entries, err := os.ReadDir(gamelogdir)
+	if err != nil {
+		return err
+	}
 
-	filesToZip = append(filesToZip, zipFile{
-		FilePath: gamelogfile,
-		DestPath: "Logs/FactoryGame.log",
-	})
+	for _, e := range entries {
+		if !e.IsDir() {
+			gamelogfile := filepath.Join(
+				gamelogdir,
+				e.Name(),
+			)
+			filesToZip = append(filesToZip, zipFile{
+				FilePath: gamelogfile,
+				DestPath: "Logs/" + e.Name(),
+			})
+		}
+	}
 
 	savemanager.GetSaveFiles()
 

@@ -3,6 +3,7 @@ package sf
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -187,6 +188,8 @@ func StartSFServer() error {
 
 	utils.InfoLogger.Println("Starting SF Server..")
 	sfExe := filepath.Join(config.GetConfig().SFDir, vars.ExeName)
+
+    fmt.Println(sfExe, GetStartArgs())
 
 	cmd := exec.Command(sfExe, GetStartArgs()...)
 

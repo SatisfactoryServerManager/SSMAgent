@@ -6,6 +6,7 @@ import (
 	mainConfig "github.com/SatisfactoryServerManager/SSMAgent/app/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/log"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/mod"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/state"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/task"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
@@ -21,6 +22,7 @@ var (
 	taskHandler   *task.Handler
 	logHandler    *log.Handler
 	configHandler *config.Handler
+	modHandler    *mod.Handler
 )
 
 func NewGRPCConnection(addr string) (*grpc.ClientConn, error) {
@@ -62,24 +64,30 @@ func InitgRPC() error {
 		return err
 	}
 
-	stateHandler = state.NewHandler(grpcConn)
-	stateHandler.Run()
+	// stateHandler = state.NewHandler(grpcConn)
+	// stateHandler.Run()
 
-	taskHandler = task.NewHandler(grpcConn)
-	taskHandler.Run()
+	// taskHandler = task.NewHandler(grpcConn)
+	// taskHandler.Run()
 
-	logHandler = log.NewHandler(grpcConn)
-	logHandler.Run()
+	// logHandler = log.NewHandler(grpcConn)
+	// logHandler.Run()
 
-	configHandler = config.NewHandler(grpcConn)
+	// configHandler = config.NewHandler(grpcConn)
+	// configHandler.Run()
 
-	return err
+	modHandler = mod.NewHandler(grpcConn)
+	modHandler.Run()
+
+	return nil
 }
 
 func ShutdownGRPCClient() error {
 	stateHandler.Stop()
 	taskHandler.Stop()
+	configHandler.Stop()
 	logHandler.Stop()
+	modHandler.Stop()
 	return nil
 }
 
@@ -90,37 +98,6 @@ func ShutdownGRPCClient() error {
 // func (c *GRPCClient) GetClient() pb.AgentServiceClient {
 // 	EnsureConnected(c.conn)
 // 	return c.client
-// }
-
-// func (c *GRPCClient) GetConfig() (*pb.AgentConfigResponse, error) {
-
-// 	EnsureConnected(c.conn)
-// 	ctx := ContextWithAPIKey(context.Background())
-// 	resp, err := c.client.GetAgentConfig(
-// 		ctx,
-// 		&pb.Empty{},
-// 	)
-// 	return resp, err
-// }
-
-// func (c *GRPCClient) UpdateConfigVersionIp() error {
-
-// 	EnsureConnected(c.conn)
-// 	ctx := ContextWithAPIKey(context.Background())
-
-// 	ip, err := GetPublicIP()
-// 	if err != nil {
-// 		ip = ""
-// 	}
-
-// 	_, err = c.client.UpdateAgentConfigVersionIp(
-// 		ctx,
-// 		&pb.AgentConfigRequest{
-// 			Version: config.GetConfig().Version,
-// 			Ip:      ip,
-// 		},
-// 	)
-// 	return err
 // }
 
 // func (c *GRPCClient) UpdateAgentState(req *pb.AgentStateRequest) error {
