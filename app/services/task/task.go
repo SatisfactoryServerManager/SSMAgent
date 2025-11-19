@@ -19,11 +19,11 @@ type UpdateModConfigData struct {
 	ModConfig    string `json:"modConfig"`
 }
 
-func ProcessMessageQueueItem(taskItem *v2.AgentTask) error {
+func ProcessMessageQueueItem(agentTask *v2.AgentTask) error {
 
 	AlreadyCompleted := false
 	for _, completedTaskId := range _completedTaskIds {
-		if taskItem.ID.Hex() == completedTaskId {
+		if agentTask.ID.Hex() == completedTaskId {
 			AlreadyCompleted = true
 			break
 		}
@@ -33,9 +33,9 @@ func ProcessMessageQueueItem(taskItem *v2.AgentTask) error {
 		return nil
 	}
 
-	utils.DebugLogger.Printf("Processing Message action %s\r\n", taskItem.Action)
+	utils.DebugLogger.Printf("Processing Message action %s\r\n", agentTask.Action)
 
-	switch taskItem.Action {
+	switch agentTask.Action {
 	case "startsfserver":
 		return sf.StartSFServer()
 	case "stopsfserver":
@@ -48,7 +48,7 @@ func ProcessMessageQueueItem(taskItem *v2.AgentTask) error {
 		return sf.UpdateSFServer()
 	case "updateModConfig":
 		var objmap []map[string]string
-		b, _ := json.Marshal(taskItem.Data)
+		b, _ := json.Marshal(agentTask.Data)
 		json.Unmarshal(b, &objmap)
 
 		var configData UpdateModConfigData
@@ -72,7 +72,7 @@ func ProcessMessageQueueItem(taskItem *v2.AgentTask) error {
 
 		var objData ClaimData
 
-		b, _ := json.Marshal(taskItem.Data)
+		b, _ := json.Marshal(agentTask.Data)
 		json.Unmarshal(b, &objData)
 
 		return sf.ClaimServer(objData.AdminPassword, objData.ClientPassword)

@@ -93,8 +93,10 @@ function stop_spinner {
 AGENTNAME=""
 PORTOFFSET="0"
 SSMURL=""
+SSMGRPCADDR=""
 SSMAPIKEY=""
 MEMORY=1073741824
+NODOCKERINSTALL=0
 DOCKEREXISTS=0
 
 PLATFORM="$(uname -s)"
@@ -133,6 +135,10 @@ while [[ $# -gt 0 ]]; do
         shift # past value
         shift # past value
         ;;
+    --nodockerinstall)
+        NODOCKERINSTALL=1
+        shift
+        ;;
     esac
 done
 
@@ -154,6 +160,9 @@ if [ "${SSMURL}" == "" ]; then
         SSMURL="https://api-ssmcloud.hostxtra.co.uk"
     fi
 fi
+
+SSMGRPCADDR=$(echo $SSMURL|sed -E 's/^\s*.*:\/\///g')
+
 if [ "${SSMAPIKEY}" == "" ]; then
 
     if [ $DOCKEREXISTS == 1 ]; then
@@ -207,6 +216,7 @@ PORT=$((7777 + $PORTOFFSET))
 docker run -d \
     -e SSM_NAME=${AGENTNAME} \
     -e SSM_URL="${SSMURL}" \
+    -e SSM_GRPCADDR="${SSMGRPCADDR}" \
     -e SSM_APIKEY="${SSMAPIKEY}" \
     -p "${PORT}:7777/udp" \
     -p "${PORT}:7777/tcp" \

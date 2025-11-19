@@ -9,81 +9,27 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
+	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/sf"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/types"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/vars"
+	"github.com/SatisfactoryServerManager/ssmcloud-resources/models"
 	v2 "github.com/SatisfactoryServerManager/ssmcloud-resources/models/v2"
 	"golang.org/x/mod/semver"
 )
 
-var (
-	_ModState     ModState
-	ModCachePatch string
-	_quit         = make(chan int)
-)
+func FindModsOnDisk() []types.InstalledMod {
 
-func InitModManager() {
+	installedMods := make([]types.InstalledMod, 0)
 
-	utils.InfoLogger.Println("Initialising Mod Manager...")
-
-	ModCachePatch = filepath.Join(config.GetConfig().DataDir, "modcache")
-	utils.CreateFolder(ModCachePatch)
-
-	GetModState()
-	utils.InfoLogger.Println("Initialised Mod Manager")
-
-	ticker := time.NewTicker(30 * time.Second)
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				if err := GetModState(); err != nil {
-					utils.ErrorLogger.Printf("Error getting mod state: %v\n", err)
-				}
-			case <-_quit:
-				ticker.Stop()
-				return
-			}
-		}
-	}()
-}
-
-func ShutdownModManager() error {
-	utils.InfoLogger.Println("Shutting Down Mod Manager...")
-	_quit <- 0
-	utils.InfoLogger.Println("Shutdown Mod Manager")
-
-	return nil
-}
-
-func GetModState() error {
-
-	if !sf.IsInstalled() {
-		return nil
-	}
-
-	if sf.IsRunning() {
-		return nil
-	}
-
-	if err := ProcessModConfig(); err != nil {
-		return fmt.Errorf("failed to process mod state with error: %s", err.Error())
-	}
-
-	return nil
-}
-
-func FindModsOnDisk() []InstalledMod {
-
-	installedMods := make([]InstalledMod, 0)
-
-	utils.DebugLogger.Printf("Finding Mods in: %s\r\n", config.GetConfig().ModsDir)
+	//utils.DebugLogger.Printf("Finding Mods in: %s\r\n", config.GetConfig().ModsDir)
 
 	files, err := os.ReadDir(config.GetConfig().ModsDir)
 	if err != nil {
-		utils.ErrorLogger.Printf("Error cand open mods directory %s\r\n", err.Error())
+		utils.ErrorLogger.Printf("error cant open mods directory %s\r\n", err.Error())
 		return installedMods
 	}
 
@@ -100,7 +46,7 @@ func FindModsOnDisk() []InstalledMod {
 			continue
 		}
 
-		var newInstalledMod = InstalledMod{
+		var newInstalledMod = types.InstalledMod{
 			ModReference:   modName,
 			ModPath:        modPath,
 			ModUPluginPath: UPluginPath,
@@ -111,21 +57,31 @@ func FindModsOnDisk() []InstalledMod {
 
 		installedMods = append(installedMods, newInstalledMod)
 
-		utils.DebugLogger.Printf("Found Mod (%s - %s) at %s\r\n", modName, newInstalledMod.ModVersion, modPath)
+		//utils.DebugLogger.Printf("Found Mod (%s - %s) at %s\n", modName, newInstalledMod.ModVersion, modPath)
 	}
 
 	return installedMods
 }
 
 func ProcessModConfig(modConfig *v2.AgentModConfig) error {
-
+    
 	utils.CreateFolder(config.GetConfig().ModsDir)
 
 	for idx := range modConfig.SelectedMods {
 		selectedMod := &modConfig.SelectedMods[idx]
 
-		if err := selectedMod.Init(); err != nil {
-			utils.ErrorLogger.Printf("error initialising selected mod with error %s\n", err.Error())
+		if err := CheckSelectedModInstalledOnDisk(selectedMod); err != nil {
+			utils.ErrorLogger.Printf("error checking selected mod installed with error %s\n", err.Error())
+			continue
+		}
+
+		if err := CheckSelectedModVersion(selectedMod); err != nil {
+			utils.ErrorLogger.Printf("error checking selected mod versions with error %s\n", err.Error())
+			continue
+		}
+
+		if err := GetSelectedModConfig(selectedMod); err != nil {
+			utils.ErrorLogger.Printf("error getting selected mod config with error %s\n", err.Error())
 			continue
 		}
 	}
@@ -137,7 +93,7 @@ func ProcessModConfig(modConfig *v2.AgentModConfig) error {
 
 		foundSelectedMod := false
 
-		for _, sm := range _ModState.SelectedMods {
+		for _, sm := range modConfig.SelectedMods {
 			if sm.Mod.ModReference == installedMod.ModReference {
 				foundSelectedMod = true
 			}
@@ -152,27 +108,30 @@ func ProcessModConfig(modConfig *v2.AgentModConfig) error {
 		}
 	}
 
-	if err := InstallAllMods(); err != nil {
+	if err := InstallAllMods(modConfig); err != nil {
 		return fmt.Errorf("error failed to install mods with error: %s", err.Error())
 	}
 
 	return nil
 }
 
-func InstallAllMods() error {
+func InstallAllMods(modConfig *v2.AgentModConfig) error {
 
 	if sf.IsRunning() {
 		return nil
 	}
 
-	for idx := range _ModState.SelectedMods {
-		selectedMod := &_ModState.SelectedMods[idx]
+	ModCachePatch := filepath.Join(config.GetConfig().DataDir, "modcache")
+	utils.CreateFolder(ModCachePatch)
+
+	for idx := range modConfig.SelectedMods {
+		selectedMod := &modConfig.SelectedMods[idx]
 
 		if selectedMod.Installed {
 			continue
 		}
 
-		var modVersion ModVersion
+		var modVersion models.ModVersion
 
 		for _, mv := range selectedMod.Mod.Versions {
 			versiondiff := semver.Compare("v"+selectedMod.DesiredVersion, "v"+mv.Version)
@@ -190,8 +149,8 @@ func InstallAllMods() error {
 			continue
 		}
 
-		if err := selectedMod.DownloadVersion(modVersion); err != nil {
-			utils.WarnLogger.Printf("Failed to download mod (%s)\r\n", selectedMod.Mod.ModReference)
+		if err := DownloadSelectedModVersion(selectedMod, modVersion); err != nil {
+			utils.WarnLogger.Printf("Failed to download mod (%s) with error: %s\n", selectedMod.Mod.ModReference, err.Error())
 			continue
 		}
 
@@ -206,7 +165,7 @@ func InstallAllMods() error {
 			return fmt.Errorf("error extracting mod zip file with error: %s", err.Error())
 		}
 
-		if err := selectedMod.CheckInstalledOnDisk(); err != nil {
+		if err := CheckSelectedModInstalledOnDisk(selectedMod); err != nil {
 			return err
 		}
 	}
@@ -310,7 +269,7 @@ func UninstallMod(modReference string) error {
 
 	allInstalledMods := FindModsOnDisk()
 
-	var installedMod *InstalledMod
+	var installedMod *types.InstalledMod
 
 	for idx := range allInstalledMods {
 		i := &allInstalledMods[idx]
@@ -338,4 +297,122 @@ func UninstallMod(modReference string) error {
 
 	utils.InfoLogger.Printf("Uninstalled mod (%s)\r\n", modReference)
 	return nil
+}
+
+func CheckSelectedModInstalledOnDisk(selectedMod *v2.AgentModConfigSelectedModSchema) error {
+	utils.CreateFolder(config.GetConfig().ModsDir)
+
+	modPath := filepath.Join(config.GetConfig().ModsDir, selectedMod.Mod.ModReference)
+
+	if !utils.CheckFileExists(modPath) {
+		selectedMod.Installed = false
+		selectedMod.InstalledVersion = "0.0.0"
+		return nil
+	}
+
+	UPluginPath := filepath.Join(modPath, selectedMod.Mod.ModReference+".uplugin")
+
+	if !utils.CheckFileExists(UPluginPath) {
+		selectedMod.Installed = false
+		selectedMod.InstalledVersion = "0.0.0"
+		return nil
+	}
+
+	var UPluginData = types.UPluginFile{}
+
+	b, _ := os.ReadFile(UPluginPath)
+	if err := json.Unmarshal([]byte(b), &UPluginData); err != nil {
+		selectedMod.Installed = false
+		selectedMod.InstalledVersion = "0.0.0"
+		return err
+	}
+
+	selectedMod.Installed = true
+	selectedMod.InstalledVersion = UPluginData.SemVersion
+
+	return nil
+}
+
+func CheckSelectedModVersion(selectedMod *v2.AgentModConfigSelectedModSchema) error {
+
+	if !selectedMod.Installed {
+		return nil
+	}
+
+	installedVersion := "v" + selectedMod.InstalledVersion
+	desiredVersion := "v" + selectedMod.DesiredVersion
+
+	versionDiff := semver.Compare(installedVersion, desiredVersion)
+
+	if versionDiff != 0 {
+		selectedMod.Installed = false
+	}
+
+	return nil
+}
+
+func GetSelectedModConfig(selectedMod *v2.AgentModConfigSelectedModSchema) error {
+	if !selectedMod.Installed {
+		return nil
+	}
+
+	utils.CreateFolder(config.GetConfig().ModConfigsDir)
+
+	configfile := filepath.Join(config.GetConfig().ModConfigsDir, selectedMod.Mod.ModReference+".cfg")
+
+	if utils.CheckFileExists(configfile) {
+
+		data, err := os.ReadFile(configfile)
+		if err != nil {
+			return err
+		}
+
+		selectedMod.Config = string(data)
+	} else {
+
+		if selectedMod.Mod.ModReference == "SatisfactoryServerManager" {
+			d1 := []byte("{\"apiKey\":\"" + config.GetConfig().APIKey + "\", \"url\":\"" + config.GetConfig().URL + "\"}")
+			if err := os.WriteFile(configfile, d1, 0777); err != nil {
+				return err
+			}
+			return nil
+		}
+
+		d1 := []byte("{}")
+		if err := os.WriteFile(configfile, d1, 0777); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func DownloadSelectedModVersion(selectedMod *v2.AgentModConfigSelectedModSchema, version models.ModVersion) error {
+	ModCachePatch := filepath.Join(config.GetConfig().DataDir, "modcache")
+	utils.CreateFolder(ModCachePatch)
+
+	ModFileName := selectedMod.Mod.ModReference + "." + version.Version + ".zip"
+	DownloadedModFilePath := filepath.Join(ModCachePatch, ModFileName)
+
+	if utils.CheckFileExists(DownloadedModFilePath) {
+		return nil
+	}
+
+	var versionTarget models.ModVersionTarget
+
+	for _, vt := range version.Targets {
+		if vt.TargetName == vars.ModPlatform {
+			versionTarget = vt
+		}
+	}
+
+	if versionTarget.Link == "" {
+		return fmt.Errorf("mod version has no link")
+	}
+
+	url := fmt.Sprintf("https://api.ficsit.app%s", versionTarget.Link)
+
+	err := api.DownloadNonSSMFile(url, DownloadedModFilePath)
+
+	return err
 }

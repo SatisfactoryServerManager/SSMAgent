@@ -41,6 +41,7 @@ func NewHandler(conn *grpc.ClientConn) *Handler {
 }
 
 func (h *Handler) Run() {
+	state.MarkAgentOnline()
 	go h.reconnectLoop()
 }
 
@@ -126,7 +127,7 @@ func (h *Handler) sendState() error {
 
 	if h.stream == nil {
 		_, err := h.client.UpdateAgentState(contextWithAPIKey(context.Background()), payload)
-        return err;
+		return err
 	}
 
 	//utils.DebugLogger.Printf("sending state: %v\n", payload)
@@ -145,6 +146,7 @@ func (h *Handler) closeStream() {
 
 func (h *Handler) Stop() {
 
+	utils.DebugLogger.Println("Stopping State Handler")
 	h.sendState()
 
 	// Stop the reconnection loop
@@ -157,4 +159,5 @@ func (h *Handler) Stop() {
 
 	// Cancel the current stream
 	h.closeStream()
+	utils.DebugLogger.Println("Stopped State Handler")
 }

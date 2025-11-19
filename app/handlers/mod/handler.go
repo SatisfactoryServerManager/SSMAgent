@@ -105,5 +105,7 @@ func (h *Handler) ProcessModConfig(cfg *pb.ModConfig) error {
 }
 
 func (h *Handler) Stop() {
+	utils.DebugLogger.Println("Stopping ModHandler")
 	close(h.masterDone)
+	utils.DebugLogger.Println("Stopped ModHandler")
 }

@@ -24,7 +24,7 @@ trap 'cleanup' SIGTERM
 
 hostname
 
-su ssm -c "${EXE} -name=$SSM_NAME -apikey=$SSM_APIKEY -url=$SSM_URL" &
+su ssm -c "${EXE} --name=$SSM_NAME --apikey=$SSM_APIKEY --url=$SSM_URL" --grpcaddr="$SSM_GRPCADDR" &
 
 wait $!
 sleep 40

@@ -124,5 +124,7 @@ func (h *Handler) MarkAgentTaskFailed(req *pb.AgentTaskFailedRequest) error {
 }
 
 func (h *Handler) Stop() {
+	utils.DebugLogger.Println("Stopping Task Handler")
 	close(h.masterDone)
+	utils.DebugLogger.Println("Stopped Task Handler")
 }

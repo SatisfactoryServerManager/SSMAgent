@@ -85,7 +85,7 @@ func (h *Handler) GetConfig() error {
 		sf.GetLatestedVersion()
 	}
 
-    if !sf.IsInstalled() {
+	if !sf.IsInstalled() {
 		return nil
 	}
 
@@ -101,5 +101,7 @@ func (h *Handler) GetConfig() error {
 }
 
 func (h *Handler) Stop() {
+	utils.DebugLogger.Println("Stopping Config Handler")
 	close(h.masterDone)
+	utils.DebugLogger.Println("Stopped Config Handler")
 }

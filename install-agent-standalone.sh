@@ -94,6 +94,7 @@ AGENTNAME=""
 PORTOFFSET="0";
 SSMURL=""
 SSMAPIKEY=""
+SSMGRPCADDR=""
 
 PLATFORM="$(uname -s)"
 
@@ -170,6 +171,9 @@ if [ "${SSMURL}" == "" ]; then
         SSMURL="https://api-ssmcloud.hostxtra.co.uk"
     fi
 fi
+
+SSMGRPCADDR=$(echo $SSMURL|sed -E 's/^\s*.*:\/\///g')
+
 if [ "${SSMAPIKEY}" == "" ]; then
     read -r -p "Enter SSM Cloud API Key [AGT-API-XXXXXXX]: " SSMAPIKEY </dev/tty
 
@@ -362,7 +366,7 @@ Group=ssm
 
 Type=simple
 WorkingDirectory=${INSTALL_DIR}
-ExecStart=${INSTALL_DIR}/SSMAgent -name=${AGENTNAME} -p=${PORTOFFSET} -url=${SSMURL} -apikey=${SSMAPIKEY} -datadir="${DATA_DIR}"
+ExecStart=${INSTALL_DIR}/SSMAgent -name=${AGENTNAME} -p=${PORTOFFSET} -url=${SSMURL} -apikey=${SSMAPIKEY} -datadir="${DATA_DIR}" -grpcaddr="${SSMGRPCADDR}"
 TimeoutStopSec=20
 KillMode=process
 Restart=on-failure

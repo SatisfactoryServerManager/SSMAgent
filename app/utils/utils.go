@@ -82,6 +82,11 @@ func SetupLoggers(logDir string) {
 	InfoLogger.Printf("Log File Location: %s", logFile)
 }
 
+func ToJSON(a interface{}) string {
+	bytes, _ := json.Marshal(a)
+	return string(bytes)
+}
+
 func CopyStruct(a interface{}, b interface{}) {
 	bytes, _ := json.Marshal(a)
 	json.Unmarshal(bytes, b)

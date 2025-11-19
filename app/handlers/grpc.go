@@ -64,17 +64,17 @@ func InitgRPC() error {
 		return err
 	}
 
-	// stateHandler = state.NewHandler(grpcConn)
-	// stateHandler.Run()
+	stateHandler = state.NewHandler(grpcConn)
+	stateHandler.Run()
 
-	// taskHandler = task.NewHandler(grpcConn)
-	// taskHandler.Run()
+	taskHandler = task.NewHandler(grpcConn)
+	taskHandler.Run()
 
-	// logHandler = log.NewHandler(grpcConn)
-	// logHandler.Run()
+	logHandler = log.NewHandler(grpcConn)
+	logHandler.Run()
 
-	// configHandler = config.NewHandler(grpcConn)
-	// configHandler.Run()
+	configHandler = config.NewHandler(grpcConn)
+	configHandler.Run()
 
 	modHandler = mod.NewHandler(grpcConn)
 	modHandler.Run()
@@ -90,24 +90,3 @@ func ShutdownGRPCClient() error {
 	modHandler.Stop()
 	return nil
 }
-
-// func GetAgentServiceClient() *GRPCClient {
-// 	return AgentGRPCClient
-// }
-
-// func (c *GRPCClient) GetClient() pb.AgentServiceClient {
-// 	EnsureConnected(c.conn)
-// 	return c.client
-// }
-
-// func (c *GRPCClient) UpdateAgentState(req *pb.AgentStateRequest) error {
-
-// 	EnsureConnected(c.conn)
-// 	ctx := ContextWithAPIKey(context.Background())
-
-// 	_, err := c.client.UpdateAgentState(
-// 		ctx,
-// 		req,
-// 	)
-// 	return err
-// }

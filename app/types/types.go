@@ -42,3 +42,17 @@ type APIError struct {
 func (e *APIError) Error() string {
 	return fmt.Sprintf("API returned code: %d", e.ResponseCode)
 }
+
+
+type InstalledMod struct {
+	ModReference    string
+	ModPath         string
+	ModDisplayName  string `json:"FriendlyName"`
+	ModUPluginPath  string
+	ModVersion      string `json:"SemVersion"`
+	ShouldUninstall bool
+}
+
+type UPluginFile struct {
+	SemVersion string `json:"SemVersion"`
+}

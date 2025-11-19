@@ -11,14 +11,12 @@ import (
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/backup"
-	"github.com/SatisfactoryServerManager/SSMAgent/app/services/mod"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/savemanager"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/sf"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/state"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/steamcmd"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 )
-
-var _quit = make(chan int)
 
 var connectionTestRetryCount = 0
 
@@ -45,15 +43,11 @@ func main() {
 		"backupmanager": func(ctx context.Context) error {
 			return backup.ShutdownBackupManager()
 		},
-		"modmanager": func(ctx context.Context) error {
-			return mod.ShutdownModManager()
-		},
 		"grpc": func(ctx context.Context) error {
 			state.MarkAgentOffline()
 			return handlers.ShutdownGRPCClient()
 		},
 		"main": func(ctx context.Context) error {
-			_quit <- 0
 			return nil
 		},
 	})
@@ -88,14 +82,11 @@ func main() {
 	utils.CheckError(handlers.InitgRPC())
 	utils.CheckError(TestSSMCloudAPI())
 
-	state.MarkAgentOnline()
+	steamcmd.InitSteamCMD()
+	sf.InitSFHandler()
 
-	// steamcmd.InitSteamCMD()
-	// sf.InitSFHandler()
-
-	// go savemanager.InitSaveManager()
-	// go backup.InitBackupManager()
-	// go mod.InitModManager()
+	go savemanager.InitSaveManager()
+	go backup.InitBackupManager()
 
 	<-wait
 

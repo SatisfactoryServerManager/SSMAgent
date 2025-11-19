@@ -97,7 +97,7 @@ func (h *Handler) senderLoop() {
 				}
 
 				if err := h.stream.Send(req); err != nil {
-					utils.ErrorLogger.Println("Stream send failed, reconnecting:", err)
+					utils.ErrorLogger.Println("Log stream send failed, reconnecting:", err)
 					time.Sleep(time.Second)
 					goto RECONNECT
 				}
@@ -193,8 +193,9 @@ func (h *Handler) Run() {
 }
 
 func (h *Handler) Stop() error {
-	close(h.done)    // stops senderLoop and tails
-	close(h.logChan) // stops senderLoop read
+	utils.DebugLogger.Println("Stopping LogHandler")
+	close(h.done)
+	close(h.logChan)
 	if h.cancel != nil {
 		h.cancel()
 	}
@@ -203,6 +204,8 @@ func (h *Handler) Stop() error {
 		t.Kill(nil)
 		t.Cleanup()
 	}
+
+	utils.DebugLogger.Println("Stopped ModHandler")
 
 	return nil
 }
