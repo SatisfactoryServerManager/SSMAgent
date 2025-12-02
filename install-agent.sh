@@ -172,7 +172,7 @@ if [ "${SSMURL}" == "" ]; then
 fi
 
 
-if [ "${SSMGRPCADDR}" == ""]; then
+if [ "${SSMGRPCADDR}" == "" ]; then
     read -r -p "Enter SSM Cloud gRPC URL [grpc-ssmcloud.hostxtra.co.uk]: " SSMGRPCADDR </dev/tty
 
     if [ "${SSMGRPCADDR}" == "" ]; then
