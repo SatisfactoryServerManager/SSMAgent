@@ -125,6 +125,11 @@ while [[ $# -gt 0 ]]; do
         shift # past value
         shift # past value
         ;;
+    --grpcaddr)
+        SSMGRPCADDR="$2"
+        shift # past value
+        shift # past value
+        ;;
     --apikey)
         SSMAPIKEY="$2"
         shift # past value
@@ -172,7 +177,13 @@ if [ "${SSMURL}" == "" ]; then
     fi
 fi
 
-SSMGRPCADDR=$(echo $SSMURL|sed -E 's/^\s*.*:\/\///g')
+if [ "${SSMGRPCADDR}" == ""]; then
+    read -r -p "Enter SSM Cloud gRPC URL [grpc-ssmcloud.hostxtra.co.uk]: " SSMGRPCADDR </dev/tty
+
+    if [ "${SSMGRPCADDR}" == "" ]; then
+        SSMURL="grpc-ssmcloud.hostxtra.co.uk"
+    fi
+fi
 
 if [ "${SSMAPIKEY}" == "" ]; then
     read -r -p "Enter SSM Cloud API Key [AGT-API-XXXXXXX]: " SSMAPIKEY </dev/tty

@@ -2,6 +2,7 @@ param(
     [String]$AGENTNAME="",
     [Int32]$PORTOFFSET=0,
     [String]$SSMURL="",
+    [String]$SSMGRPCADDR="",
     [String]$SSMAPIKEY="",
     [String]$MEMORY=1073741824,
     [switch]$NoDockerInstall = $false
@@ -28,6 +29,15 @@ if($SSMURL -eq ""){
     if ([string]::IsNullOrWhiteSpace($SSMURL))
     {
         $SSMURL = 'https://api-ssmcloud.hostxtra.co.uk';
+    }
+}
+
+if($SSMGRPCADDR -eq ""){
+    $SSMGRPCADDR = Read-Host -Prompt 'Enter SSM Cloud gRPC URL [grpc-ssmcloud.hostxtra.co.uk]'
+
+    if ([string]::IsNullOrWhiteSpace($SSMURL))
+    {
+        $SSMGRPCADDR = 'grpc-ssmcloud.hostxtra.co.uk';
     }
 }
 
@@ -63,6 +73,7 @@ write-host -ForegroundColor Cyan "Installation Summary:"
 echo "Agent Name: $AGENTNAME"
 echo "SF Port: $PORT"
 echo "SSM Cloud URL: $SSMURL"
+echo "SSM Cloud gRPC Address: $SSMGRPCADDR"
 echo "SSM Cloud API Key: $SSMAPIKEY"
 echo "Skip Docker Install: $NoDockerInstall"
 echo ""
@@ -189,6 +200,7 @@ write-host "* Starting docker container"
 docker run -d `
 -e SSM_NAME="$($AGENTNAME)" `
 -e SSM_URL="$($SSMURL)" `
+-e SSM_GRPCADDR="${SSMGRPCADDR}" `
 -e SSM_APIKEY="$($SSMAPIKEY)" `
 -p "$($PORT):7777/udp" `
 -p "$($PORT):7777/tcp" `

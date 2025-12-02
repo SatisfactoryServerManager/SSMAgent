@@ -2,6 +2,7 @@ param(
     [String]$AGENTNAME="",
     [Int32]$PORTOFFSET=0,
     [String]$SSMURL="",
+    [String]$SSMGRPCADDR="",
     [String]$SSMAPIKEY="",
     [String]$ServiceUser="",
     [String]$ServicePassword=""
@@ -43,6 +44,15 @@ if($SSMURL -eq ""){
     }
 }
 
+if($SSMGRPCADDR -eq ""){
+    $SSMGRPCADDR = Read-Host -Prompt 'Enter SSM Cloud gRPC URL [grpc-ssmcloud.hostxtra.co.uk]'
+
+    if ([string]::IsNullOrWhiteSpace($SSMURL))
+    {
+        $SSMGRPCADDR = 'grpc-ssmcloud.hostxtra.co.uk';
+    }
+}
+
 if($SSMAPIKEY -eq ""){
     $SSMAPIKEY = Read-Host -Prompt 'Enter SSM Cloud API Key [AGT-API-XXXXXXX]'
 
@@ -61,6 +71,7 @@ echo "Agent Name: $AGENTNAME"
 echo "Installation Directory: $INSTALL_DIR"
 echo "SF Port: $PORT"
 echo "SSM Cloud URL: $SSMURL"
+echo "SSM Cloud gRPC Address: $SSMGRPCADDR"
 echo "SSM Cloud API Key: $SSMAPIKEY"
 echo ""
 

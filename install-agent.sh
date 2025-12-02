@@ -125,6 +125,11 @@ while [[ $# -gt 0 ]]; do
         shift # past value
         shift # past value
         ;;
+    --grpcaddr)
+        SSMGRPCADDR="$2"
+        shift # past value
+        shift # past value
+        ;;
     --apikey)
         SSMAPIKEY="$2"
         shift # past value
@@ -142,10 +147,15 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-start_spinner "${YELLOW}Installing Docker${NC}"
-wget -q https://get.docker.com/ -O - | sh >/dev/null 2>&1
+PORT=$((7777 + $PORTOFFSET))
 
-stop_spinner $?
+
+if [ $NODOCKERINSTALL -eq 0 ]; then
+    start_spinner "${YELLOW}Installing Docker${NC}"
+    wget -q https://get.docker.com/ -O - | sh >/dev/null 2>&1
+
+    stop_spinner $?
+fi
 
 if [ ! $(docker ps -a -q -f name=${AGENTNAME}) ]; then
     DOCKEREXISTS=0
@@ -161,7 +171,14 @@ if [ "${SSMURL}" == "" ]; then
     fi
 fi
 
-SSMGRPCADDR=$(echo $SSMURL|sed -E 's/^\s*.*:\/\///g')
+
+if [ "${SSMGRPCADDR}" == ""]; then
+    read -r -p "Enter SSM Cloud gRPC URL [grpc-ssmcloud.hostxtra.co.uk]: " SSMGRPCADDR </dev/tty
+
+    if [ "${SSMGRPCADDR}" == "" ]; then
+        SSMURL="grpc-ssmcloud.hostxtra.co.uk"
+    fi
+fi
 
 if [ "${SSMAPIKEY}" == "" ]; then
 
@@ -184,6 +201,15 @@ if [ "${SSMAPIKEY}" == "" ]; then
         fi
     fi
 fi
+
+echo "Installation Summary:"
+echo "Agent Name: $AGENTNAME"
+echo "SF Port: $PORT"
+echo "SSM Cloud URL: $SSMURL"
+echo "SSM Cloud gRPC Address: $SSMGRPCADDR"
+echo "SSM Cloud API Key: $SSMAPIKEY"
+echo "Skip Docker Install: $NoDockerInstall"
+echo ""
 
 start_spinner "${YELLOW}Creating SSM User Account${NC}"
 if id "ssm" &>/dev/null; then
@@ -211,7 +237,7 @@ if [ $DOCKEREXISTS == 1 ]; then
     docker rm -f ${AGENTNAME}
 fi
 
-PORT=$((7777 + $PORTOFFSET))
+
 
 docker run -d \
     -e SSM_NAME=${AGENTNAME} \
