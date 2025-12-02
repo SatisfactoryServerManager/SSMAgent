@@ -1,3 +1,6 @@
+## 1.0.77 (December 02, 2025)
+  - fix: Fixed docker entry script
+
 ## 1.0.76 (December 02, 2025)
   - feat: Updated agent install scripts
   - feat: send final state on cleanup
