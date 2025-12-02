@@ -1,3 +1,6 @@
+## 1.0.78 (December 02, 2025)
+  - fix: Fixed file permissions on sf server
+
 ## 1.0.77 (December 02, 2025)
   - fix: Fixed docker entry script
 
