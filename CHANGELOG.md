@@ -1,3 +1,15 @@
+## 1.0.76 (December 02, 2025)
+  - feat: Updated agent install scripts
+  - feat: send final state on cleanup
+  - feat: Mod Handler
+  - removed makefile
+  - feat: Mod config work
+  - feat: grpc structure changes
+  - feat: Proto functions
+  - feat: GRPC connection
+  - feat: log line changes
+  - feat: new log handling
+
 ## 1.0.75 (November 03, 2025)
   - fix: Fixed modReference
 
