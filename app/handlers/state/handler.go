@@ -134,6 +134,24 @@ func (h *Handler) sendState() error {
 	return h.stream.Send(payload)
 }
 
+func (h *Handler) sendFinalState() error {
+	state.InstalledSFVersion = config.GetConfig().SF.InstalledVer
+	state.LatestSFVersion = config.GetConfig().SF.AvilableVer
+
+	payload := &pb.AgentStateRequest{
+		Online:             state.Online,
+		Installed:          state.Installed,
+		Running:            state.Running,
+		Cpu:                state.CPU,
+		Ram:                state.MEM,
+		InstalledSFVersion: state.InstalledSFVersion,
+		LatestSFVersion:    state.LatestSFVersion,
+	}
+
+	_, err := h.client.UpdateAgentState(contextWithAPIKey(context.Background()), payload)
+	return err
+}
+
 func (h *Handler) closeStream() {
 	if h.streamCancel != nil {
 		h.streamCancel()
@@ -159,5 +177,7 @@ func (h *Handler) Stop() {
 
 	// Cancel the current stream
 	h.closeStream()
+
+	h.sendFinalState()
 	utils.DebugLogger.Println("Stopped State Handler")
 }
