@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -90,4 +91,17 @@ func ToJSON(a interface{}) string {
 func CopyStruct(a interface{}, b interface{}) {
 	bytes, _ := json.Marshal(a)
 	json.Unmarshal(bytes, b)
+}
+
+func ChmodRecursive(path string, mode os.FileMode) error {
+	return filepath.WalkDir(path, func(p string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		// Use os.Chmod for both files and directories
+		if err := os.Chmod(p, mode); err != nil {
+			return fmt.Errorf("chmod failed for %s: %w", p, err)
+		}
+		return nil
+	})
 }

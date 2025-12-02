@@ -33,6 +33,10 @@ func InitSFHandler() {
 
 	utils.InfoLogger.Println("Initalising SF Handler...")
 
+	if err := utils.ChmodRecursive(config.GetConfig().SFDir, 0777); err != nil {
+		utils.ErrorLogger.Println(err.Error())
+	}
+
 	GetLatestedVersion()
 
 	if config.GetConfig().SF.UpdateSFOnStart {
@@ -124,6 +128,10 @@ func InstallSFServer(force bool) error {
 
 	SendStates()
 
+	if err := utils.ChmodRecursive(config.GetConfig().SFDir, 0777); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -175,6 +183,10 @@ func AutoRestart() error {
 
 func StartSFServer() error {
 
+	if err := utils.ChmodRecursive(config.GetConfig().SFDir, 0777); err != nil {
+		return err
+	}
+
 	SF_PID = GetSFPID()
 
 	if IsRunning() {
@@ -189,7 +201,7 @@ func StartSFServer() error {
 	utils.InfoLogger.Println("Starting SF Server..")
 	sfExe := filepath.Join(config.GetConfig().SFDir, vars.ExeName)
 
-    fmt.Println(sfExe, GetStartArgs())
+	fmt.Println(sfExe, GetStartArgs())
 
 	cmd := exec.Command(sfExe, GetStartArgs()...)
 
