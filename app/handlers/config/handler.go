@@ -87,6 +87,7 @@ func (h *Handler) GetConfig() error {
 	config.SaveConfig()
 
 	if oldBranch != config.GetConfig().SF.SFBranch {
+		utils.InfoLogger.Printf("detected SF branch was changed: %s -> %s", oldBranch, config.GetConfig().SF.SFBranch)
 		sf.GetLatestedVersion()
 	}
 
