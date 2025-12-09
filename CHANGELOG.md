@@ -1,3 +1,6 @@
+## 1.0.79 (December 09, 2025)
+  - fix: Fixed sending version and ip to backend
+
 ## 1.0.78 (December 02, 2025)
   - fix: Fixed file permissions on sf server
 
