@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/sf"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
@@ -47,6 +48,10 @@ func (h *Handler) PollTasks() {
 		select {
 		case <-ticker.C:
 			if err := h.GetConfig(); err != nil {
+				utils.ErrorLogger.Println(err.Error())
+			}
+
+			if err := h.SendVersionAndIPAddress(); err != nil {
 				utils.ErrorLogger.Println(err.Error())
 			}
 
@@ -95,6 +100,25 @@ func (h *Handler) GetConfig() error {
 
 	if err := config.UpdateIniFiles(); err != nil {
 		utils.ErrorLogger.Printf("error updating game ini files with error: %s\n", err.Error())
+	}
+
+	return nil
+}
+
+func (h *Handler) SendVersionAndIPAddress() error {
+
+	ipAddress, err := api.GetPublicIP()
+	if err != nil {
+		return fmt.Errorf("error getting public ip address with error: %s", err.Error())
+	}
+
+	_, err = h.client.UpdateAgentConfigVersionIp(h.context, &pb.UpdateAgentConfigRequest{
+		Version: config.GetConfig().Version,
+		Ip:      ipAddress,
+	})
+
+	if err != nil {
+		return fmt.Errorf("error sending version and public ip address with error: %s", err.Error())
 	}
 
 	return nil
