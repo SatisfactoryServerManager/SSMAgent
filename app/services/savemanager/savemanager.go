@@ -1,6 +1,7 @@
 package savemanager
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path"
@@ -8,9 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/file"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/types"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
+	pb "github.com/SatisfactoryServerManager/ssmcloud-resources/proto/generated"
 )
 
 type SaveFile struct {
@@ -112,8 +114,7 @@ func GetSaveFiles() {
 }
 
 func UploadSaveFile(filePath string) error {
-	err := api.SendFile("/api/v1/agent/upload/save", filePath)
-	return err
+	return file.Upload(context.Background(), pb.FileKind_FILE_KIND_SAVE, filePath)
 }
 
 func DownloadSaveFile(fileName string) error {
@@ -128,7 +129,7 @@ func DownloadSaveFile(fileName string) error {
 
 	newFilePath := filepath.Join(saveDir, filepath.Clean(fileName))
 
-	err = api.DownloadFile("/api/v1/agent/saves/download/"+fileName, newFilePath)
+	err = file.Download(context.Background(), fileName, newFilePath)
 	if err != nil {
 		return err
 	}
@@ -141,8 +142,17 @@ func DownloadSaveFile(fileName string) error {
 func SyncSaveFiles() error {
 
 	resBody := types.HttpResponseBody_SaveSync{}
-	if err := api.SendGetRequest("/api/v1/agent/save/sync", &resBody); err != nil {
+	items, err := file.GetSaveSyncItems(context.Background())
+	if err != nil {
 		return err
+	}
+	for _, it := range items {
+		resBody.Saves = append(resBody.Saves, types.HttpResponseBody_SaveSync_Save{
+			UUID:     it.Uuid,
+			FileName: it.FileName,
+			Size:     it.Size,
+			ModTime:  time.Unix(it.ModTimeUnix, 0).UTC(),
+		})
 	}
 
 	// Check if the server needs to upload any outdated saves
@@ -242,10 +252,18 @@ func SyncSaveFiles() error {
 	}
 
 	if shouldSendPostSync {
-		type emptyReturnData struct{}
-		emptyRes := emptyReturnData{}
+		syncItems := make([]*pb.SaveSyncItem, 0, len(resBody.Saves))
+		for i := range resBody.Saves {
+			s := &resBody.Saves[i]
+			syncItems = append(syncItems, &pb.SaveSyncItem{
+				Uuid:        s.UUID,
+				FileName:    s.FileName,
+				Size:        s.Size,
+				ModTimeUnix: s.ModTime.Unix(),
+			})
+		}
 
-		if err := api.SendPostRequest("/api/v1/agent/save/sync", resBody, &emptyRes); err != nil {
+		if err := file.PostSaveSyncItems(context.Background(), syncItems); err != nil {
 			return err
 		}
 	}

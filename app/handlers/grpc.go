@@ -5,6 +5,7 @@ import (
 
 	mainConfig "github.com/SatisfactoryServerManager/SSMAgent/app/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/config"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/file"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/log"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/mod"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/state"
@@ -78,6 +79,8 @@ func InitgRPC() error {
 
 	modHandler = mod.NewHandler(grpcConn)
 	modHandler.Run()
+
+	file.Init(grpcConn)
 
 	return nil
 }

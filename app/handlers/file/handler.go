@@ -37,6 +37,32 @@ func NewHandler(conn *grpc.ClientConn) *Handler {
 	}
 }
 
+// defaultHandler is the process-wide file transfer client, initialised by Init
+// from the gRPC bootstrap. Package-level helpers delegate to it so consumers
+// (savemanager, backupmanager) don't need to import the handlers bootstrap
+// package, avoiding an import cycle.
+var defaultHandler *Handler
+
+func Init(conn *grpc.ClientConn) {
+	defaultHandler = NewHandler(conn)
+}
+
+func Upload(ctx context.Context, kind pb.FileKind, localPath string) error {
+	return defaultHandler.UploadFile(ctx, kind, localPath)
+}
+
+func Download(ctx context.Context, remoteFilename, localPath string) error {
+	return defaultHandler.DownloadFile(ctx, remoteFilename, localPath)
+}
+
+func GetSaveSyncItems(ctx context.Context) ([]*pb.SaveSyncItem, error) {
+	return defaultHandler.GetSaveSync(ctx)
+}
+
+func PostSaveSyncItems(ctx context.Context, items []*pb.SaveSyncItem) error {
+	return defaultHandler.PostSaveSync(ctx, items)
+}
+
 func contextWithAPIKey(ctx context.Context) context.Context {
 	return metadata.AppendToOutgoingContext(ctx, "x-api-key", config.GetConfig().APIKey)
 }
