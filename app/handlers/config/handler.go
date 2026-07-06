@@ -9,7 +9,8 @@ import (
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/sf"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
-	pb "github.com/SatisfactoryServerManager/ssmcloud-resources/proto"
+	pb "github.com/SatisfactoryServerManager/ssmcloud-resources/proto/generated"
+	pbModels "github.com/SatisfactoryServerManager/ssmcloud-resources/proto/generated/models"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -63,7 +64,7 @@ func (h *Handler) PollTasks() {
 }
 
 func (h *Handler) GetConfig() error {
-	resConfig, err := h.client.GetAgentConfig(h.context, &pb.Empty{})
+	resConfig, err := h.client.GetAgentConfig(h.context, &pbModels.SSMEmpty{})
 	if err != nil {
 		return fmt.Errorf("error getting agent config with error: %s", err.Error())
 	}
@@ -77,12 +78,12 @@ func (h *Handler) GetConfig() error {
 	config.GetConfig().SF.WorkerThreads = int(resConfig.ServerConfig.WorkerThreads)
 	config.GetConfig().SF.SFBranch = resConfig.ServerConfig.Branch
 
-	config.GetConfig().SF.UpdateSFOnStart = resConfig.ServerConfig.UpdateSFOnStart
-	config.GetConfig().SF.AutoRestart = resConfig.ServerConfig.AutoRestart
-	config.GetConfig().SF.AutoPause = resConfig.ServerConfig.AutoPause
-	config.GetConfig().SF.AutoSaveOnDisconnect = resConfig.ServerConfig.AutoSaveOnDisconnect
+	config.GetConfig().SF.UpdateSFOnStart = resConfig.ServerConfig.GetUpdateOnStart().GetValue()
+	config.GetConfig().SF.AutoRestart = resConfig.ServerConfig.GetAutoRestart().GetValue()
+	config.GetConfig().SF.AutoPause = resConfig.ServerConfig.GetAutoPause().GetValue()
+	config.GetConfig().SF.AutoSaveOnDisconnect = resConfig.ServerConfig.GetAutoSaveOnDisconnect().GetValue()
 	config.GetConfig().SF.AutoSaveInterval = float32(resConfig.ServerConfig.AutoSaveInterval)
-	config.GetConfig().SF.DisableSeasonalEvents = resConfig.ServerConfig.DisableSeasonalEvents
+	config.GetConfig().SF.DisableSeasonalEvents = resConfig.ServerConfig.GetDisableSeasonalEvents().GetValue()
 
 	config.SaveConfig()
 

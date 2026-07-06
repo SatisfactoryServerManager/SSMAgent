@@ -9,7 +9,7 @@ import (
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
-	pb "github.com/SatisfactoryServerManager/ssmcloud-resources/proto"
+	pb "github.com/SatisfactoryServerManager/ssmcloud-resources/proto/generated"
 	"github.com/hpcloud/tail"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
