@@ -176,6 +176,12 @@ func GetConfig() *Config {
 	return _config
 }
 
+// SetConfig replaces the active config singleton. Primarily used to seed
+// config in tests without invoking the flag-based file loader.
+func SetConfig(c *Config) {
+	_config = c
+}
+
 func SaveConfig() {
 	file, _ := json.MarshalIndent(GetConfig(), "", "    ")
 
