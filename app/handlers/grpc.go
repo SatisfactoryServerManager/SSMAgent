@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"os"
 	"time"
 
 	mainConfig "github.com/SatisfactoryServerManager/SSMAgent/app/config"
@@ -15,6 +16,7 @@ import (
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 )
 
@@ -43,9 +45,17 @@ func NewGRPCConnection(addr string) (*grpc.ClientConn, error) {
 		PermitWithoutStream: true,
 	}
 
+	// In development the backend serves plaintext gRPC, so use insecure
+	// credentials. Matches the frontend's APP_MODE convention.
+	creds := credentials.NewTLS(nil)
+	if os.Getenv("APP_MODE") == "development" {
+		creds = insecure.NewCredentials()
+		utils.InfoLogger.Println("Using insecure gRPC credentials for development mode")
+	}
+
 	return grpc.NewClient(
 		addr,
-		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
+		grpc.WithTransportCredentials(creds),
 		grpc.WithConnectParams(cfg),
 		grpc.WithKeepaliveParams(ka),
 	)
