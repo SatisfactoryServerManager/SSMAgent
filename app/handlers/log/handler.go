@@ -80,6 +80,7 @@ func (h *Handler) senderLoop() {
 
 		utils.DebugLogger.Println("Log stream connected")
 
+		var sent int
 		for {
 			select {
 			case <-h.done:
@@ -97,9 +98,13 @@ func (h *Handler) senderLoop() {
 				}
 
 				if err := h.stream.Send(req); err != nil {
-					utils.ErrorLogger.Println("Log stream send failed, reconnecting:", err)
+					utils.ErrorLogger.Printf("Log stream send failed after %d lines, reconnecting: %v", sent, err)
 					time.Sleep(time.Second)
 					goto RECONNECT
+				}
+				sent++
+				if sent == 1 || sent%100 == 0 {
+					utils.DebugLogger.Printf("Log stream sent %d lines (last type=%s inital=%t)", sent, entry.source, entry.inital)
 				}
 			}
 		}
@@ -131,6 +136,7 @@ func (h *Handler) sendInitialContent(filePath, source string) error {
 			idx++
 		}
 	}
+	utils.DebugLogger.Printf("Queued %d initial log lines for source %s from %s", idx, source, filePath)
 	return nil
 }
 
