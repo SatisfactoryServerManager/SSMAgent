@@ -3,9 +3,13 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/types"
@@ -84,27 +88,47 @@ func DownloadNonSSMFile(url string, filePath string) error {
 	return err
 }
 
-type IP struct {
-	Query string
+// publicIPEndpoints are plain-text services that return just the caller's
+// public IP. Multiple providers are tried in order for resilience.
+var publicIPEndpoints = []string{
+	"https://api.ipify.org",
+	"https://ifconfig.me/ip",
+	"https://icanhazip.com",
+	"https://ipinfo.io/ip",
 }
 
 func GetPublicIP() (string, error) {
-	req, err := http.Get("http://ip-api.com/json/")
-	if err != nil {
-		return "", err
-	}
-	defer req.Body.Close()
+	client := &http.Client{Timeout: 10 * time.Second}
 
-	body, err := io.ReadAll(req.Body)
-	if err != nil {
-		return "", err
+	var lastErr error
+	for _, url := range publicIPEndpoints {
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		// Some providers reject requests without a User-Agent.
+		req.Header.Set("User-Agent", "SSMAgent")
+
+		resp, err := client.Do(req)
+		if err != nil {
+			lastErr = fmt.Errorf("%s: %w", url, err)
+			continue
+		}
+
+		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			lastErr = fmt.Errorf("%s: %w", url, err)
+			continue
+		}
+
+		ip := strings.TrimSpace(string(body))
+		if resp.StatusCode == http.StatusOK && net.ParseIP(ip) != nil {
+			return ip, nil
+		}
+		lastErr = fmt.Errorf("%s returned status %d body %q", url, resp.StatusCode, ip)
 	}
 
-	var ip IP
-	err = json.Unmarshal(body, &ip)
-	if err != nil {
-		return "", err
-	}
-
-	return ip.Query, nil
+	return "", fmt.Errorf("all public ip lookups failed: %w", lastErr)
 }
