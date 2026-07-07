@@ -1,7 +1,7 @@
 #!/bin/bash
 
 EXE="/opt/SSMAgent/SSMAgent"
-
+echo "Entry started"
 #Define cleanup procedure
 cleanup() {
     echo "Container stopped, performing cleanup..."
@@ -22,7 +22,9 @@ cleanup() {
 #Trap SIGTERM
 trap 'cleanup' SIGTERM
 
-hostname
+chown -R ssm:ssm /opt/SSMAgent
+chown -R ssm:ssm /home/ssm
+chown -R ssm:ssm /SSM/data
 
 su ssm -c "${EXE} --name=$SSM_NAME --apikey=$SSM_APIKEY --url=$SSM_URL --grpcaddr=$SSM_GRPCADDR --grpcinsecure=${SSM_INSECURE:-false}" &
 
