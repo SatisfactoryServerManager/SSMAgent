@@ -45,12 +45,13 @@ func NewGRPCConnection(addr string) (*grpc.ClientConn, error) {
 		PermitWithoutStream: true,
 	}
 
-	// In development the backend serves plaintext gRPC, so use insecure
-	// credentials. Matches the frontend's APP_MODE convention.
+	// When the backend serves plaintext gRPC (local/dev), use insecure
+	// credentials. Controlled by the --grpcinsecure flag (SSM_INSECURE in the
+	// container) or APP_MODE=development for `go run` workflows.
 	creds := credentials.NewTLS(nil)
-	if os.Getenv("APP_MODE") == "development" {
+	if mainConfig.GetConfig().GRPCInsecure || os.Getenv("APP_MODE") == "development" {
 		creds = insecure.NewCredentials()
-		utils.InfoLogger.Println("Using insecure gRPC credentials for development mode")
+		utils.InfoLogger.Println("Using insecure gRPC credentials")
 	}
 
 	return grpc.NewClient(

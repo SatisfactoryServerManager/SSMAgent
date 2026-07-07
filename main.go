@@ -55,6 +55,7 @@ func main() {
 	flag.String("name", "", "The name of the ssm agent")
 	flag.String("url", "https://api-ssmcloud.hostxtra.co.uk", "The url for SSM Cloud")
 	flag.String("grpcaddr", "api-ssmcloud.hostxtra.co.uk", "The grpc address for SSM Cloud")
+	flag.Bool("grpcinsecure", false, "Use an insecure (plaintext) gRPC connection")
 	flag.String("apikey", "", "The agents api key used to connect to SSM Cloud")
 	flag.String("datadir", "/SSM/data", "The directory where SF and Steam will be stored")
 	flag.Int("p", 0, "The port offset from 7777 defaults to 0")
