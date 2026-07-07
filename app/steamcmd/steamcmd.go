@@ -88,45 +88,21 @@ func IsInstalled() bool {
 	return !os.IsNotExist(err)
 }
 
-func BuildScriptFile() (string, error) {
-
-	steamExe := filepath.Join(SteamDir, vars.DepotDownloaderExeName)
-	exeArgs := fmt.Sprintf(`-app "%d" -depot "%d" -beta "%s" -dir "%s"`, vars.SteamAppId, vars.DepotId, config.GetConfig().SF.SFBranch, config.GetConfig().SFDir)
-
-	tempfile, err := os.CreateTemp(os.TempDir(), "ssm_temp_*.ps1")
-	if err != nil {
-		return "", err
-	}
-
-	file, err := os.OpenFile(tempfile.Name(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-
-	if err != nil {
-		return "", err
-	}
-
-	datawriter := bufio.NewWriter(file)
-
-	datawriter.WriteString("& " + steamExe + " " + exeArgs)
-
-	datawriter.Flush()
-	file.Close()
-	tempfile.Close()
-
-	return tempfile.Name(), nil
-}
-
 func InstallSFServer() (string, error) {
 
-	// Guard: the DepotDownloader executable must exist before we try to run it,
-	// otherwise the failure surfaces only as an opaque interpreter error.
+	// Guard: the DepotDownloader executable must exist before we try to run it.
 	steamExe := filepath.Join(SteamDir, vars.DepotDownloaderExeName)
 	if _, err := os.Stat(steamExe); err != nil {
 		return "", fmt.Errorf("depot downloader not found at %s: %w", steamExe, err)
 	}
 
-	filename, err := BuildScriptFile()
-	if err != nil {
-		return "", fmt.Errorf("failed to build install script: %w", err)
+	// Run DepotDownloader directly rather than via a PowerShell script so the
+	// agent has no dependency on pwsh being installed in the environment.
+	args := []string{
+		"-app", fmt.Sprintf("%d", vars.SteamAppId),
+		"-depot", fmt.Sprintf("%d", vars.DepotId),
+		"-beta", config.GetConfig().SF.SFBranch,
+		"-dir", config.GetConfig().SFDir,
 	}
 
 	reader, writer := io.Pipe()
@@ -144,7 +120,7 @@ func InstallSFServer() (string, error) {
 		}
 	}()
 
-	cmd := exec.Command("pwsh", filename)
+	cmd := exec.Command(steamExe, args...)
 	cmd.Dir = SteamDir
 	cmd.Stdout = writer
 	cmd.Stderr = writer
