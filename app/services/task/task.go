@@ -42,7 +42,7 @@ func ProcessMessageQueueItem(agentTask *v2.AgentTask) error {
 		return sf.ShutdownSFServer()
 	case "killsfserver":
 		return sf.KillSFServer()
-	case "installsfserver":
+	case "install":
 		return sf.InstallSFServer(true)
 	case "updatesfserver":
 		return sf.UpdateSFServer()

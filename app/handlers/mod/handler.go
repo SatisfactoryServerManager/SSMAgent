@@ -9,7 +9,8 @@ import (
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/mod"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 	v2 "github.com/SatisfactoryServerManager/ssmcloud-resources/models/v2"
-	pb "github.com/SatisfactoryServerManager/ssmcloud-resources/proto"
+	pb "github.com/SatisfactoryServerManager/ssmcloud-resources/proto/generated"
+	pbModels "github.com/SatisfactoryServerManager/ssmcloud-resources/proto/generated/models"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -73,8 +74,8 @@ func (h *Handler) PollModConfig() {
 	}
 }
 
-func (h *Handler) GetModConfig() (*pb.ModConfig, error) {
-	resp, err := h.client.GetModConfig(h.context, &pb.Empty{})
+func (h *Handler) GetModConfig() (*pbModels.ModConfig, error) {
+	resp, err := h.client.GetModConfig(h.context, &pbModels.SSMEmpty{})
 	if err != nil {
 		return nil, fmt.Errorf("error getting mod config: %s", err.Error())
 	}
@@ -82,7 +83,7 @@ func (h *Handler) GetModConfig() (*pb.ModConfig, error) {
 	return resp.Config, nil
 }
 
-func (h *Handler) UpdateModConfig(cfg *pb.ModConfig) error {
+func (h *Handler) UpdateModConfig(cfg *pbModels.ModConfig) error {
 	_, err := h.client.UpdateModConfig(
 		h.context,
 		&pb.AgentModConfigRequest{Config: cfg},
@@ -91,7 +92,7 @@ func (h *Handler) UpdateModConfig(cfg *pb.ModConfig) error {
 }
 
 // Logic for processing / updating the mods on the client
-func (h *Handler) ProcessModConfig(cfg *pb.ModConfig) error {
+func (h *Handler) ProcessModConfig(cfg *pbModels.ModConfig) error {
 	modConfig := &v2.AgentModConfig{}
 	utils.CopyStruct(cfg, modConfig)
 

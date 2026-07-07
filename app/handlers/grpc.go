@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"os"
 	"time"
 
 	mainConfig "github.com/SatisfactoryServerManager/SSMAgent/app/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/config"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/file"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/log"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/mod"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/state"
@@ -14,6 +16,7 @@ import (
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 )
 
@@ -42,9 +45,18 @@ func NewGRPCConnection(addr string) (*grpc.ClientConn, error) {
 		PermitWithoutStream: true,
 	}
 
+	// When the backend serves plaintext gRPC (local/dev), use insecure
+	// credentials. Controlled by the --grpcinsecure flag (SSM_INSECURE in the
+	// container) or APP_MODE=development for `go run` workflows.
+	creds := credentials.NewTLS(nil)
+	if mainConfig.GetConfig().GRPCInsecure || os.Getenv("APP_MODE") == "development" {
+		creds = insecure.NewCredentials()
+		utils.InfoLogger.Println("Using insecure gRPC credentials")
+	}
+
 	return grpc.NewClient(
 		addr,
-		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
+		grpc.WithTransportCredentials(creds),
 		grpc.WithConnectParams(cfg),
 		grpc.WithKeepaliveParams(ka),
 	)
@@ -78,6 +90,8 @@ func InitgRPC() error {
 
 	modHandler = mod.NewHandler(grpcConn)
 	modHandler.Run()
+
+	file.Init(grpcConn)
 
 	return nil
 }

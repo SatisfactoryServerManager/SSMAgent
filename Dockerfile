@@ -4,7 +4,7 @@ FROM ubuntu:latest
 COPY scripts/setup-docker.sh /setup-docker.sh
 
 RUN chmod +x /setup-docker.sh
-RUN /setup-docker.sh
+RUN bash /setup-docker.sh
 
 VOLUME /opt/SSMAgent
 COPY release/linux/* /opt/SSMAgent/
@@ -16,4 +16,4 @@ RUN chmod 755 /entry.sh
 
 RUN ls -l /
 
-ENTRYPOINT [ "/entry.sh" ]
+ENTRYPOINT [ "bash", "/entry.sh" ]

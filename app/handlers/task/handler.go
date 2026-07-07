@@ -10,8 +10,9 @@ import (
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/task"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 	v2 "github.com/SatisfactoryServerManager/ssmcloud-resources/models/v2"
-	pb "github.com/SatisfactoryServerManager/ssmcloud-resources/proto"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	pb "github.com/SatisfactoryServerManager/ssmcloud-resources/proto/generated"
+	pbModels "github.com/SatisfactoryServerManager/ssmcloud-resources/proto/generated/models"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -71,7 +72,7 @@ func (h *Handler) PollTasks() {
 }
 
 func (h *Handler) GetTasks() ([]v2.AgentTask, error) {
-	resp, err := h.client.GetAgentTasks(h.context, &pb.Empty{})
+	resp, err := h.client.GetAgentTasks(h.context, &pbModels.SSMEmpty{})
 	if err != nil {
 		return nil, fmt.Errorf("error getting agent tasks with error: %s", err.Error())
 	}
@@ -79,7 +80,7 @@ func (h *Handler) GetTasks() ([]v2.AgentTask, error) {
 	tasks := make([]v2.AgentTask, 0)
 	for _, t := range resp.Tasks {
 		// parse ObjectID
-		objID, err := primitive.ObjectIDFromHex(t.Id)
+		objID, err := bson.ObjectIDFromHex(t.Id)
 		if err != nil {
 			fmt.Println("Invalid task ID:", t.Id)
 			continue

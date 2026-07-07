@@ -1,6 +1,7 @@
 package backup
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -11,10 +12,11 @@ import (
 	"archive/tar"
 	"compress/gzip"
 
-	"github.com/SatisfactoryServerManager/SSMAgent/app/api"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/file"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/savemanager"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
+	pb "github.com/SatisfactoryServerManager/ssmcloud-resources/proto/generated"
 )
 
 var _quit = make(chan int)
@@ -140,7 +142,7 @@ func CreateBackupFile() error {
 
 	utils.InfoLogger.Println("Backup created successfully")
 
-	err = api.SendFile("/api/v1/agent/upload/backup", zipFilePath)
+	err = file.Upload(context.Background(), pb.FileKind_FILE_KIND_BACKUP, zipFilePath)
 	if err != nil {
 		return err
 	}
