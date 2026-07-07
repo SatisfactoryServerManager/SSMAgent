@@ -3,7 +3,6 @@ package steamcmd
 import (
 	"archive/zip"
 	"bufio"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -118,12 +117,21 @@ func BuildScriptFile() (string, error) {
 
 func InstallSFServer() (string, error) {
 
+	// Guard: the DepotDownloader executable must exist before we try to run it,
+	// otherwise the failure surfaces only as an opaque interpreter error.
+	steamExe := filepath.Join(SteamDir, vars.DepotDownloaderExeName)
+	if _, err := os.Stat(steamExe); err != nil {
+		return "", fmt.Errorf("depot downloader not found at %s: %w", steamExe, err)
+	}
+
+	filename, err := BuildScriptFile()
+	if err != nil {
+		return "", fmt.Errorf("failed to build install script: %w", err)
+	}
+
 	reader, writer := io.Pipe()
 
-	cmdCtx, cmdDone := context.WithCancel(context.Background())
-
 	output := ""
-
 	scannerStopped := make(chan struct{})
 	go func() {
 		defer close(scannerStopped)
@@ -136,27 +144,18 @@ func InstallSFServer() (string, error) {
 		}
 	}()
 
-	filename, _ := BuildScriptFile()
-	fmt.Printf("%v\n", filename)
-
 	cmd := exec.Command("pwsh", filename)
 	cmd.Dir = SteamDir
-
-	fmt.Printf("%v\n", cmd.String())
-
 	cmd.Stdout = writer
 	cmd.Stderr = writer
 
-	_ = cmd.Start()
-
-	go func() {
-		_ = cmd.Wait()
-		cmdDone()
-		writer.Close()
-	}()
-	<-cmdCtx.Done()
-
+	runErr := cmd.Run()
+	writer.Close()
 	<-scannerStopped
+
+	if runErr != nil {
+		return output, fmt.Errorf("install command %q failed: %w\noutput:\n%s", cmd.String(), runErr, output)
+	}
 
 	return output, nil
 }
