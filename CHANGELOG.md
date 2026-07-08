@@ -1,3 +1,6 @@
+## 1.0.81 (July 08, 2026)
+
+
 ## 1.0.80 (July 08, 2026)
   - Merge pull request #1 from SatisfactoryServerManager/feature/rest-to-grpc-migration
   - fix: Fixed agent
