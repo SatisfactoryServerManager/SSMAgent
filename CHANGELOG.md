@@ -1,3 +1,18 @@
+## 1.0.80 (July 08, 2026)
+  - Merge pull request #1 from SatisfactoryServerManager/feature/rest-to-grpc-migration
+  - fix: Fixed agent
+  - fix: make public IP lookup resilient with fallbacks
+  - feat: add debug logging to log stream sender
+  - fix: run DepotDownloader directly instead of via PowerShell
+  - fix: surface SF server install errors instead of always succeeding
+  - feat: add --grpcinsecure flag for plaintext gRPC in containers
+  - fix: use insecure gRPC credentials in development mode
+  - chore: remove dead agent REST helpers, keep ping connectivity check
+  - refactor: agent uses gRPC file client instead of REST
+  - feat: agent gRPC file-transfer client with resume-from-offset
+  - chore: bump ssmcloud-resources and migrate to proto/generated layout
+  - feat: added log message when branch changed
+
 ## 1.0.79 (December 09, 2025)
   - fix: Fixed sending version and ip to backend
 
