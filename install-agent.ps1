@@ -35,7 +35,7 @@ if($SSMURL -eq ""){
 if($SSMGRPCADDR -eq ""){
     $SSMGRPCADDR = Read-Host -Prompt 'Enter SSM Cloud gRPC URL [grpc-ssmcloud.hostxtra.co.uk]'
 
-    if ([string]::IsNullOrWhiteSpace($SSMURL))
+    if ([string]::IsNullOrWhiteSpace($SSMGRPCADDR))
     {
         $SSMGRPCADDR = 'grpc-ssmcloud.hostxtra.co.uk';
     }
