@@ -40,12 +40,9 @@ func InitSFHandler() {
 
 	GetLatestedVersion()
 
-	if config.GetConfig().SF.UpdateSFOnStart {
-		err := UpdateSFServer()
-		if err != nil {
-			utils.ErrorLogger.Printf("Error updating SF server: %s\r\n", err.Error())
-		}
-	}
+	// The backend owns install and update. The agent reports versions as state and
+	// waits to be told. This deletion is the fix for the double-install: previously
+	// this ran concurrently with the workflow's installsfserver task.
 
 	SF_PID = GetSFPID()
 	SendStates()
@@ -96,28 +93,42 @@ func RemoveSFServer() error {
 	return nil
 }
 
-func InstallSFServer(force bool) error {
-
+// EnsureInstalled is idempotent: it returns success if the server is already
+// installed at the available version, and never removes an existing install.
+// The task queue delivers at-least-once, so this must be safe to run twice.
+func EnsureInstalled() error {
 	if IsRunning() {
+		return errors.New("cannot install while the server is running")
+	}
+
+	if IsInstalled() && config.GetConfig().SF.InstalledVer >= config.GetConfig().SF.AvilableVer {
+		utils.InfoLogger.Println("SF Server already installed at the available version, nothing to do")
 		return nil
 	}
 
-	if IsInstalled() && !force {
-		return nil
-	} else if IsInstalled() && force {
-		err := RemoveSFServer()
-		if err != nil {
-			utils.InfoLogger.Printf("Error removing existing SF Server install %s\r\n", err.Error())
+	return install()
+}
+
+// Reinstall destroys the existing installation first. Only ever user-triggered.
+func Reinstall() error {
+	if IsRunning() {
+		return errors.New("cannot reinstall while the server is running")
+	}
+
+	if IsInstalled() {
+		if err := RemoveSFServer(); err != nil {
 			return err
 		}
-
 		state.Installed = false
 	}
 
+	return install()
+}
+
+func install() error {
 	utils.InfoLogger.Println("Installing SF Server..")
 
-	_, err := steamcmd.InstallSFServer()
-	if err != nil {
+	if _, err := steamcmd.InstallSFServer(); err != nil {
 		utils.ErrorLogger.Printf("Error installing SF Server %s\r\n", err.Error())
 		return err
 	}
@@ -129,22 +140,27 @@ func InstallSFServer(force bool) error {
 
 	SendStates()
 
-	if err := utils.ChmodRecursive(config.GetConfig().SFDir, 0777); err != nil {
-		return err
-	}
-
-	return nil
+	return utils.ChmodRecursive(config.GetConfig().SFDir, 0777)
 }
 
+// UpdateSFServer updates an existing installation. It is an error to call it on
+// a machine with no install: retrying that cannot help, so the task dies rather
+// than looping.
 func UpdateSFServer() error {
-	installedVer := config.GetConfig().SF.InstalledVer
-	avaliableVer := config.GetConfig().SF.AvilableVer
-	if installedVer < avaliableVer {
-		utils.InfoLogger.Printf("Found newer version of SF Server - Installed %d, Available: %d", installedVer, avaliableVer)
-		return InstallSFServer(true)
+	if !IsInstalled() {
+		return errors.New("cannot update: SF server is not installed")
 	}
 
-	return nil
+	installedVer := config.GetConfig().SF.InstalledVer
+	avaliableVer := config.GetConfig().SF.AvilableVer
+
+	if installedVer >= avaliableVer {
+		utils.InfoLogger.Println("SF Server is up to date")
+		return nil
+	}
+
+	utils.InfoLogger.Printf("Found newer version of SF Server - Installed %d, Available: %d", installedVer, avaliableVer)
+	return install()
 }
 
 func AutoRestart() error {

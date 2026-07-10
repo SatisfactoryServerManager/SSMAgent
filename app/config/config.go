@@ -34,7 +34,6 @@ type Backup struct {
 
 type SFConfig struct {
 	PortOffset            int     `json:"portOffset"`
-	UpdateSFOnStart       bool    `json:"updateSFOnStart"`
 	AutoRestart           bool    `json:"autoRestart"`
 	AutoPause             bool    `json:"autoPause"`
 	AutoSaveOnDisconnect  bool    `json:"autoSaveOnDisconnect"`
@@ -114,10 +113,6 @@ func SetDefaultValues() {
 
 	_config.HomeDir = SSMHomeDir
 	_config.LogDir, _ = filepath.Abs(path.Join(SSMHomeDir, "logs"))
-
-	if _config.URL == "" {
-		_config.SF.UpdateSFOnStart = true
-	}
 
 	_config.URL = flag.Lookup("url").Value.(flag.Getter).Get().(string)
 	_config.GRPCAddress = flag.Lookup("grpcaddr").Value.(flag.Getter).Get().(string)

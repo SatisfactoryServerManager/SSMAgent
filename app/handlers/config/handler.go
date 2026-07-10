@@ -78,7 +78,6 @@ func (h *Handler) GetConfig() error {
 	config.GetConfig().SF.WorkerThreads = int(resConfig.ServerConfig.WorkerThreads)
 	config.GetConfig().SF.SFBranch = resConfig.ServerConfig.Branch
 
-	config.GetConfig().SF.UpdateSFOnStart = resConfig.ServerConfig.GetUpdateOnStart().GetValue()
 	config.GetConfig().SF.AutoRestart = resConfig.ServerConfig.GetAutoRestart().GetValue()
 	config.GetConfig().SF.AutoPause = resConfig.ServerConfig.GetAutoPause().GetValue()
 	config.GetConfig().SF.AutoSaveOnDisconnect = resConfig.ServerConfig.GetAutoSaveOnDisconnect().GetValue()
