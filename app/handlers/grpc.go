@@ -11,6 +11,7 @@ import (
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/mod"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/state"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/task"
+	taskservice "github.com/SatisfactoryServerManager/SSMAgent/app/services/task"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
@@ -80,6 +81,7 @@ func InitgRPC() error {
 	stateHandler.Run()
 
 	taskHandler = task.NewHandler(grpcConn)
+	task.SetSink(taskservice.TemporarySink{})
 	taskHandler.Run()
 
 	logHandler = log.NewHandler(grpcConn)

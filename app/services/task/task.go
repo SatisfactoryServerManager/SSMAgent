@@ -1,82 +1,17 @@
 package task
 
 import (
-	"encoding/json"
-	"errors"
+	pb "github.com/SatisfactoryServerManager/ssmcloud-resources/proto/generated"
 
-	"github.com/SatisfactoryServerManager/SSMAgent/app/services/mod"
-	"github.com/SatisfactoryServerManager/SSMAgent/app/services/sf"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
-	v2 "github.com/SatisfactoryServerManager/ssmcloud-resources/models/v2"
 )
 
-var (
-	_completedTaskIds = make([]string, 0)
-)
+// TemporarySink logs assignments and does nothing else. Replaced by the executor
+// in Task 12. It exists so this commit compiles without silently dropping work.
+type TemporarySink struct{}
 
-type UpdateModConfigData struct {
-	ModReference string `json:"modReference"`
-	ModConfig    string `json:"modConfig"`
+func (TemporarySink) Submit(a *pb.TaskAssignment) {
+	utils.WarnLogger.Printf("task %s (%s) received but executor is not implemented yet", a.TaskId, a.Action)
 }
 
-func ProcessMessageQueueItem(agentTask *v2.AgentTask) error {
-
-	AlreadyCompleted := false
-	for _, completedTaskId := range _completedTaskIds {
-		if agentTask.ID.Hex() == completedTaskId {
-			AlreadyCompleted = true
-			break
-		}
-	}
-
-	if AlreadyCompleted {
-		return nil
-	}
-
-	utils.DebugLogger.Printf("Processing Message action %s\r\n", agentTask.Action)
-
-	switch agentTask.Action {
-	case "startsfserver":
-		return sf.StartSFServer()
-	case "stopsfserver":
-		return sf.ShutdownSFServer()
-	case "killsfserver":
-		return sf.KillSFServer()
-	case "install", "installsfserver":
-		return sf.InstallSFServer(true)
-	case "updatesfserver":
-		return sf.UpdateSFServer()
-	case "updateModConfig":
-		var objmap []map[string]string
-		b, _ := json.Marshal(agentTask.Data)
-		json.Unmarshal(b, &objmap)
-
-		var configData UpdateModConfigData
-
-		for _, d := range objmap {
-			if string(d["Key"]) == "modReference" {
-				configData.ModReference = string(d["Value"])
-			}
-			if string(d["Key"]) == "modConfig" {
-				configData.ModConfig = string(d["Value"])
-			}
-		}
-
-		return mod.UpdateModConfigFile(configData.ModReference, configData.ModConfig)
-	case "claimserver":
-
-		type ClaimData struct {
-			AdminPassword  string `json:"adminpass"`
-			ClientPassword string `json:"clientpass"`
-		}
-
-		var objData ClaimData
-
-		b, _ := json.Marshal(agentTask.Data)
-		json.Unmarshal(b, &objData)
-
-		return sf.ClaimServer(objData.AdminPassword, objData.ClientPassword)
-	default:
-		return errors.New("unknown task action")
-	}
-}
+func (TemporarySink) RunningTask() (string, string) { return "", "" }

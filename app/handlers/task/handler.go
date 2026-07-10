@@ -2,130 +2,160 @@ package task
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
+	"io"
+	"sync"
 	"time"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
-	"github.com/SatisfactoryServerManager/SSMAgent/app/services/task"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
-	v2 "github.com/SatisfactoryServerManager/ssmcloud-resources/models/v2"
 	pb "github.com/SatisfactoryServerManager/ssmcloud-resources/proto/generated"
-	pbModels "github.com/SatisfactoryServerManager/ssmcloud-resources/proto/generated/models"
-	"go.mongodb.org/mongo-driver/v2/bson"
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
 
 type Handler struct {
-	conn       *grpc.ClientConn
-	client     pb.AgentTaskServiceClient
-	context    context.Context
+	conn   *grpc.ClientConn
+	client pb.AgentTaskServiceClient
+
+	connectionID string
+
+	mu        sync.Mutex
+	accepting bool
+
 	masterDone chan struct{}
+	stopOnce   sync.Once
 }
 
+// Sink receives assignments from the stream. The executor implements it (Task 12).
+type Sink interface {
+	Submit(a *pb.TaskAssignment)
+	RunningTask() (taskID string, leaseToken string)
+}
+
+var sink Sink
+
+func SetSink(s Sink) { sink = s }
+
 func contextWithAPIKey(ctx context.Context) context.Context {
-	apiKey := config.GetConfig().APIKey
-	return metadata.AppendToOutgoingContext(ctx, "x-api-key", apiKey)
+	return metadata.AppendToOutgoingContext(ctx, "x-api-key", config.GetConfig().APIKey)
 }
 
 func NewHandler(conn *grpc.ClientConn) *Handler {
-	ctx := contextWithAPIKey(context.Background())
 	return &Handler{
-		conn:       conn,
-		client:     pb.NewAgentTaskServiceClient(conn),
-		context:    ctx,
-		masterDone: make(chan struct{}),
+		conn:         conn,
+		client:       pb.NewAgentTaskServiceClient(conn),
+		connectionID: uuid.NewString(),
+		accepting:    true,
+		masterDone:   make(chan struct{}),
 	}
 }
 
+func (h *Handler) Client() pb.AgentTaskServiceClient { return h.client }
+
+func (h *Handler) Context() context.Context { return contextWithAPIKey(context.Background()) }
+
 func (h *Handler) Run() {
-	go h.PollTasks()
+	go h.subscribeLoop()
 }
 
-func (h *Handler) PollTasks() {
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
+// StopAccepting closes the subscription so no further assignments arrive. The
+// executor drains separately, so an in-flight task keeps running.
+func (h *Handler) StopAccepting(ctx context.Context) error {
+	h.mu.Lock()
+	h.accepting = false
+	h.mu.Unlock()
+
+	utils.InfoLogger.Println("Task client stopped accepting new tasks")
+	return nil
+}
+
+func (h *Handler) isAccepting() bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.accepting
+}
+
+func (h *Handler) subscribeLoop() {
+	backoff := time.Second
 
 	for {
 		select {
-		case <-ticker.C:
-			tasks, err := h.GetTasks()
-			if err != nil {
-				utils.ErrorLogger.Println(err.Error())
-			}
-
-			for idx := range tasks {
-				theTask := &tasks[idx]
-				if err := task.ProcessMessageQueueItem(theTask); err != nil {
-					utils.ErrorLogger.Printf("Error processing task item %s (%s) with error: %s\r\n", theTask.Action, theTask.ID.Hex(), err.Error())
-					h.MarkAgentTaskFailed(&pb.AgentTaskFailedRequest{Id: theTask.ID.Hex()})
-					continue
-				}
-				h.MarkAgentTaskCompleted(&pb.AgentTaskCompletedRequest{Id: theTask.ID.Hex()})
-			}
 		case <-h.masterDone:
-			ticker.Stop()
+			return
+		default:
+		}
+
+		if !h.isAccepting() {
 			return
 		}
+
+		if err := h.subscribe(); err != nil && err != io.EOF {
+			utils.ErrorLogger.Printf("task stream error: %s", err.Error())
+		}
+
+		select {
+		case <-h.masterDone:
+			return
+		case <-time.After(backoff):
+		}
+
+		backoff *= 2
+		if backoff > 15*time.Second {
+			backoff = 15 * time.Second
+		}
 	}
 }
 
-func (h *Handler) GetTasks() ([]v2.AgentTask, error) {
-	resp, err := h.client.GetAgentTasks(h.context, &pbModels.SSMEmpty{})
-	if err != nil {
-		return nil, fmt.Errorf("error getting agent tasks with error: %s", err.Error())
+func (h *Handler) subscribe() error {
+	ctx, cancel := context.WithCancel(contextWithAPIKey(context.Background()))
+	defer cancel()
+
+	go func() {
+		<-h.masterDone
+		cancel()
+	}()
+
+	req := &pb.SubscribeTasksRequest{
+		AgentVersion: config.GetConfig().Version,
+		ConnectionId: h.connectionID,
 	}
 
-	tasks := make([]v2.AgentTask, 0)
-	for _, t := range resp.Tasks {
-		// parse ObjectID
-		objID, err := bson.ObjectIDFromHex(t.Id)
+	if sink != nil {
+		req.RunningTaskId, req.RunningLeaseToken = sink.RunningTask()
+	}
+
+	stream, err := h.client.SubscribeTasks(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	utils.InfoLogger.Println("Subscribed to agent task stream")
+
+	for {
+		assignment, err := stream.Recv()
 		if err != nil {
-			fmt.Println("Invalid task ID:", t.Id)
+			return err
+		}
+
+		if !h.isAccepting() {
+			return nil
+		}
+
+		utils.InfoLogger.Printf("Received task %s (%s)", assignment.TaskId, assignment.Action)
+
+		if sink == nil {
+			utils.ErrorLogger.Println("No task sink registered, dropping assignment")
 			continue
 		}
-
-		// parse Data JSON into a map or concrete struct
-		var data interface{}
-		if t.Data != "" {
-			err := json.Unmarshal([]byte(t.Data), &data)
-			if err != nil {
-				fmt.Println("Failed to unmarshal data:", err)
-			}
-		}
-
-		task := v2.AgentTask{
-			ID:        objID,
-			Action:    t.Action,
-			Data:      data,
-			Completed: t.Completed,
-			Retries:   int(t.Retries),
-		}
-		tasks = append(tasks, task)
+		sink.Submit(assignment)
 	}
-
-	return tasks, nil
-}
-
-func (h *Handler) MarkAgentTaskCompleted(req *pb.AgentTaskCompletedRequest) error {
-	_, err := h.client.MarkAgentTaskCompleted(
-		h.context,
-		req,
-	)
-	return err
-}
-
-func (h *Handler) MarkAgentTaskFailed(req *pb.AgentTaskFailedRequest) error {
-	_, err := h.client.MarkAgentTaskFailed(
-		h.context,
-		req,
-	)
-	return err
 }
 
 func (h *Handler) Stop() {
-	utils.DebugLogger.Println("Stopping Task Handler")
-	close(h.masterDone)
-	utils.DebugLogger.Println("Stopped Task Handler")
+	h.stopOnce.Do(func() {
+		utils.DebugLogger.Println("Stopping Task Handler")
+		close(h.masterDone)
+		utils.DebugLogger.Println("Stopped Task Handler")
+	})
 }
