@@ -112,8 +112,11 @@ func (h *Handler) subscribe() error {
 	defer cancel()
 
 	go func() {
-		<-h.masterDone
-		cancel()
+		select {
+		case <-h.masterDone:
+			cancel()
+		case <-ctx.Done():
+		}
 	}()
 
 	req := &pb.SubscribeTasksRequest{
