@@ -18,7 +18,9 @@ type Handler struct {
 	conn   *grpc.ClientConn
 	client pb.AgentTaskServiceClient
 
-	connectionID string
+	// sessionID identifies this agent process, not one stream. It stays fixed
+	// across reconnects so the backend can scope once-per-boot work to it.
+	sessionID string
 
 	mu        sync.Mutex
 	accepting bool
@@ -43,11 +45,11 @@ func contextWithAPIKey(ctx context.Context) context.Context {
 
 func NewHandler(conn *grpc.ClientConn) *Handler {
 	return &Handler{
-		conn:         conn,
-		client:       pb.NewAgentTaskServiceClient(conn),
-		connectionID: uuid.NewString(),
-		accepting:    true,
-		masterDone:   make(chan struct{}),
+		conn:       conn,
+		client:     pb.NewAgentTaskServiceClient(conn),
+		sessionID:  uuid.NewString(),
+		accepting:  true,
+		masterDone: make(chan struct{}),
 	}
 }
 
@@ -90,8 +92,17 @@ func (h *Handler) subscribeLoop() {
 			return
 		}
 
-		if err := h.subscribe(); err != nil && err != io.EOF {
+		established, err := h.subscribe()
+		if err != nil && err != io.EOF {
 			utils.ErrorLogger.Printf("task stream error: %s", err.Error())
+		}
+
+		// A stream that came up and later dropped is not evidence the backend is
+		// unhealthy, so it must not inherit the previous run's backoff. Without
+		// this reset an agent ratchets to the cap and never comes back down,
+		// leaving every later blip a 15s gap in task dispatch.
+		if established {
+			backoff = time.Second
 		}
 
 		select {
@@ -107,7 +118,9 @@ func (h *Handler) subscribeLoop() {
 	}
 }
 
-func (h *Handler) subscribe() error {
+// subscribe reports whether the stream was successfully opened, so the caller
+// can tell "backend refused the connection" from "a live stream dropped".
+func (h *Handler) subscribe() (bool, error) {
 	ctx, cancel := context.WithCancel(contextWithAPIKey(context.Background()))
 	defer cancel()
 
@@ -121,7 +134,7 @@ func (h *Handler) subscribe() error {
 
 	req := &pb.SubscribeTasksRequest{
 		AgentVersion: config.GetConfig().Version,
-		ConnectionId: h.connectionID,
+		SessionId:    h.sessionID,
 	}
 
 	if sink != nil {
@@ -130,7 +143,15 @@ func (h *Handler) subscribe() error {
 
 	stream, err := h.client.SubscribeTasks(ctx, req)
 	if err != nil {
-		return err
+		return false, err
+	}
+
+	// SubscribeTasks returns before the server has accepted anything, so an auth
+	// or dispatch failure would otherwise only surface on the first Recv. The
+	// server flushes headers once it has registered the stream; block on them so
+	// a genuine subscription can be told apart from a rejected one.
+	if _, err := stream.Header(); err != nil {
+		return false, err
 	}
 
 	utils.InfoLogger.Println("Subscribed to agent task stream")
@@ -138,11 +159,11 @@ func (h *Handler) subscribe() error {
 	for {
 		assignment, err := stream.Recv()
 		if err != nil {
-			return err
+			return true, err
 		}
 
 		if !h.isAccepting() {
-			return nil
+			return true, nil
 		}
 
 		utils.InfoLogger.Printf("Received task %s (%s)", assignment.TaskId, assignment.Action)
