@@ -5,7 +5,8 @@ param(
     [String]$SSMGRPCADDR="",
     [String]$SSMAPIKEY="",
     [String]$MEMORY=1073741824,
-    [switch]$NoDockerInstall = $false
+    [switch]$NoDockerInstall = $false,
+    [switch]$GRPCInsecure = $false
 )
 
 
@@ -197,11 +198,17 @@ if($DOCKEREXISTS -eq $True){
 
 write-host "* Starting docker container"
 
+$insecureEnv = ""
+if($GRPCInsecure -eq $true){
+    $insecureEnv = "-eSSM_INSECURE=true"
+}
+
 docker run -d `
 -e SSM_NAME="$($AGENTNAME)" `
 -e SSM_URL="$($SSMURL)" `
 -e SSM_GRPCADDR="${SSMGRPCADDR}" `
 -e SSM_APIKEY="$($SSMAPIKEY)" `
+$insecureEnv `
 -p "$($PORT):7777/udp" `
 -p "$($PORT):7777/tcp" `
 -v "C:\SSMAgent\$($AGENTNAME)\SSM:/home/ssm/SSM/Agents/$($AGENTNAME)" `
