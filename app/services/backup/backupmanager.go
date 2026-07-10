@@ -14,6 +14,7 @@ import (
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/file"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/services/lock"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/savemanager"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 	pb "github.com/SatisfactoryServerManager/ssmcloud-resources/proto/generated"
@@ -66,6 +67,12 @@ type zipFile struct {
 }
 
 func CreateBackupFile() error {
+	if !lock.TryServer() {
+		utils.DebugLogger.Println("Backup skipped: server is locked by another operation")
+		return nil
+	}
+	defer lock.Server.Unlock()
+
 	t := time.Now()
 
 	formatted := fmt.Sprintf("%d-%02d-%02d_%02d%02d",

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/file"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/services/lock"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/types"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 	pb "github.com/SatisfactoryServerManager/ssmcloud-resources/proto/generated"
@@ -118,6 +119,9 @@ func UploadSaveFile(filePath string) error {
 }
 
 func DownloadSaveFile(fileName string) error {
+
+	lock.Server.Lock()
+	defer lock.Server.Unlock()
 
 	fileName = strings.Replace(fileName, "\"", "", -1)
 	utils.DebugLogger.Printf("Downloading Save File: %s\r\n", fileName)

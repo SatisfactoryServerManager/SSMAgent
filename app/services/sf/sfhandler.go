@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/services/lock"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/state"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/steamcmd"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
@@ -147,6 +148,12 @@ func UpdateSFServer() error {
 }
 
 func AutoRestart() error {
+
+	if !lock.TryServer() {
+		utils.DebugLogger.Println("AutoRestart skipped: server is locked by another operation")
+		return nil
+	}
+	defer lock.Server.Unlock()
 
 	if IsRunning() {
 		if attemptingToAutoRestart {
