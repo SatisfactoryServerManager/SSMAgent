@@ -25,6 +25,7 @@ import (
 var (
 	stateHandler  *state.Handler
 	taskHandler   *task.Handler
+	taskExecutor  *taskservice.Executor
 	logHandler    *log.Handler
 	configHandler *config.Handler
 	modHandler    *mod.Handler
@@ -82,7 +83,12 @@ func InitgRPC() error {
 	stateHandler.Run()
 
 	taskHandler = task.NewHandler(grpcConn)
-	task.SetSink(taskservice.TemporarySink{})
+
+	taskservice.RegisterDefaults()
+	taskExecutor = taskservice.NewExecutor(taskHandler.Client(), taskHandler.Context())
+	taskExecutor.Start()
+
+	task.SetSink(taskExecutor)
 	taskHandler.Run()
 
 	logHandler = log.NewHandler(grpcConn)
@@ -111,7 +117,10 @@ func StopAcceptingTasks(ctx context.Context) error {
 // DrainTasks releases the running task back to the queue so another agent run
 // picks it up rather than waiting out its lease.
 func DrainTasks(ctx context.Context) error {
-	return nil
+	if taskExecutor == nil {
+		return nil
+	}
+	return taskExecutor.DrainAndRelease(ctx)
 }
 
 func ShutdownGRPCClient() error {
