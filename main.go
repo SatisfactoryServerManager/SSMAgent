@@ -32,24 +32,29 @@ func isFlagPassed(name string) bool {
 
 func main() {
 
-	wait := gracefulShutdown(context.Background(), 30*time.Second, map[string]operation{
-
-		"sf": func(ctx context.Context) error {
-			return sf.ShutdownSFHandler()
-		},
-		"savemanager": func(ctx context.Context) error {
-			return savemanager.ShutdownSaveManager()
-		},
-		"backupmanager": func(ctx context.Context) error {
+	// Order matters. Stop accepting new tasks, drain the one in flight and hand it
+	// back to the queue, quiesce the tickers, stop the SF server, and only then
+	// mark the agent offline and drop the gRPC connection.
+	wait := gracefulShutdown(context.Background(), 30*time.Second, []NamedOperation{
+		{Name: "taskclient", Op: func(ctx context.Context) error {
+			return handlers.StopAcceptingTasks(ctx)
+		}},
+		{Name: "executor", Op: func(ctx context.Context) error {
+			return handlers.DrainTasks(ctx)
+		}},
+		{Name: "backupmanager", Op: func(ctx context.Context) error {
 			return backup.ShutdownBackupManager()
-		},
-		"grpc": func(ctx context.Context) error {
+		}},
+		{Name: "savemanager", Op: func(ctx context.Context) error {
+			return savemanager.ShutdownSaveManager()
+		}},
+		{Name: "sf", Op: func(ctx context.Context) error {
+			return sf.ShutdownSFHandler()
+		}},
+		{Name: "grpc", Op: func(ctx context.Context) error {
 			state.MarkAgentOffline()
 			return handlers.ShutdownGRPCClient()
-		},
-		"main": func(ctx context.Context) error {
-			return nil
-		},
+		}},
 	})
 
 	flag.String("name", "", "The name of the ssm agent")

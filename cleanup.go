@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 
@@ -14,8 +13,16 @@ import (
 // operation is a clean up function on shutting down
 type operation func(ctx context.Context) error
 
-// gracefulShutdown waits for termination syscalls and doing clean up operations after received it
-func gracefulShutdown(ctx context.Context, timeout time.Duration, ops map[string]operation) <-chan struct{} {
+// NamedOperation is one shutdown step. Order matters: the task executor must
+// drain before the SF server stops, and the gRPC stream must close last. A map
+// could not express that.
+type NamedOperation struct {
+	Name string
+	Op   operation
+}
+
+// gracefulShutdown waits for a termination syscall, then runs ops in the order given.
+func gracefulShutdown(ctx context.Context, timeout time.Duration, ops []NamedOperation) <-chan struct{} {
 	wait := make(chan struct{})
 	go func() {
 		s := make(chan os.Signal, 1)
@@ -34,26 +41,17 @@ func gracefulShutdown(ctx context.Context, timeout time.Duration, ops map[string
 
 		defer timeoutFunc.Stop()
 
-		var wg sync.WaitGroup
+		for _, entry := range ops {
+			utils.InfoLogger.Printf("cleaning up: %s", entry.Name)
 
-		// Do the operations asynchronously to save time
-		for key, op := range ops {
-			wg.Add(1)
-			innerOp := op
-			innerKey := key
-			go func() {
-				defer wg.Done()
+			// A failed step must not abort the rest: the later steps are the ones
+			// that release the in-flight task and mark the agent offline.
+			if err := entry.Op(ctx); err != nil {
+				utils.InfoLogger.Printf("%s: clean up failed: %s", entry.Name, err.Error())
+				continue
+			}
 
-				utils.InfoLogger.Printf("cleaning up: %s", innerKey)
-				if err := innerOp(ctx); err != nil {
-					utils.InfoLogger.Printf("%s: clean up failed: %s", innerKey, err.Error())
-					return
-				}
-
-				utils.InfoLogger.Printf("%s was shutdown gracefully", innerKey)
-			}()
-
-			wg.Wait()
+			utils.InfoLogger.Printf("%s was shutdown gracefully", entry.Name)
 		}
 
 		close(wait)

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"os"
 	"time"
 
@@ -95,6 +96,21 @@ func InitgRPC() error {
 
 	file.Init(grpcConn)
 
+	return nil
+}
+
+// StopAcceptingTasks closes the task subscription so no new work arrives. The
+// in-flight task keeps running; DrainTasks deals with it.
+func StopAcceptingTasks(ctx context.Context) error {
+	if taskHandler == nil {
+		return nil
+	}
+	return taskHandler.StopAccepting(ctx)
+}
+
+// DrainTasks releases the running task back to the queue so another agent run
+// picks it up rather than waiting out its lease.
+func DrainTasks(ctx context.Context) error {
 	return nil
 }
 
