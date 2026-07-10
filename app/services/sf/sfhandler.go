@@ -151,6 +151,14 @@ func UpdateSFServer() error {
 		return errors.New("cannot update: SF server is not installed")
 	}
 
+	// Updating over a live install rewrites files the running server holds open.
+	// Skipping rather than failing is deliberate: the boot update fires on every
+	// subscribe, and failing here would burn the task's whole attempt budget.
+	if IsRunning() {
+		utils.InfoLogger.Println("SF Server is running, skipping update")
+		return nil
+	}
+
 	installedVer := config.GetConfig().SF.InstalledVer
 	avaliableVer := config.GetConfig().SF.AvilableVer
 
