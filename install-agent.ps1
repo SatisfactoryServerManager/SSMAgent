@@ -6,7 +6,8 @@ param(
     [String]$SSMAPIKEY="",
     [String]$MEMORY=1073741824,
     [switch]$NoDockerInstall = $false,
-    [switch]$GRPCInsecure = $false
+    [switch]$GRPCInsecure = $false,
+    [switch]$UseDevImage = $false
 )
 
 
@@ -185,6 +186,9 @@ if($NoDockerInstall){
 
 
 $DOCKER_IMG="mrhid6/ssmagent:latest"
+if($UseDevImage -eq $true){
+    $DOCKER_IMG="mrhid6/ssmagent:dev"
+}
 
 write-host "* Pulling Docker Image.."
 docker pull -q $DOCKER_IMG
@@ -198,7 +202,7 @@ if($DOCKEREXISTS -eq $True){
 
 write-host "* Starting docker container"
 
-$insecureEnv = ""
+$insecureEnv = "-eSSM_INSECURE=false"
 if($GRPCInsecure -eq $true){
     $insecureEnv = "-eSSM_INSECURE=true"
 }
