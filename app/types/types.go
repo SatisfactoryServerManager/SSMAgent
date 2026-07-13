@@ -50,9 +50,13 @@ type InstalledMod struct {
 	ModDisplayName  string `json:"FriendlyName"`
 	ModUPluginPath  string
 	ModVersion      string `json:"SemVersion"`
+	GameFeature     bool   `json:"GameFeature"`
 	ShouldUninstall bool
 }
 
+// UPluginFile is the mod's .uplugin manifest. GameFeature decides where the mod
+// has to live: the game only loads a game feature plugin from Mods/GameFeatures.
 type UPluginFile struct {
-	SemVersion string `json:"SemVersion"`
+	SemVersion  string `json:"SemVersion"`
+	GameFeature bool   `json:"GameFeature"`
 }

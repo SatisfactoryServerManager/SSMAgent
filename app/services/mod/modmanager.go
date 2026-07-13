@@ -21,15 +21,57 @@ import (
 	"golang.org/x/mod/semver"
 )
 
+// GameFeaturesDirName is the subdirectory of Mods that the game loads game
+// feature plugins from. A game feature mod placed alongside the ordinary mods is
+// simply never loaded.
+const GameFeaturesDirName = "GameFeatures"
+
+func gameFeaturesDir() string {
+	return filepath.Join(config.GetConfig().ModsDir, GameFeaturesDirName)
+}
+
+// modInstallDir is where a mod belongs, given its GameFeature flag.
+func modInstallDir(modReference string, gameFeature bool) string {
+	if gameFeature {
+		return filepath.Join(gameFeaturesDir(), modReference)
+	}
+	return filepath.Join(config.GetConfig().ModsDir, modReference)
+}
+
+// findModDir returns the directory a mod is actually installed in, checking both
+// layouts. A mod that changes its GameFeature flag between versions moves, so its
+// location on disk cannot be inferred from the manifest we are about to install.
+func findModDir(modReference string) (string, bool) {
+	for _, gameFeature := range []bool{false, true} {
+		dir := modInstallDir(modReference, gameFeature)
+
+		if utils.CheckFileExists(filepath.Join(dir, modReference+".uplugin")) {
+			return dir, true
+		}
+	}
+	return "", false
+}
+
 func FindModsOnDisk() []types.InstalledMod {
 
 	installedMods := make([]types.InstalledMod, 0)
 
-	//utils.DebugLogger.Printf("Finding Mods in: %s\r\n", config.GetConfig().ModsDir)
+	installedMods = append(installedMods, findModsInDir(config.GetConfig().ModsDir)...)
+	installedMods = append(installedMods, findModsInDir(gameFeaturesDir())...)
 
-	files, err := os.ReadDir(config.GetConfig().ModsDir)
+	return installedMods
+}
+
+func findModsInDir(dir string) []types.InstalledMod {
+
+	installedMods := make([]types.InstalledMod, 0)
+
+	files, err := os.ReadDir(dir)
 	if err != nil {
-		utils.ErrorLogger.Printf("error cant open mods directory %s\r\n", err.Error())
+		// GameFeatures only exists once a game feature mod has been installed.
+		if !os.IsNotExist(err) {
+			utils.ErrorLogger.Printf("error cant open mods directory %s\r\n", err.Error())
+		}
 		return installedMods
 	}
 
@@ -39,7 +81,13 @@ func FindModsOnDisk() []types.InstalledMod {
 		}
 
 		modName := file.Name()
-		modPath := filepath.Join(config.GetConfig().ModsDir, modName)
+
+		// GameFeatures is a container, not a mod. It is scanned separately.
+		if modName == GameFeaturesDirName {
+			continue
+		}
+
+		modPath := filepath.Join(dir, modName)
 		UPluginPath := filepath.Join(modPath, modName+".uplugin")
 
 		if !utils.CheckFileExists(UPluginPath) {
@@ -56,8 +104,6 @@ func FindModsOnDisk() []types.InstalledMod {
 		_ = json.Unmarshal([]byte(file), &newInstalledMod)
 
 		installedMods = append(installedMods, newInstalledMod)
-
-		//utils.DebugLogger.Printf("Found Mod (%s - %s) at %s\n", modName, newInstalledMod.ModVersion, modPath)
 	}
 
 	return installedMods
@@ -159,10 +205,8 @@ func InstallAllMods(modConfig *v2.AgentModConfig) error {
 		ModFileName := selectedMod.Mod.ModReference + "." + modVersion.Version + ".zip"
 		DownloadedModFilePath := filepath.Join(ModCachePatch, ModFileName)
 
-		modPath := filepath.Join(config.GetConfig().ModsDir, selectedMod.Mod.ModReference)
-
-		if err := ExtractArchive(DownloadedModFilePath, modPath); err != nil {
-			return fmt.Errorf("error extracting mod zip file with error: %s", err.Error())
+		if err := InstallModArchive(DownloadedModFilePath, selectedMod.Mod.ModReference); err != nil {
+			return fmt.Errorf("error installing mod zip file with error: %s", err.Error())
 		}
 
 		if err := CheckSelectedModInstalledOnDisk(selectedMod); err != nil {
@@ -171,6 +215,74 @@ func InstallAllMods(modConfig *v2.AgentModConfig) error {
 	}
 
 	return nil
+}
+
+// InstallModArchive unpacks a mod and puts it where the game will load it from.
+//
+// The GameFeature flag lives in the .uplugin inside the archive, so the target
+// directory is not known until the archive has been unpacked. Extract to a
+// staging directory first, read the manifest, then move it into place.
+func InstallModArchive(modFilePath string, modReference string) error {
+
+	staging := filepath.Join(config.GetConfig().DataDir, "modcache", ".staging", modReference)
+	defer os.RemoveAll(staging)
+
+	if err := ExtractArchive(modFilePath, staging); err != nil {
+		return err
+	}
+
+	gameFeature, err := IsGameFeatureMod(staging, modReference)
+	if err != nil {
+		return err
+	}
+
+	// The flag can change between versions, so clear both layouts. Leaving the old
+	// copy behind would load the mod twice, or load the stale one.
+	for _, gf := range []bool{false, true} {
+		if err := os.RemoveAll(modInstallDir(modReference, gf)); err != nil {
+			return err
+		}
+	}
+
+	modPath := modInstallDir(modReference, gameFeature)
+
+	if err := os.MkdirAll(filepath.Dir(modPath), os.ModePerm); err != nil {
+		return err
+	}
+
+	if err := os.Rename(staging, modPath); err != nil {
+		return err
+	}
+
+	if gameFeature {
+		utils.InfoLogger.Printf("Installed game feature mod (%s) to %s\r\n", modReference, modPath)
+	} else {
+		utils.InfoLogger.Printf("Installed mod (%s) to %s\r\n", modReference, modPath)
+	}
+
+	return nil
+}
+
+// IsGameFeatureMod reads the GameFeature flag out of an unpacked mod's manifest.
+func IsGameFeatureMod(modDirectory string, modReference string) (bool, error) {
+
+	UPluginPath := filepath.Join(modDirectory, modReference+".uplugin")
+
+	if !utils.CheckFileExists(UPluginPath) {
+		return false, fmt.Errorf("mod (%s) has no %s.uplugin", modReference, modReference)
+	}
+
+	b, err := os.ReadFile(UPluginPath)
+	if err != nil {
+		return false, err
+	}
+
+	var UPluginData = types.UPluginFile{}
+	if err := json.Unmarshal(b, &UPluginData); err != nil {
+		return false, err
+	}
+
+	return UPluginData.GameFeature, nil
 }
 
 func ExtractArchive(modFilePath string, modDirectory string) error {
@@ -197,8 +309,10 @@ func ExtractArchive(modFilePath string, modDirectory string) error {
 		filePath := filepath.Join(modDirectory, f.Name)
 		utils.DebugLogger.Println("unzipping file ", filePath)
 
+		// Returning nil here would abandon the extraction half-done and report
+		// success, leaving a partial mod on disk.
 		if !strings.HasPrefix(filePath, filepath.Clean(modDirectory)+string(os.PathSeparator)) {
-			return nil
+			return fmt.Errorf("mod archive contains an illegal path: %s", f.Name)
 		}
 		if f.FileInfo().IsDir() {
 			os.MkdirAll(filePath, os.ModePerm)
@@ -302,21 +416,17 @@ func UninstallMod(modReference string) error {
 func CheckSelectedModInstalledOnDisk(selectedMod *v2.AgentModConfigSelectedModSchema) error {
 	utils.CreateFolder(config.GetConfig().ModsDir)
 
-	modPath := filepath.Join(config.GetConfig().ModsDir, selectedMod.Mod.ModReference)
+	// A game feature mod lives under Mods/GameFeatures, so looking only in Mods
+	// would report it missing and reinstall it on every pass.
+	modPath, found := findModDir(selectedMod.Mod.ModReference)
 
-	if !utils.CheckFileExists(modPath) {
+	if !found {
 		selectedMod.Installed = false
 		selectedMod.InstalledVersion = "0.0.0"
 		return nil
 	}
 
 	UPluginPath := filepath.Join(modPath, selectedMod.Mod.ModReference+".uplugin")
-
-	if !utils.CheckFileExists(UPluginPath) {
-		selectedMod.Installed = false
-		selectedMod.InstalledVersion = "0.0.0"
-		return nil
-	}
 
 	var UPluginData = types.UPluginFile{}
 
