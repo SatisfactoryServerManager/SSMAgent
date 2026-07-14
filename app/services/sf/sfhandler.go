@@ -20,6 +20,12 @@ import (
 	"github.com/shirou/gopsutil/process"
 )
 
+const (
+	startupTimeout  = 2 * time.Minute
+	shutdownTimeout = 1 * time.Minute
+	pollInterval    = 2 * time.Second
+)
+
 var (
 	SF_PID                  int32   = -1
 	SF_SUB_PID              int32   = -1
@@ -27,7 +33,6 @@ var (
 	cpu                     float64 = 0.0
 	mem                     float32 = 0.0
 	shouldBeRunning                 = false
-	attemptingToAutoRestart         = false
 )
 
 func InitSFHandler() {
@@ -180,13 +185,10 @@ func AutoRestart() error {
 	defer lock.Server.Unlock()
 
 	if IsRunning() {
-		if attemptingToAutoRestart {
-			attemptingToAutoRestart = false
-		}
 		return nil
 	}
 
-	if !shouldBeRunning || attemptingToAutoRestart {
+	if !shouldBeRunning {
 		return nil
 	}
 
@@ -195,21 +197,18 @@ func AutoRestart() error {
 	}
 
 	utils.InfoLogger.Println("Server may have crashed.. Auto restarting..")
-	attemptingToAutoRestart = true
+
+	// Kill and Start both clear/set shouldBeRunning, so a failed restart would
+	// otherwise leave it false and this function would never try again for a
+	// server the user never asked to stop. Keep the intent pinned across the
+	// whole attempt and let the next tick retry.
+	defer func() { shouldBeRunning = true }()
 
 	if err := KillSFServer(); err != nil {
-		attemptingToAutoRestart = false
 		return err
 	}
 
-	if err := StartSFServer(); err != nil {
-		attemptingToAutoRestart = false
-		return err
-	}
-
-	attemptingToAutoRestart = false
-
-	return nil
+	return StartSFServer()
 }
 
 func StartSFServer() error {
@@ -242,8 +241,9 @@ func StartSFServer() error {
 
 	cmd.Process.Release()
 
-	time.Sleep(5 * time.Second)
-	SF_PID = GetSFPID()
+	if err := waitForServerState(true, startupTimeout); err != nil {
+		return err
+	}
 
 	utils.InfoLogger.Println("Started SF Server")
 	utils.InfoLogger.Printf("Started process with pid: %d\r\n", SF_PID)
@@ -273,11 +273,18 @@ func ShutdownSFServer() error {
 		return err
 	}
 
-	err = newProcess.Terminate()
-	SF_PID = GetSFPID()
-	utils.InfoLogger.Println("SF Server is now shutdown")
+	if err := newProcess.Terminate(); err != nil {
+		return err
+	}
+
 	shouldBeRunning = false
-	return err
+
+	if err := waitForServerState(false, shutdownTimeout); err != nil {
+		return err
+	}
+
+	utils.InfoLogger.Println("SF Server is now shutdown")
+	return nil
 }
 
 func KillSFServer() error {
@@ -298,13 +305,44 @@ func KillSFServer() error {
 		return err
 	}
 
-	err = newProcess.Kill()
-	SF_PID = GetSFPID()
-	utils.InfoLogger.Println("SF Server is now killed")
+	if err := newProcess.Kill(); err != nil {
+		return err
+	}
 
 	shouldBeRunning = false
 
-	return err
+	if err := waitForServerState(false, shutdownTimeout); err != nil {
+		return err
+	}
+
+	utils.InfoLogger.Println("SF Server is now killed")
+	return nil
+}
+
+// waitForServerState polls until the SF process is present (running=true) or
+// gone (running=false), refreshing SF_PID as it goes. Callers rely on the
+// process having actually reached the state before they report success, so a
+// timeout here is a real failure rather than something to log and move past.
+func waitForServerState(running bool, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+
+	for {
+		SF_PID = GetSFPID()
+		if IsRunning() == running {
+			SendStates()
+			return nil
+		}
+
+		if time.Now().After(deadline) {
+			SendStates()
+			if running {
+				return fmt.Errorf("sf server did not start within %s", timeout)
+			}
+			return fmt.Errorf("sf server did not shut down within %s", timeout)
+		}
+
+		time.Sleep(pollInterval)
+	}
 }
 
 func GetLatestedVersion() {

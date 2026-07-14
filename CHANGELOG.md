@@ -1,3 +1,6 @@
+## 1.0.85 (July 14, 2026)
+
+
 ## 1.0.84 (July 14, 2026)
   - fix: added platform to config rpc call
   - fix: clear the mod staging directory at the start of a sync
