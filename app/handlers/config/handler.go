@@ -9,6 +9,7 @@ import (
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/sf"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/vars"
 	pb "github.com/SatisfactoryServerManager/ssmcloud-resources/proto/generated"
 	pbModels "github.com/SatisfactoryServerManager/ssmcloud-resources/proto/generated/models"
 	"google.golang.org/grpc"
@@ -114,8 +115,9 @@ func (h *Handler) SendVersionAndIPAddress() error {
 	}
 
 	_, err = h.client.UpdateAgentConfigVersionIp(h.context, &pb.UpdateAgentConfigRequest{
-		Version: config.GetConfig().Version,
-		Ip:      ipAddress,
+		Version:  config.GetConfig().Version,
+		Ip:       ipAddress,
+		Platform: vars.PlatformFolder,
 	})
 
 	if err != nil {
