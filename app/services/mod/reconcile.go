@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -65,15 +66,47 @@ func PlanSync(onDisk []types.InstalledMod, lf v2.Lockfile) SyncPlan {
 	return plan
 }
 
+// serverRunning is sf.IsRunning, indirected through a package variable purely so
+// the guard below is testable. Nothing but the test may reassign it.
+var serverRunning = sf.IsRunning
+
+// downloadFile is api.DownloadNonSSMFile, indirected for the same reason.
+var downloadFile = api.DownloadNonSSMFile
+
+// ErrNilMods is returned for a syncmods payload with no mods field at all.
+//
+// nil and an explicit empty slice are NOT interchangeable, exactly as in the
+// backend's agentmod.DeleteAbsent:
+//   - lf.Mods == nil means the payload was absent, null, or {} — a malformed task.
+//     Executing it would put every mod on disk into plan.Remove and uninstall the
+//     lot on what is really a bug or a truncated message. Refuse it.
+//   - lf.Mods == []v2.ModLock{} (non-nil, empty) means the backend resolved the set
+//     and it is genuinely empty — the user removed their last mod. That is a real
+//     outcome and MUST still wipe the Mods directory, or the last mod could never
+//     be removed.
+//
+// Do not "simplify" this to a len() check: the two look identical there and mean
+// opposite things.
+var ErrNilMods = errors.New("syncmods payload has no mods list; refusing to uninstall every mod")
+
 // Sync brings the Mods directory to the lockfile's desired state and returns what
 // it ended up with. The caller holds serverlock.
+//
+// On failure it returns the report ALONGSIDE the error whenever it has already
+// begun touching the disk: mods installed before the failing one are really on
+// disk at their new version, and if the caller reported nothing the backend would
+// keep believing the pre-sync installed-set until the next reconnect.
 func Sync(ctx context.Context, lf v2.Lockfile, progress func(int32, string)) ([]v2.InstalledMod, error) {
+	if lf.Mods == nil {
+		return nil, ErrNilMods
+	}
+
 	// The queue guarantees this: a syncmods task is either behind a stopsfserver in
 	// its chain, or gated on requiresServerStopped. If the server is up anyway,
 	// something is wrong, and writing the Mods directory under a live server would
 	// corrupt it. Fail loudly rather than no-op silently, which is what the old
 	// InstallAllMods did.
-	if sf.IsRunning() {
+	if serverRunning() {
 		return nil, fmt.Errorf("cannot sync mods while the satisfactory server is running")
 	}
 
@@ -88,7 +121,7 @@ func Sync(ctx context.Context, lf v2.Lockfile, progress func(int32, string)) ([]
 
 		for idx, lock := range plan.Install {
 			if err := ctx.Err(); err != nil {
-				return nil, err
+				return installedReport(lf), err
 			}
 
 			pct := int32(float64(idx) / float64(len(plan.Install)) * 100)
@@ -97,26 +130,32 @@ func Sync(ctx context.Context, lf v2.Lockfile, progress func(int32, string)) ([]
 			archive := filepath.Join(cacheDir, lock.ModReference+"."+lock.Version+".zip")
 
 			if err := download(archive, lock); err != nil {
-				return nil, err
+				return installedReport(lf), err
 			}
 
 			// An upgrade is a replace-in-place: InstallModArchive clears the old
 			// layout only once the new archive is on disk and verified.
 			if err := InstallModArchive(archive, lock.ModReference); err != nil {
-				return nil, fmt.Errorf("error installing mod %s: %w", lock.ModReference, err)
+				// The archive is unusable — an unverifiable hash-less mod whose cached
+				// bytes are an error page, say. Nothing else deletes it (the cache
+				// delete otherwise only lives on the verification path), so every later
+				// sync would re-extract the same garbage. Drop it and let the retry
+				// re-download.
+				os.Remove(archive)
+				return installedReport(lf), fmt.Errorf("error installing mod %s: %w", lock.ModReference, err)
 			}
 		}
 
 		for _, ref := range plan.Remove {
 			if err := UninstallMod(ref); err != nil {
-				return nil, fmt.Errorf("error uninstalling mod %s: %w", ref, err)
+				return installedReport(lf), fmt.Errorf("error uninstalling mod %s: %w", ref, err)
 			}
 		}
 	}
 
 	for ref, cfg := range plan.Configs {
 		if err := WriteModConfigFile(ref, cfg); err != nil {
-			return nil, err
+			return installedReport(lf), err
 		}
 	}
 
@@ -137,7 +176,7 @@ func download(path string, lock v2.ModLock) error {
 		os.Remove(path)
 	}
 
-	if err := api.DownloadNonSSMFile(lock.DownloadURL, path); err != nil {
+	if err := downloadFile(lock.DownloadURL, path); err != nil {
 		return fmt.Errorf("error downloading mod %s: %w", lock.ModReference, err)
 	}
 

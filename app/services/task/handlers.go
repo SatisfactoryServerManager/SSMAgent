@@ -6,6 +6,7 @@ import (
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/mod"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/services/sf"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 	v2 "github.com/SatisfactoryServerManager/ssmcloud-resources/models/v2"
 )
 
@@ -67,11 +68,26 @@ func RegisterDefaults() {
 			return err
 		}
 
-		installed, err := mod.Sync(ctx, lf, progress)
-		if err != nil {
-			return err
+		// Sync returns what actually landed even when it fails part-way: mods before
+		// the failing one are on disk at their new version. Report that BEFORE failing
+		// the task, or the backend keeps believing the pre-sync installed-set until
+		// the next reconnect.
+		installed, syncErr := mod.Sync(ctx, lf, progress)
+
+		// nil means Sync refused before touching anything (a malformed payload, or the
+		// server was up); an empty non-nil slice is a real "nothing is installed" and
+		// must be reported.
+		if installed != nil {
+			// The report is best effort. A failure to report must never mask the sync
+			// error that caused the task to fail.
+			if err := ReportInstalledMods(ctx, installed); err != nil {
+				utils.ErrorLogger.Printf("error reporting installed mods: %s\r\n", err.Error())
+				if syncErr == nil {
+					return err
+				}
+			}
 		}
 
-		return ReportInstalledMods(ctx, installed)
+		return syncErr
 	})
 }

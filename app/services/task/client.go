@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"errors"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
 	v2 "github.com/SatisfactoryServerManager/ssmcloud-resources/models/v2"
@@ -20,8 +21,10 @@ func SetClient(c pb.AgentTaskServiceClient) { reporter = c }
 
 // ReportInstalledMods tells the backend what is actually on the agent's disk.
 func ReportInstalledMods(ctx context.Context, mods []v2.InstalledMod) error {
+	// Returning nil here would turn a miswire into a silent success: the backend
+	// would simply never learn what is installed, with nothing in the logs.
 	if reporter == nil {
-		return nil
+		return errors.New("task client is not wired: SetClient must be called before the executor starts")
 	}
 
 	out := make([]*pb.InstalledMod, 0, len(mods))

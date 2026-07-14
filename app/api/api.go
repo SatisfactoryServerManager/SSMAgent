@@ -76,6 +76,13 @@ func DownloadNonSSMFile(url string, filePath string) error {
 	}
 	defer r.Body.Close()
 
+	// Without this, a 404/500 error page is happily written to disk and reported as
+	// a successful download. For a mod with no catalogue hash there is then nothing
+	// left to catch it, and the garbage is unzipped (or cached) forever.
+	if r.StatusCode < 200 || r.StatusCode > 299 {
+		return fmt.Errorf("download of %s failed with status %d", url, r.StatusCode)
+	}
+
 	// Create the file
 	out, err := os.Create(filePath)
 	if err != nil {

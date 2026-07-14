@@ -110,7 +110,14 @@ func findModsInDir(dir string) []types.InstalledMod {
 // staging directory first, read the manifest, then move it into place.
 func InstallModArchive(modFilePath string, modReference string) error {
 
-	staging := filepath.Join(config.GetConfig().DataDir, "modcache", ".staging", modReference)
+	// Staging lives inside ModsDir, NOT under DataDir: the final step is an
+	// os.Rename of the staging directory into ModsDir, and that rename happens
+	// AFTER the old version has been deleted. DataDir and SFDir (which ModsDir
+	// lives under) are independent flags and are on different filesystems in a
+	// normal Docker layout, where a cross-device rename fails with EXDEV — losing
+	// the mod entirely, identically on every retry. Staging under ModsDir keeps the
+	// rename intra-filesystem.
+	staging := filepath.Join(config.GetConfig().ModsDir, ".staging", modReference)
 	defer os.RemoveAll(staging)
 
 	if err := ExtractArchive(modFilePath, staging); err != nil {
