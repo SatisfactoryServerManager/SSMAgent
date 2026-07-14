@@ -1,3 +1,21 @@
+## 1.0.84 (July 14, 2026)
+  - fix: added platform to config rpc call
+  - fix: clear the mod staging directory at the start of a sync
+  - fix: make syncmods report partial progress, refuse a nil mod list, and stop losing mods on a failed install
+  - feat!: replace the mod poll loop with a syncmods task
+  - feat: install game feature mods into Mods/GameFeatures
+  - feat: Updated install script
+  - fix: skip the SF update while the server is running
+  - feat: single serial task executor with lease renewal and release
+  - fix!: run shutdown operations in declared order
+  - fix!: agent never self-installs; split install from reinstall
+  - feat: single mutex over SF install dir and process
+  - fix: send a session id and reset the reconnect backoff on a live stream
+  - fix: stop leaking a goroutine per task stream reconnect
+  - feat!: subscribe to task stream instead of polling
+  - chore: Update deps
+  - feat: Added insecure flag
+
 ## 1.0.83 (July 09, 2026)
 
 
