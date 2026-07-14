@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/SatisfactoryServerManager/SSMAgent/app/config"
+	"github.com/SatisfactoryServerManager/SSMAgent/app/services/mod"
+	taskservice "github.com/SatisfactoryServerManager/SSMAgent/app/services/task"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/utils"
 	pb "github.com/SatisfactoryServerManager/ssmcloud-resources/proto/generated"
 	"github.com/google/uuid"
@@ -155,6 +157,13 @@ func (h *Handler) subscribe() (bool, error) {
 	}
 
 	utils.InfoLogger.Println("Subscribed to agent task stream")
+
+	// Report the Mods directory as it actually is, so a mod deleted from disk by
+	// hand is noticed rather than believed installed forever. Best effort: a failure
+	// here must not tear down the subscription.
+	if err := taskservice.ReportInstalledMods(ctx, mod.ReportOnDisk()); err != nil {
+		utils.ErrorLogger.Printf("error reporting installed mods on subscribe: %s", err.Error())
+	}
 
 	for {
 		assignment, err := stream.Recv()

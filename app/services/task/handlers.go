@@ -9,12 +9,6 @@ import (
 	v2 "github.com/SatisfactoryServerManager/ssmcloud-resources/models/v2"
 )
 
-// UpdateModConfigData is the payload shape for updateModConfig.
-type UpdateModConfigData struct {
-	ModReference string `json:"modReference"`
-	ModConfig    string `json:"modConfig"`
-}
-
 // RegisterDefaults wires the action names the backend enqueues. Each handler is
 // a no-op when its post-condition already holds, which is what makes at-least-once
 // delivery safe.
@@ -65,11 +59,19 @@ func RegisterDefaults() {
 		return sf.ClaimServer(d.AdminPass, d.ClientPass)
 	})
 
-	Register("updateModConfig", func(ctx context.Context, data json.RawMessage, progress func(int32, string)) error {
-		var d UpdateModConfigData
-		if err := json.Unmarshal(data, &d); err != nil {
+	// The agent resolves nothing: the payload is a fully pinned lockfile, and the
+	// handler reconciles the Mods directory to it and reports what actually landed.
+	Register("syncmods", func(ctx context.Context, data json.RawMessage, progress func(int32, string)) error {
+		var lf v2.Lockfile
+		if err := json.Unmarshal(data, &lf); err != nil {
 			return err
 		}
-		return mod.UpdateModConfigFile(d.ModReference, d.ModConfig)
+
+		installed, err := mod.Sync(ctx, lf, progress)
+		if err != nil {
+			return err
+		}
+
+		return ReportInstalledMods(ctx, installed)
 	})
 }

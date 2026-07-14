@@ -9,7 +9,6 @@ import (
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/config"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/file"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/log"
-	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/mod"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/state"
 	"github.com/SatisfactoryServerManager/SSMAgent/app/handlers/task"
 	taskservice "github.com/SatisfactoryServerManager/SSMAgent/app/services/task"
@@ -28,7 +27,6 @@ var (
 	taskExecutor  *taskservice.Executor
 	logHandler    *log.Handler
 	configHandler *config.Handler
-	modHandler    *mod.Handler
 )
 
 func NewGRPCConnection(addr string) (*grpc.ClientConn, error) {
@@ -84,6 +82,9 @@ func InitgRPC() error {
 
 	taskHandler = task.NewHandler(grpcConn)
 
+	// Wire the client before any handler can run, so syncmods always has a way to
+	// report back what it installed.
+	taskservice.SetClient(taskHandler.Client())
 	taskservice.RegisterDefaults()
 	taskExecutor = taskservice.NewExecutor(taskHandler.Client(), taskHandler.Context())
 	taskExecutor.Start()
@@ -96,9 +97,6 @@ func InitgRPC() error {
 
 	configHandler = config.NewHandler(grpcConn)
 	configHandler.Run()
-
-	modHandler = mod.NewHandler(grpcConn)
-	modHandler.Run()
 
 	file.Init(grpcConn)
 
@@ -128,6 +126,5 @@ func ShutdownGRPCClient() error {
 	taskHandler.Stop()
 	configHandler.Stop()
 	logHandler.Stop()
-	modHandler.Stop()
 	return nil
 }

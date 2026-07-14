@@ -3,7 +3,7 @@ module github.com/SatisfactoryServerManager/SSMAgent
 go 1.26
 
 require (
-	github.com/SatisfactoryServerManager/ssmcloud-resources v0.0.92
+	github.com/SatisfactoryServerManager/ssmcloud-resources v0.0.94
 	github.com/google/uuid v1.6.0
 	github.com/hpcloud/tail v1.0.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
