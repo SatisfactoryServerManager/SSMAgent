@@ -113,6 +113,13 @@ func Sync(ctx context.Context, lf v2.Lockfile, progress func(int32, string)) ([]
 	utils.CreateFolder(config.GetConfig().ModsDir)
 	utils.CreateFolder(config.GetConfig().ModConfigsDir)
 
+	// The staging dir now lives inside ModsDir so the install rename stays on one
+	// filesystem, which means an agent killed mid-extract leaves a half-written mod
+	// inside the tree Unreal/SML enumerates for plugins. The agent's own scan cannot
+	// see it (no .staging/.staging.uplugin), so clear it here rather than trusting
+	// the previous run's defer to have survived.
+	os.RemoveAll(stagingDir())
+
 	plan := PlanSync(FindModsOnDisk(), lf)
 
 	if !plan.IsEmpty() {

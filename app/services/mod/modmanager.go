@@ -105,6 +105,14 @@ func findModsInDir(dir string) []types.InstalledMod {
 
 // InstallModArchive unpacks a mod and puts it where the game will load it from.
 //
+// stagingDir is where an archive is unpacked before it is moved into place. It is
+// invisible to findModsInDir, which requires a <dirname>/<dirname>.uplugin that
+// ".staging" can never have - so a half-extracted mod left here by a killed agent
+// is never reported as installed, and never lands in a sync plan's Remove list.
+func stagingDir() string {
+	return filepath.Join(config.GetConfig().ModsDir, ".staging")
+}
+
 // The GameFeature flag lives in the .uplugin inside the archive, so the target
 // directory is not known until the archive has been unpacked. Extract to a
 // staging directory first, read the manifest, then move it into place.
@@ -117,7 +125,7 @@ func InstallModArchive(modFilePath string, modReference string) error {
 	// normal Docker layout, where a cross-device rename fails with EXDEV — losing
 	// the mod entirely, identically on every retry. Staging under ModsDir keeps the
 	// rename intra-filesystem.
-	staging := filepath.Join(config.GetConfig().ModsDir, ".staging", modReference)
+	staging := filepath.Join(stagingDir(), modReference)
 	defer os.RemoveAll(staging)
 
 	if err := ExtractArchive(modFilePath, staging); err != nil {
